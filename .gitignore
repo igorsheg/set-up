@@ -1,0 +1,20 @@
+# Ignore backup files, typically ending with ~
+*~
+
+# Ignore temporary files
+*.tmp
+*.swp
+
+# Ignore build artifacts
+/target/
+
+# Ignore .env file which may contain sensitive information
+.env
+
+# Ignore files that might appear on various systems
+.DS_Store
+Thumbs.db
+
+# Ignore user-specific IDE configuration files
+.idea/
+.vscode/
