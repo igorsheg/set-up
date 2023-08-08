@@ -1,8 +1,9 @@
 use super::{set::Set, stock::Stock};
 use crate::domain::card::entity::Card;
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Hand {
     cards: Vec<Card>,
 }

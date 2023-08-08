@@ -1,14 +1,10 @@
 use std::{net::SocketAddr, sync::Arc};
 
-use axum::{
-    http::Method,
-    routing::{get, patch},
-    Extension,
-};
+use axum::{http::Method, routing::get, Extension};
 use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
 
-use crate::{application::services::game::GameSessionService, presentation::websocket_server};
+use crate::{application::services::game::GameSessionService, presentation::http::websocket};
 
 pub struct Services {
     pub game_session: Arc<Mutex<GameSessionService>>,
@@ -49,16 +45,8 @@ impl Server {
                 axum::http::header::AUTHORIZATION,
             ]);
 
-        // let service_routes = axum::Router::new()
-        //     .route("/", get(list_services).patch(update_service))
-        //     .route("/grid_order", patch(update_services_order))
-        //     .layer(Extension(self.services.svc_service.clone()))
-        //     .layer(Extension(self.services.uptime_service.clone()));
-        //
-        // let api_routes = axum::Router::new().nest("/services", service_routes);
-
         let app = axum::Router::new()
-            .route("/ws", get(websocket_server::handler))
+            .route("/ws", get(websocket::controller::handler))
             .layer(Extension(self.services.game_session.clone()))
             .layer(cors);
 
@@ -68,7 +56,5 @@ impl Server {
             .serve(app.into_make_service())
             .await
             .unwrap();
-
-        println!("Server running on port {}", self.port);
     }
 }

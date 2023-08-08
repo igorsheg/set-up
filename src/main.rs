@@ -10,6 +10,7 @@ extern crate log;
 pub mod application;
 pub mod config;
 pub mod domain;
+pub mod infra;
 pub mod presentation;
 
 #[tokio::main]
@@ -21,11 +22,11 @@ async fn main() -> std::io::Result<()> {
         application::services::game::GameSessionService::new(),
     ));
 
-    let services = presentation::http_server::Services {
+    let services = presentation::http::server::Services {
         game_session: game_session_service,
     };
 
-    let server = presentation::http_server::Server::new(
+    let server = presentation::http::server::Server::new(
         config.server.host,
         config.server.port.parse().unwrap(),
         services,
