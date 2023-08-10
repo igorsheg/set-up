@@ -1,10 +1,15 @@
+use axum::{http::Method, response::IntoResponse, routing::get, Extension, Json};
+use rand::{distributions::Alphanumeric, Rng};
+use serde_json::json;
 use std::{net::SocketAddr, sync::Arc};
-
-use axum::{http::Method, routing::get, Extension};
 use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
 
-use crate::{application::services::game::GameSessionService, presentation::http::websocket};
+use crate::{
+    application::services::game::GameSessionService,
+    domain::game::{Hand, Stock},
+    presentation::http::websocket,
+};
 
 pub struct Services {
     pub game_session: Arc<Mutex<GameSessionService>>,
@@ -46,7 +51,8 @@ impl Server {
             ]);
 
         let app = axum::Router::new()
-            .route("/ws", get(websocket::controller::handler))
+            .route("/start-match", get(start_match))
+            .route("/game/:code/ws", get(websocket::controller::handler))
             .layer(Extension(self.services.game_session.clone()))
             .layer(cors);
 
@@ -57,4 +63,22 @@ impl Server {
             .await
             .unwrap();
     }
+}
+
+async fn start_match(
+    Extension(state): Extension<Arc<Mutex<GameSessionService>>>,
+) -> impl IntoResponse {
+    let code: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(6)
+        .map(char::from)
+        .collect();
+
+    let stock = Stock::from_seed(0);
+    let (_stock, hand) = Hand::from_stock(&stock);
+    let _ = state.lock().await.create_session(hand, code.clone()); // Lock the GameSessionService
+
+    // Create a new game session with the code (logic here)
+
+    (axum::http::StatusCode::OK, Json(code))
 }

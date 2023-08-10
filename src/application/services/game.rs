@@ -28,16 +28,23 @@ impl GameSessionService {
         self.get_session(code).map(|session| session.get_players())
     }
 
-    pub fn create_session(&mut self, hand: Hand) -> GameSession {
-        let code = generate_session_code();
+    pub fn create_session(&mut self, hand: Hand, code: String) -> GameSession {
+        // let code = generate_session_code();
         let session = GameSession::new(code.clone(), hand);
         self.sessions.insert(code.clone(), session.clone());
         session
     }
 
-    pub fn join_session(&mut self, session_code: &String, player: &Player) -> Result<(), String> {
+    pub fn join_session(
+        &mut self,
+        session_code: &String,
+        player: &Player,
+    ) -> Result<&GameSession, String> {
         match self.sessions.get_mut(session_code) {
-            Some(session) => session.join(player),
+            Some(session) => {
+                session.join(player)?;
+                Ok(session)
+            }
             None => Err("Session not found.".to_string()),
         }
     }

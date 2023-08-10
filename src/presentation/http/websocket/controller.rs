@@ -6,7 +6,10 @@ use crate::{
     infra::error::Error,
 };
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        Path,
+    },
     response::IntoResponse,
     Extension,
 };
@@ -21,7 +24,7 @@ use tokio::sync::Mutex;
 
 #[derive(Serialize, Deserialize, Debug)]
 enum WebSocketMessage {
-    JoinSession { code: String },
+    JoinSession { code: String, username: String },
     StartMatch,
 }
 
@@ -37,36 +40,9 @@ pub async fn handler(
 }
 
 async fn websocket(stream: WebSocket, state: Arc<Mutex<GameSessionService>>) -> Result<(), Error> {
-    let (mut sender, receiver) = stream.split();
+    let (sender, receiver) = stream.split();
 
-    let stock = Stock::from_seed(0);
-    let (_stock, hand) = Hand::from_stock(&stock);
-    let session = state.lock().await.create_session(hand); // Lock the GameSessionService
-
-    let player = Player {
-        id: 0,
-        name: "test player".to_string(),
-        score: 0,
-    };
-
-    match state.lock().await.join_session(&session.code, &player) {
-        Ok(_) => {
-            sender
-                .send(Message::Text(format!(
-                    "Player: {}, Successfully joined. Code: {}",
-                    &player.name, session.code
-                )))
-                .await?
-        }
-        Err(err) => {
-            sender
-                .send(Message::Text(format!("Failed to join: {}", err)))
-                .await?
-        }
-    }
-
-    log::debug!("Session Code: {:?}", session);
-    tokio::spawn(handle_messages(receiver, sender, state.clone(), session));
+    tokio::spawn(handle_messages(receiver, sender, state));
     Ok(())
 }
 
@@ -74,7 +50,6 @@ async fn handle_messages(
     mut receiver: futures::stream::SplitStream<WebSocket>,
     mut sender: SplitSink<WebSocket, Message>,
     state: Arc<Mutex<GameSessionService>>,
-    _session: GameSession,
 ) -> Result<(), Error> {
     while let Some(result) = receiver.next().await {
         match result {
@@ -83,22 +58,23 @@ async fn handle_messages(
                 let ws_msg: WebSocketMessage = serde_json::from_str(&msg)?;
 
                 match ws_msg {
-                    WebSocketMessage::JoinSession { code } => {
+                    WebSocketMessage::JoinSession { code, username } => {
                         let player = Player {
                             id: 1,
-                            name: "test player 2".to_string(),
+                            username: username.clone(),
                             score: 0,
                         };
                         match state.lock().await.join_session(&code, &player) {
-                            Ok(_) => {
-                                sender
-                                    .send(Message::Text(format!(
-                                        "Successfully joined: {:?}",
-                                        &player,
-                                    )))
-                                    .await?
+                            Ok(session) => {
+                                // log::debug!(
+                                //     "From hey: {:?}",
+                                //     state.lock().await.get_players(&code)
+                                // );
+                                let response = serde_json::json!(session.hand.cards());
+                                sender.send(Message::Text(response.to_string())).await?
                             }
                             Err(err) => {
+                                log::error!("Failed to join session: {}", err);
                                 sender
                                     .send(Message::Text(format!("Failed to join: {}", err)))
                                     .await?
@@ -114,9 +90,9 @@ async fn handle_messages(
                         // Handle start match logic here
                     }
                 }
-                sender
-                    .send(Message::Text(format!("Hello from {}", msg)))
-                    .await?;
+                // sender
+                //     .send(Message::Text(format!("Hello from {}", msg)))
+                //     .await?;
             }
             Ok(Message::Close(_)) => {
                 log::debug!("Received close message");
