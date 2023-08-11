@@ -1,7 +1,3 @@
-use std::sync::Arc;
-
-use tokio::sync::Mutex;
-
 use crate::config::Configuration;
 
 #[macro_use]
@@ -18,18 +14,9 @@ async fn main() -> std::io::Result<()> {
     let config = Configuration::new();
     env_logger::init();
 
-    let game_session_service = Arc::new(Mutex::new(
-        application::services::game::GameSessionService::new(),
-    ));
-
-    let services = presentation::http::server::Services {
-        game_session: game_session_service,
-    };
-
     let server = presentation::http::server::Server::new(
         config.server.host,
         config.server.port.parse().unwrap(),
-        services,
     );
 
     server.run().await;
