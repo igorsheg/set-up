@@ -1,9 +1,10 @@
 use axum::{
+    body::Body,
     extract::{
         ws::{Message, WebSocket},
-        Path, Query, WebSocketUpgrade,
+        WebSocketUpgrade,
     },
-    http::Method,
+    http::{Method, Request},
     response::IntoResponse,
     routing::get,
     Extension,
@@ -16,14 +17,14 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     collections::HashMap,
-    convert::Infallible,
     net::{IpAddr, Ipv4Addr, SocketAddr},
     sync::Arc,
 };
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tower_http::cors::{Any, CorsLayer};
+use uuid::Uuid;
 
-use crate::infra::error::{AppError, Error};
+use crate::infra::error::Error;
 
 pub struct Server {
     host: String,
@@ -81,9 +82,7 @@ pub struct WsMessage {
 pub async fn game_routes(
     ws: WebSocketUpgrade,
     Extension(context): Extension<Arc<Mutex<Context>>>,
-    // Extension(remote_addr): Extension<SocketAddr>,
 ) -> impl IntoResponse {
-    // println!("Incoming websocket connection from: {}", remote_addr);
     let remote_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
     log::debug!("Incoming websocket connection from: {}", remote_addr);
     ws.on_upgrade(move |socket| async move {
@@ -99,16 +98,17 @@ pub async fn handle_connection(
     remote_addr: SocketAddr,
 ) -> Result<(), Error> {
     let (tx, rx) = mpsc::channel(32);
-    let client = Client::new(context.clone(), tx, rx);
+    let client = Client::new(context.clone(), tx);
+    let client_id = client.id.clone();
 
     // Register the client with the context
     {
         let mut ctx = context.lock().await;
-        ctx.clients.insert(remote_addr, client);
+        ctx.clients.insert(client_id, client);
     }
 
     // Spawn separate tasks for reading and writing to better control each direction of the communication
-    let (ws_tx, ws_rx) = ws.split();
+    let (mut ws_tx, ws_rx) = ws.split();
 
     let context_clone = context.clone(); // Clone the Arc
 
@@ -124,19 +124,19 @@ pub async fn handle_connection(
                         match message.r#type.as_str() {
                             "join" => {
                                 let mut ctx = context.lock().await;
-                                ctx.handle_join(message, &ws_tx, remote_addr).unwrap();
+                                ctx.handle_join(message, client_id).unwrap();
                             }
                             "move" => {
                                 let mut ctx = context.lock().await;
-                                ctx.handle_move(message, &ws_tx, remote_addr).unwrap();
+                                ctx.handle_move(message, client_id).unwrap();
                             }
                             "request" => {
                                 let mut ctx = context.lock().await;
-                                ctx.handle_request(&ws_tx).unwrap();
+                                ctx.handle_request().unwrap();
                             }
                             "new" => {
                                 let mut ctx = context.lock().await;
-                                ctx.handle_new().unwrap();
+                                ctx.handle_new(client_id).await.unwrap();
                             }
                             _ => {
                                 log::warn!("Unrecognized message type: {}", message.r#type);
@@ -151,10 +151,30 @@ pub async fn handle_connection(
         }
     });
 
-    // Writer task
+    // // // Writer task
+    // let writer_task = tokio::spawn(async move {
+    //     // ... Handle the writer logic, sending messages to the client ...
+    // });
+
+    // let writer_task = tokio::spawn(client.read());
+
     let writer_task = tokio::spawn(async move {
-        // ... Handle the writer logic, sending messages to the client ...
+        let mut rx = rx;
+        while let Some(message) = rx.recv().await {
+            let json_message = serde_json::to_string(&message).unwrap();
+            ws_tx.send(Message::Text(json_message)).await.unwrap();
+        }
     });
+
+    //
+    // let writer_task = tokio::spawn(async move {
+    //     while let Some(message) = rx.recv().await {
+    //         ws_tx
+    //             .send(Message::Text(serde_json::to_string(&message).unwrap()))
+    //             .await
+    //             .unwrap();
+    //     }
+    // });
 
     // Wait for both tasks to complete
     tokio::try_join!(reader_task, writer_task);
@@ -162,14 +182,14 @@ pub async fn handle_connection(
     // Unregister the client from the context
     {
         let mut ctx = context_clone.lock().await;
-        ctx.clients.remove(&remote_addr);
+        ctx.clients.remove(&client_id);
     }
 
     Ok(())
 }
 
 pub struct Context {
-    clients: HashMap<SocketAddr, Client>,
+    clients: HashMap<Uuid, Client>,
     rooms: HashMap<String, GameEngine>,
     // Additional attributes related to the context
 }
@@ -183,12 +203,7 @@ impl Context {
         }
     }
 
-    pub fn handle_join(
-        &mut self,
-        message: WsMessage,
-        conn: &SplitSink<WebSocket, Message>,
-        remote_addr: SocketAddr,
-    ) -> Result<(), Error> {
+    pub fn handle_join(&mut self, message: WsMessage, client_id: Uuid) -> Result<(), Error> {
         // Extract room code from message payload
         let room_code = message
             .payload
@@ -197,12 +212,12 @@ impl Context {
             .unwrap_or_default()
             .to_string();
 
-        log::debug!("Client {} joining room {}", remote_addr, room_code);
+        log::debug!("Client {} joining room {}", client_id, room_code);
 
         // Get the corresponding game engine
         if let Some(game_engine) = self.rooms.get_mut(&room_code) {
             // Register the client
-            if let Some(client) = self.clients.remove(&remote_addr) {
+            if let Some(client) = self.clients.remove(&client_id) {
                 game_engine.register_client(client);
             } else {
                 return Err(Error::GameError("Client not found".to_string()));
@@ -214,15 +229,10 @@ impl Context {
         Ok(())
     }
 
-    pub fn handle_move(
-        &mut self,
-        message: WsMessage,
-        conn: &SplitSink<WebSocket, Message>,
-        remote_addr: SocketAddr,
-    ) -> Result<(), Error> {
+    pub fn handle_move(&mut self, message: WsMessage, client_id: Uuid) -> Result<(), Error> {
         // Extract client from connection
         // let client_addr = conn.remote_addr().unwrap();
-        let client = self.clients.get(&remote_addr).ok_or(Error::ClientNotFound);
+        let client = self.clients.get(&client_id).ok_or(Error::ClientNotFound);
 
         // Determine the room code (or any other way to identify the game)
         let room_code = message
@@ -234,7 +244,7 @@ impl Context {
 
         // Get the corresponding game engine and process the move
         if let Some(game_engine) = self.rooms.get_mut(&room_code) {
-            game_engine.process_moves(remote_addr, message);
+            game_engine.process_moves(client_id, message);
         } else {
             return Err(Error::GameError("Game not found".to_string()));
         }
@@ -242,42 +252,53 @@ impl Context {
         Ok(())
     }
 
-    pub fn handle_request(&mut self, conn: &SplitSink<WebSocket, Message>) -> Result<(), Error> {
+    pub fn handle_request(&mut self) -> Result<(), Error> {
         // Handle a generic request (e.g., requesting game state)
         // You may want to implement specific logic here based on your requirements
 
         Ok(())
     }
 
-    pub fn handle_new(&mut self) -> Result<(), Error> {
+    pub async fn handle_new(&mut self, client_id: Uuid) -> Result<String, Error> {
         // Create a new game and add it to the rooms
         let room_code = nanoid::nanoid!(6); // Generate a unique room code
         let game_engine = GameEngine::new();
-        self.rooms.insert(room_code, game_engine);
+        self.rooms.insert(room_code.clone(), game_engine);
 
-        Ok(())
+        let client = self.clients.get(&client_id).unwrap();
+
+        let payload: HashMap<String, serde_json::Value> =
+            serde_json::from_value(serde_json::json!({ "room_code": room_code })).unwrap();
+
+        // room.notify_clients().await;
+        let message = WsMessage {
+            r#type: "update".to_string(),
+            payload,
+        };
+        client.send_message(message).await;
+
+        Ok(room_code)
     }
 }
 
 pub struct Client {
+    id: Uuid,
     context: Arc<Mutex<Context>>,
     tx: mpsc::Sender<WsMessage>,
-    rx: mpsc::Receiver<WsMessage>,
-    remote_addr: Option<SocketAddr>,
-    // Additional attributes related to the client
+    // rx: mpsc::Receiver<WsMessage>,
 }
 
 impl Client {
     pub fn new(
         context: Arc<Mutex<Context>>,
         tx: mpsc::Sender<WsMessage>,
-        rx: mpsc::Receiver<WsMessage>,
+        // rx: mpsc::Receiver<WsMessage>,
     ) -> Self {
         Self {
+            id: Uuid::new_v4(),
             context,
             tx,
-            rx,
-            remote_addr: None,
+            // rx,
         }
     }
 
@@ -303,7 +324,7 @@ impl Client {
 
 pub struct GameEngine {
     state: RwLock<GameState>,
-    clients: HashMap<SocketAddr, Client>,
+    clients: HashMap<Uuid, Client>,
 }
 
 impl GameEngine {
@@ -314,13 +335,9 @@ impl GameEngine {
         }
     }
 
-    pub async fn process_moves(
-        &self,
-        client_addr: SocketAddr,
-        game_move: WsMessage,
-    ) -> Result<(), Error> {
+    pub async fn process_moves(&self, client_id: Uuid, game_move: WsMessage) -> Result<(), Error> {
         // Retrieve the client associated with the move
-        let client = self.clients.get(&client_addr).unwrap();
+        let client = self.clients.get(&client_id).unwrap();
 
         // Process the move and update the game state
         let mut state = self.state.write().await;
@@ -352,11 +369,11 @@ impl GameEngine {
     }
 
     pub fn register_client(&mut self, client: Client) {
-        self.clients.insert(client.remote_addr.unwrap(), client);
+        self.clients.insert(client.id, client);
     }
 
-    pub fn unregister_client(&mut self, remote_addr: SocketAddr) {
-        self.clients.remove(&remote_addr);
+    pub fn unregister_client(&mut self, client_id: Uuid) {
+        self.clients.remove(&client_id);
     }
 }
 
