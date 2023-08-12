@@ -15,6 +15,15 @@ pub enum Error {
 
     #[error("JSON serialization error. {0}")]
     JsonError(String),
+
+    #[error("JSON serialization error. {0}")]
+    ClientNotFound(String),
+
+    #[error("JSON serialization error. {0}")]
+    UnknownMove(String),
+
+    #[error("JSON serialization error. {0}")]
+    GameError(String),
 }
 
 pub struct AppError(pub Error);

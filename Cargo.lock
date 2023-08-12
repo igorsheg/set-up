@@ -944,6 +944,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "futures",
+ "hyper",
  "itertools",
  "lazy_static",
  "log",
