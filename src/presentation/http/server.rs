@@ -354,36 +354,72 @@ impl Player {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[repr(i64)]
 pub enum Shape {
     Diamond = 0,
-    Oval,
-    Squiggle,
+    Oval = 1,
+    Squiggle = 2,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+impl Serialize for Shape {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_i64(*self as i64)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[repr(i64)]
 pub enum Color {
     Red = 0,
-    Purple,
-    Green,
+    Purple = 1,
+    Green = 2,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+impl Serialize for Color {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_i64(*self as i64)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[repr(i64)]
 pub enum Number {
     One = 0,
-    Two,
-    Three,
+    Two = 1,
+    Three = 2,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+impl Serialize for Number {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_i64(*self as i64)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[repr(i64)]
 pub enum Shading {
     Outlined = 0,
     Striped,
     Solid,
+}
+
+impl Serialize for Shading {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_i64(*self as i64)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -464,6 +500,7 @@ impl Game {
             remaining: 0,
             state: GameState::WaitingForPlayers,
         };
+        game.deck.shuffle();
         game.deal(); // Call the deal method to initialize the in_play and remaining fields
         game
     }

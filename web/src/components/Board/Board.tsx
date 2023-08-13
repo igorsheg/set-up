@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Data, Card as CardType, Player } from "../../types";
 import Card from "@components/Card/Card";
+import { boardStyles as styles } from "./Board.css"; // Adjust the path as needed
 
 type Props = {
   data: Data;
@@ -32,9 +33,9 @@ export default function Board(props: Props): React.ReactElement {
   };
 
   return (
-    <div className="board">
+    <div className={styles.board}>
       {in_play.map((cards: CardType[], i: number) => (
-        <div className="row" key={i}>
+        <div className={styles.row} key={i}>
           {cards.map((card: CardType, j: number) => (
             <Card
               selected={selected.indexOf(card) !== -1}
@@ -46,7 +47,7 @@ export default function Board(props: Props): React.ReactElement {
           ))}
         </div>
       ))}
-      <div className="last-set">
+      <div className={styles.lastSet}>
         {last_player && `${last_player} found a set: `}
         {last_set &&
           last_set.map((card: CardType) => (
@@ -62,6 +63,7 @@ export default function Board(props: Props): React.ReactElement {
         type="button"
         onClick={(): void => handleRequest()}
         disabled={remaining === 0}
+        className={styles.button}
       >
         Request more cards
       </button>
@@ -74,4 +76,48 @@ export default function Board(props: Props): React.ReactElement {
       ))}
     </div>
   );
+
+  // return (
+  //   <div className="board">
+  //     {in_play.map((cards: CardType[], i: number) => (
+  //       <div className="row" key={i}>
+  //         {cards.map((card: CardType, j: number) => (
+  //           <Card
+  //             selected={selected.indexOf(card) !== -1}
+  //             key={`${card.color}${card.shape}${card.number}${card.shading}${j}`}
+  //             onClick={(): void => handleClick(card)}
+  //             card={card}
+  //             hidden={card.color === null}
+  //           />
+  //         ))}
+  //       </div>
+  //     ))}
+  //     <div className="last-set">
+  //       {last_player && `${last_player} found a set: `}
+  //       {last_set &&
+  //         last_set.map((card: CardType) => (
+  //           <Card
+  //             selected={false}
+  //             key={`${card.color}${card.shape}${card.number}${card.shading}`}
+  //             card={card}
+  //             hidden={false}
+  //           />
+  //         ))}
+  //     </div>
+  //     <button
+  //       type="button"
+  //       onClick={(): void => handleRequest()}
+  //       disabled={remaining === 0}
+  //     >
+  //       Request more cards
+  //     </button>
+  //     <div>{`Remaining cards: ${remaining}`}</div>
+  //     {players.map((player: Player) => (
+  //       <div key={player.id}>
+  //         {`${player.name}: ${player.score} ${player.request ? "Requested more cards" : ""
+  //           }`}
+  //       </div>
+  //     ))}
+  //   </div>
+  // );
 }

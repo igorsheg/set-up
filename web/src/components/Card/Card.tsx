@@ -4,6 +4,7 @@ import { COLORS, SHAPES, SHADINGS } from "../../consts";
 import Diamond from "./Diamond";
 import Oval from "./Oval";
 import Squiggle from "./Squiggle";
+import { cardStyles as styles } from "./Card.css"; // Adjust the path as needed
 
 type Props = {
   card: CardType;
@@ -37,7 +38,7 @@ export default function Card(props: Props): React.ReactElement {
 
   return (
     <div
-      className={`card ${selected ? "selected" : ""} ${onClick ? "" : "thumbnail"
+      className={`${styles.card} ${selected ? styles.selected : ""} ${onClick ? "" : styles.thumbnail
         }`}
       onClick={onClick}
       onKeyDown={onClick}

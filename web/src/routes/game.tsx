@@ -51,7 +51,7 @@ export default function Game() {
       JSON.stringify({
         type: "join",
         payload: {
-          room_code: "yFacTa",
+          room_code: "psuWcr",
           name,
         },
       }),
