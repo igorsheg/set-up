@@ -1,7 +1,3 @@
-import { GameSession, Player } from "./types/internal";
-import { useGameConnection } from "./hooks/useGameConnection";
-import Board from "@components/Board/Board";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function App() {

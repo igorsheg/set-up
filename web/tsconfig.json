@@ -42,7 +42,7 @@
     }
   },
   "include": [
-    "src"
+    "src/**/*"
   ],
   "references": [
     {

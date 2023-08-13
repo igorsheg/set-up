@@ -1,25 +1,17 @@
 use axum::{
-    body::Body,
     extract::{
         ws::{Message, WebSocket},
         WebSocketUpgrade,
     },
-    http::{Method, Request},
+    http::Method,
     response::IntoResponse,
     routing::get,
     Extension,
 };
-use futures::{
-    sink::SinkExt,
-    stream::{SplitSink, SplitStream, StreamExt},
-};
-use serde::{Deserialize, Serialize};
+use futures::{sink::SinkExt, stream::StreamExt};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::json;
-use std::{
-    collections::HashMap,
-    net::{IpAddr, Ipv4Addr, SocketAddr},
-    sync::Arc,
-};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tower_http::cors::{Any, CorsLayer};
 use uuid::Uuid;
@@ -83,23 +75,17 @@ pub async fn game_routes(
     ws: WebSocketUpgrade,
     Extension(context): Extension<Arc<Mutex<Context>>>,
 ) -> impl IntoResponse {
-    let remote_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-    log::debug!("Incoming websocket connection from: {}", remote_addr);
     ws.on_upgrade(move |socket| async move {
-        if let Err(err) = handle_connection(socket, context, remote_addr).await {
+        if let Err(err) = handle_connection(socket, context).await {
             log::error!("An error occurred in the websocket handler: {}", err);
         }
     })
 }
 
-pub async fn handle_connection(
-    ws: WebSocket,
-    context: Arc<Mutex<Context>>,
-    remote_addr: SocketAddr,
-) -> Result<(), Error> {
+pub async fn handle_connection(ws: WebSocket, context: Arc<Mutex<Context>>) -> Result<(), Error> {
     let (tx, rx) = mpsc::channel(32);
     let client = Client::new(context.clone(), tx);
-    let client_id = client.id.clone();
+    let client_id = client.id;
 
     // Register the client with the context
     {
@@ -124,11 +110,11 @@ pub async fn handle_connection(
                         match message.r#type.as_str() {
                             "join" => {
                                 let mut ctx = context.lock().await;
-                                ctx.handle_join(message, client_id).unwrap();
+                                ctx.handle_join(message, client_id).await.unwrap();
                             }
                             "move" => {
                                 let mut ctx = context.lock().await;
-                                ctx.handle_move(message, client_id).unwrap();
+                                ctx.handle_move(message, client_id).await.unwrap();
                             }
                             "request" => {
                                 let mut ctx = context.lock().await;
@@ -151,13 +137,6 @@ pub async fn handle_connection(
         }
     });
 
-    // // // Writer task
-    // let writer_task = tokio::spawn(async move {
-    //     // ... Handle the writer logic, sending messages to the client ...
-    // });
-
-    // let writer_task = tokio::spawn(client.read());
-
     let writer_task = tokio::spawn(async move {
         let mut rx = rx;
         while let Some(message) = rx.recv().await {
@@ -166,19 +145,17 @@ pub async fn handle_connection(
         }
     });
 
-    //
-    // let writer_task = tokio::spawn(async move {
-    //     while let Some(message) = rx.recv().await {
-    //         ws_tx
-    //             .send(Message::Text(serde_json::to_string(&message).unwrap()))
-    //             .await
-    //             .unwrap();
-    //     }
-    // });
-
     // Wait for both tasks to complete
-    tokio::try_join!(reader_task, writer_task);
-
+    let join_result = tokio::try_join!(reader_task, writer_task);
+    if let Err(err) = join_result {
+        log::error!(
+            "An error occurred while processing the WebSocket tasks: {:?}",
+            err
+        );
+        return Err(Error::GameError(
+            "An error occurred while processing the WebSocket tasks".to_string(),
+        ));
+    }
     // Unregister the client from the context
     {
         let mut ctx = context_clone.lock().await;
@@ -188,10 +165,16 @@ pub async fn handle_connection(
     Ok(())
 }
 
+#[derive(Debug)]
 pub struct Context {
     clients: HashMap<Uuid, Client>,
-    rooms: HashMap<String, GameEngine>,
-    // Additional attributes related to the context
+    rooms: HashMap<String, Game>,
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Context {
@@ -199,26 +182,34 @@ impl Context {
         Self {
             clients: HashMap::new(),
             rooms: HashMap::new(),
-            // Initialize other attributes
         }
     }
 
-    pub fn handle_join(&mut self, message: WsMessage, client_id: Uuid) -> Result<(), Error> {
-        // Extract room code from message payload
+    pub async fn handle_join(&mut self, message: WsMessage, client_id: Uuid) -> Result<(), Error> {
         let room_code = message
             .payload
             .get("room_code")
             .and_then(|v| v.as_str())
             .unwrap_or_default()
             .to_string();
-
         log::debug!("Client {} joining room {}", client_id, room_code);
 
-        // Get the corresponding game engine
-        if let Some(game_engine) = self.rooms.get_mut(&room_code) {
-            // Register the client
-            if let Some(client) = self.clients.remove(&client_id) {
-                game_engine.register_client(client);
+        if let Some(game) = self.rooms.get_mut(&room_code) {
+            if let Some(client) = self.clients.get(&client_id) {
+                if let Some(name) = message.payload.get("name").and_then(|v| v.as_str()) {
+                    let player = Player::new(client.id, name.to_string());
+                    game.add_player(player);
+
+                    // let payload: HashMap<String, serde_json::Value> =
+                    //     serde_json::from_value(json!({ "User joined room": name })).unwrap();
+                    // let message = WsMessage {
+                    //     r#type: "new_room".to_string(),
+                    //     payload,
+                    // };
+                    client
+                        .send_message(self.rooms.get(&room_code).unwrap().clone())
+                        .await?;
+                }
             } else {
                 return Err(Error::GameError("Client not found".to_string()));
             }
@@ -226,25 +217,38 @@ impl Context {
             return Err(Error::GameError("Game not found".to_string()));
         }
 
+        log::debug!(
+            "Rooms: {:?}",
+            self.rooms
+                .clone()
+                .into_iter()
+                .map(|(k, v)| (k, v.players))
+                .collect::<HashMap<String, Vec<Player>>>()
+        );
+
         Ok(())
     }
 
-    pub fn handle_move(&mut self, message: WsMessage, client_id: Uuid) -> Result<(), Error> {
-        // Extract client from connection
-        // let client_addr = conn.remote_addr().unwrap();
-        let client = self.clients.get(&client_id).ok_or(Error::ClientNotFound);
-
-        // Determine the room code (or any other way to identify the game)
+    pub async fn handle_move(&mut self, message: WsMessage, client_id: Uuid) -> Result<(), Error> {
         let room_code = message
             .payload
             .get("room_code")
             .and_then(|v| v.as_str())
             .unwrap_or_default()
             .to_string();
+        let game_move_json = message
+            .payload
+            .get("move")
+            .ok_or(Error::GameError("Move not found".to_string()))?;
 
-        // Get the corresponding game engine and process the move
-        if let Some(game_engine) = self.rooms.get_mut(&room_code) {
-            game_engine.process_moves(client_id, message);
+        // Deserialize the game_move
+        let game_move: Move = serde_json::from_value(game_move_json.clone())
+            .map_err(|_| Error::GameError("Failed to parse move".to_string()))?;
+
+        // Find the game associated with the room code
+        if let Some(game) = self.rooms.get_mut(&room_code) {
+            // Apply the move to the game state
+            game.make_move(client_id, game_move.cards)?;
         } else {
             return Err(Error::GameError("Game not found".to_string()));
         }
@@ -255,50 +259,61 @@ impl Context {
     pub fn handle_request(&mut self) -> Result<(), Error> {
         // Handle a generic request (e.g., requesting game state)
         // You may want to implement specific logic here based on your requirements
-
         Ok(())
     }
 
     pub async fn handle_new(&mut self, client_id: Uuid) -> Result<String, Error> {
-        // Create a new game and add it to the rooms
-        let room_code = nanoid::nanoid!(6); // Generate a unique room code
-        let game_engine = GameEngine::new();
-        self.rooms.insert(room_code.clone(), game_engine);
+        // Generate a unique room code
+        let room_code = nanoid::nanoid!(6);
 
-        let client = self.clients.get(&client_id).unwrap();
+        // Create a new game instance
+        let mut game = Game::new();
+        let mut players = game.players.clone();
+        for player in &mut players {
+            player.score = 0;
+        }
+        game.players = players;
 
-        let payload: HashMap<String, serde_json::Value> =
-            serde_json::from_value(serde_json::json!({ "room_code": room_code })).unwrap();
+        // Add the game to the rooms
+        self.rooms.insert(room_code.clone(), game.clone());
 
-        // room.notify_clients().await;
-        let message = WsMessage {
-            r#type: "update".to_string(),
-            payload,
-        };
-        client.send_message(message).await;
+        // Optionally, notify the client of the room code
+        if let Some(client) = self.clients.get(&client_id) {
+            // let payload: HashMap<String, serde_json::Value> =
+            //     serde_json::from_value(json!({ "room_code": room_code })).unwrap();
+            // let message = WsMessage {
+            //     r#type: "new_room".to_string(),
+            //     payload,
+            // };
+            client.send_message(game.clone()).await?;
+        }
+
+        log::debug!(
+            "Rooms: {:?}",
+            self.rooms
+                .clone()
+                .into_iter()
+                .map(|(k, v)| (k, v.players))
+                .collect::<HashMap<String, Vec<Player>>>()
+        );
 
         Ok(room_code)
     }
 }
 
+#[derive(Debug)]
 pub struct Client {
     id: Uuid,
     context: Arc<Mutex<Context>>,
-    tx: mpsc::Sender<WsMessage>,
-    // rx: mpsc::Receiver<WsMessage>,
+    tx: mpsc::Sender<Game>,
 }
 
 impl Client {
-    pub fn new(
-        context: Arc<Mutex<Context>>,
-        tx: mpsc::Sender<WsMessage>,
-        // rx: mpsc::Receiver<WsMessage>,
-    ) -> Self {
+    pub fn new(context: Arc<Mutex<Context>>, tx: mpsc::Sender<Game>) -> Self {
         Self {
             id: Uuid::new_v4(),
             context,
             tx,
-            // rx,
         }
     }
 
@@ -310,7 +325,7 @@ impl Client {
         // Handle client writing similar to the Go code
     }
 
-    pub async fn send_message(&self, message: WsMessage) -> Result<(), Error> {
+    pub async fn send_message(&self, message: Game) -> Result<(), Error> {
         // Serialize the message to JSON
         let json_message = serde_json::to_string(&message).map_err(|_| Error::JsonError);
 
@@ -322,110 +337,192 @@ impl Client {
     }
 }
 
-pub struct GameEngine {
-    state: RwLock<GameState>,
-    clients: HashMap<Uuid, Client>,
+#[derive(Debug, Clone, Serialize)]
+pub struct Player {
+    client_id: Uuid,
+    name: String,
+    score: i32,
 }
 
-impl GameEngine {
+impl Player {
+    pub fn new(client_id: Uuid, name: String) -> Self {
+        Player {
+            client_id,
+            name, // Initialize player attributes
+            score: 0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(i64)]
+pub enum Shape {
+    Diamond = 0,
+    Oval,
+    Squiggle,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(i64)]
+pub enum Color {
+    Red = 0,
+    Purple,
+    Green,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(i64)]
+pub enum Number {
+    One = 0,
+    Two,
+    Three,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(i64)]
+pub enum Shading {
+    Outlined = 0,
+    Striped,
+    Solid,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Card {
+    shape: Shape,
+    color: Color,
+    number: Number,
+    shading: Shading,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Deck {
+    cards: Vec<Card>,
+}
+
+impl Deck {
     pub fn new() -> Self {
-        GameEngine {
-            state: RwLock::new(GameState::new()),
-            clients: HashMap::new(),
-        }
-    }
-
-    pub async fn process_moves(&self, client_id: Uuid, game_move: WsMessage) -> Result<(), Error> {
-        // Retrieve the client associated with the move
-        let client = self.clients.get(&client_id).unwrap();
-
-        // Process the move and update the game state
-        let mut state = self.state.write().await;
-        state.apply_move(client, game_move)?;
-
-        // Notify all clients of the update
-        self.notify_clients().await?;
-
-        Ok(())
-    }
-
-    pub async fn notify_clients(&self) -> Result<(), Error> {
-        // Create the response message
-        let payload: HashMap<String, serde_json::Value> = serde_json::from_value(
-            serde_json::json!({ "game_state": self.state.read().await.to_json() }),
-        )
-        .unwrap();
-        let message = WsMessage {
-            r#type: "update".to_string(),
-            payload,
-        };
-
-        // Send the response to all clients
-        for client in self.clients.values() {
-            client.send_message(message.clone()).await?;
-        }
-
-        Ok(())
-    }
-
-    pub fn register_client(&mut self, client: Client) {
-        self.clients.insert(client.id, client);
-    }
-
-    pub fn unregister_client(&mut self, client_id: Uuid) {
-        self.clients.remove(&client_id);
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct GameState {
-    players: Vec<Player>,
-    // Other game-related state can be added here
-}
-
-impl GameState {
-    pub fn new() -> Self {
-        GameState {
-            players: Vec::new(),
-            // Initialize other game-related state
-        }
-    }
-
-    pub fn apply_move(&mut self, client: &Client, game_move: WsMessage) -> Result<(), Error> {
-        // Apply the move to the game state
-        // Update players, board, etc.
-
-        // Example: you might want to match the type of move and apply it accordingly
-        match game_move.r#type.as_str() {
-            "move" => {
-                // Handle the move logic here
-            }
-            _ => {
-                return Err(Error::UnknownMove(game_move.r#type));
+        // Initialize the deck with all possible combinations of cards
+        let mut cards = Vec::new();
+        for &shape in &[Shape::Diamond, Shape::Oval, Shape::Squiggle] {
+            for &color in &[Color::Red, Color::Purple, Color::Green] {
+                for &number in &[Number::One, Number::Two, Number::Three] {
+                    for &shading in &[Shading::Outlined, Shading::Striped, Shading::Solid] {
+                        cards.push(Card {
+                            shape,
+                            color,
+                            number,
+                            shading,
+                        });
+                    }
+                }
             }
         }
-
-        Ok(())
+        Self { cards }
     }
 
-    pub fn to_json(&self) -> serde_json::Value {
-        // Convert the game state to JSON
-        // You can implement this based on your specific game state structure
-        json!({
-            "players": self.players,
-        })
+    pub fn shuffle(&mut self) {
+        // Shuffle the deck of cards
+        use rand::seq::SliceRandom;
+        let mut rng = rand::thread_rng();
+        self.cards.shuffle(&mut rng);
+    }
+
+    pub fn draw(&mut self) -> Option<Card> {
+        // Draw a card from the deck
+        self.cards.pop()
     }
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct Player {
-    // Player-related attributes can be added here
+pub struct Game {
+    deck: Deck,                  // The deck of cards
+    game_over: Option<bool>,     // Indicates whether the game is over
+    in_play: Vec<Vec<Card>>,     // The cards currently in play, organized in rows
+    last_player: Option<String>, // The last player who made a move
+    last_set: Option<Vec<Card>>, // The last set of cards played
+    players: Vec<Player>,        // The players in the game
+    remaining: i64,              // The number of remaining cards in the deck
+    state: GameState,
 }
 
-impl Player {
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub enum GameState {
+    WaitingForPlayers,
+    InProgress,
+    Ended,
+}
+
+impl Game {
     pub fn new() -> Self {
-        Player {
-            // Initialize player attributes
-        }
+        let mut game = Game {
+            deck: Deck::new(),
+            game_over: None,
+            in_play: vec![vec![], vec![], vec![]],
+            last_player: None,
+            last_set: None,
+            players: vec![],
+            remaining: 0,
+            state: GameState::WaitingForPlayers,
+        };
+        game.deal(); // Call the deal method to initialize the in_play and remaining fields
+        game
     }
+
+    pub fn add_player(&mut self, player: Player) {
+        self.players.push(player);
+    }
+
+    pub fn deal(&mut self) {
+        // Initialize in_play as a vector of three empty vectors
+        let mut in_play = vec![Vec::new(), Vec::new(), Vec::new()];
+
+        // Iterate four times to deal 12 cards in total
+        for _ in 0..4 {
+            for j in 0..3 {
+                // Take the top card from the deck and copy it to the corresponding row
+                if let Some(card) = self.deck.draw() {
+                    in_play[j].push(card);
+                }
+            }
+        }
+
+        // Update the InPlay and Remaining fields of the game
+        self.in_play = in_play;
+        self.remaining = self.deck.cards.len() as i64;
+    }
+
+    pub fn make_move(&mut self, player_id: Uuid, selected_cards: Vec<Card>) -> Result<(), Error> {
+        // Validate the move and update the game state
+        if self.state != GameState::InProgress {
+            return Err(Error::GameError("Game is not in progress".to_string()));
+        }
+
+        if !self.is_valid_set(&selected_cards) {
+            return Err(Error::GameError("Invalid set".to_string()));
+        }
+
+        // Apply the move
+        self.apply_move(player_id, selected_cards);
+
+        Ok(())
+    }
+
+    pub fn is_valid_set(&self, selected_cards: &[Card]) -> bool {
+        // Check if the selected cards form a valid set according to the game's rules
+        // Implement the validation logic here
+        true
+    }
+
+    pub fn apply_move(&mut self, player_id: Uuid, selected_cards: Vec<Card>) {
+        // Apply the player's move to the game state
+        // Update scores, remove matched cards, draw new cards, etc.
+    }
+
+    // Additional game logic and methods can be implemented here
+}
+
+#[derive(Debug, Deserialize)]
+struct Move {
+    player_id: Option<i64>,
+    cards: Vec<Card>,
 }
