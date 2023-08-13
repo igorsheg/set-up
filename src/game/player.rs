@@ -5,7 +5,7 @@ use uuid::Uuid;
 pub struct Player {
     pub client_id: Uuid,
     pub name: String,
-    pub score: i32,
+    pub score: i64,
 }
 
 impl Player {

@@ -7,13 +7,9 @@ export const boardStyles = {
     gridTemplateRows: "repeat(3, 1fr)",
     gridTemplateColumns: "repeat(4, 1fr)",
     gap: vars.spacing.s4,
+    width: "600px",
     padding: vars.spacing.s4,
     backgroundColor: vars.colors.background,
-  }),
-  row: style({
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
-    gap: vars.spacing.s2,
   }),
   lastSet: style({
     marginTop: vars.spacing.s4,

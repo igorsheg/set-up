@@ -25,6 +25,7 @@ export type Data = {
 
 export type Move = {
   cards: Card[];
+  room_code: string;
 };
 
 export type ColorMapping = typeof COLORS;

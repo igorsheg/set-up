@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use crate::{
     context::Context,
@@ -15,12 +15,11 @@ use axum::{
     Extension,
 };
 use futures::{sink::SinkExt, stream::StreamExt};
-use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex};
 use uuid::Uuid;
 
 #[axum::debug_handler]
-pub async fn game_routes(
+pub async fn ws_handler(
     ws: WebSocketUpgrade,
     Extension(context): Extension<Arc<Mutex<Context>>>,
 ) -> impl IntoResponse {
@@ -56,7 +55,9 @@ pub async fn handle_connection(ws: WebSocket, context: Arc<Mutex<Context>>) -> R
                 if let Ok(message) = message {
                     let message_type = MessageType::from_ws_message(message).unwrap();
                     let mut ctx = context.lock().await;
-                    ctx.handle_message(message_type, client_id).await;
+                    if let Err(err) = ctx.handle_message(message_type, client_id).await {
+                        log::error!("Error handling message: {}", err);
+                    }
                 } else {
                     log::error!("Failed to parse WebSocket message");
                 }
@@ -108,19 +109,7 @@ impl Client {
         }
     }
 
-    pub async fn read(&self) {
-        // Handle client reading similar to the Go code
-    }
-
-    pub async fn write(&self) {
-        // Handle client writing similar to the Go code
-    }
-
     pub async fn send_message(&self, message: Game) -> Result<(), Error> {
-        // Serialize the message to JSON
-        let json_message = serde_json::to_string(&message).map_err(|_| Error::JsonError);
-
-        // Send the message to the client via the tx channel
         self.tx
             .send(message)
             .await

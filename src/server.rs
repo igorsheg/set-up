@@ -3,7 +3,7 @@ use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
 
-use crate::{client::game_routes, context::Context};
+use crate::{client::ws_handler, context::Context};
 
 pub struct Server {
     host: String,
@@ -38,7 +38,7 @@ impl Server {
         let context = Arc::new(Mutex::new(Context::new()));
 
         let app = axum::Router::new()
-            .route("/ws", get(game_routes))
+            .route("/ws", get(ws_handler))
             .layer(cors)
             .layer(Extension(context));
 

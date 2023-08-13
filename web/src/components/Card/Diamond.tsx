@@ -1,7 +1,8 @@
 import * as React from "react";
 import { COLORS, SHADINGS } from "../../consts";
+import { shapeStyles } from "./Card.css"; // Adjust the path accordingly
 
-function Icon(props) {
+function Icon(props: any) {
   return (
     <svg
       width={142}
@@ -16,15 +17,22 @@ function Icon(props) {
 }
 
 type Props = {
-  shading: keyof typeof SHADINGS;
-  color: keyof typeof COLORS;
+  shading: number;
+  color: number;
 };
 
 export default function Diamond(props: Props): React.ReactElement {
   const { color, shading } = props;
 
-  const colorClass = COLORS[color];
-  const shadingClass = SHADINGS[shading];
+  const colorValue = COLORS[color];
+  const shadingValue = SHADINGS[shading];
 
-  return <Icon className={`${colorClass} ${shadingClass}`} />;
+  return (
+    <Icon
+      className={shapeStyles({
+        color: colorValue as any,
+        shading: shadingValue as any,
+      })}
+    />
+  );
 }

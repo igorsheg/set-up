@@ -9,6 +9,7 @@ const ws = new WebSocket(`ws://${import.meta.env.VITE_BACKEND_URL}/ws`);
 export default function Game() {
   const [selected, setSelected] = React.useState<Card[]>([]);
   const [data, setData] = React.useState<Data>({} as Data);
+  const { room_code } = useParams();
 
   // Custom hook to keep track of the previous state of Data
   const usePrevious = (
@@ -27,9 +28,9 @@ export default function Game() {
     ws.onopen = (): void => { };
 
     ws.onmessage = (msg): void => {
+      console.log("data", msg);
       const currentState = JSON.parse(msg.data);
       setData(currentState);
-      console.log("data", msg.data);
 
       // If the in_play cards have changed, deselect any cards for the client
       if (
@@ -51,7 +52,7 @@ export default function Game() {
       JSON.stringify({
         type: "join",
         payload: {
-          room_code: "z4_dDE",
+          room_code,
           name,
         },
       }),
@@ -59,7 +60,8 @@ export default function Game() {
   };
 
   const handleMove = (cards: Card[]): void => {
-    const move: Move = { cards };
+    const move: Move = { cards, room_code };
+    console.log("move", move);
     ws.send(
       JSON.stringify({
         type: "move",

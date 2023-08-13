@@ -26,8 +26,6 @@ export default function Oval(props: Props): React.ReactElement {
   const colorValue = COLORS[color];
   const shadingValue = SHADINGS[shading];
 
-  // const className = shapeStyles({ color: colorValue, shading: shadingValue });
-
   return (
     <div className={shapeStyles({ color: colorValue as any })}>
       <Icon className={shapeStyles({ shading: shadingValue as any })} />

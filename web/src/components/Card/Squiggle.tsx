@@ -26,7 +26,9 @@ export default function Squiggle(props: Props): React.ReactElement {
   const colorValue = COLORS[color];
   const shadingValue = SHADINGS[shading];
 
-  const className = shapeStyles({ color: colorValue, shading: shadingValue });
-
-  return <Icon className={className} />;
+  return (
+    <div className={shapeStyles({ color: colorValue as any })}>
+      <Icon className={shapeStyles({ shading: shadingValue as any })} />
+    </div>
+  );
 }

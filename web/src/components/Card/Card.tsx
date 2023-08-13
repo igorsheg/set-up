@@ -34,12 +34,23 @@ export default function Card(props: Props): React.ReactElement {
     default:
       throw new Error("Undefined shape");
   }
-  const elements = [...Array(number + 1).keys()].map(() => element);
+
+  const threeElements = number + 1 === 3;
+
+  const elements = threeElements
+    ? [
+      <div>{element}</div>,
+      <div>
+        {element}
+        {element}
+      </div>,
+    ]
+    : [...Array(number + 1).keys()].map(() => element);
 
   return (
     <div
       className={`${styles.card} ${selected ? styles.selected : ""} ${onClick ? "" : styles.thumbnail
-        }`}
+        } ${threeElements ? styles.threeElements : ""}`}
       onClick={onClick}
       onKeyDown={onClick}
       role="button"

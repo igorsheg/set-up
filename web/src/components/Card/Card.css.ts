@@ -6,6 +6,7 @@ export const cardStyles = {
   card: style({
     display: "flex",
     justifyContent: "center",
+    flexDirection: "column",
     alignItems: "center",
     padding: vars.spacing.s2,
     backgroundColor: vars.colors.card,
@@ -14,6 +15,18 @@ export const cardStyles = {
     transition: "box-shadow 0.2s ease-in-out",
     ":hover": {
       boxShadow: vars.shadows.md,
+    },
+  }),
+  threeElements: style({
+    "& > div": {
+      display: "flex",
+      justifyContent: "center",
+    },
+    "& > div:first-child": {
+      justifyContent: "center",
+    },
+    "& > div:last-child": {
+      justifyContent: "space-between",
     },
   }),
   selected: style({

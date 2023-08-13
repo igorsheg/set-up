@@ -34,19 +34,17 @@ export default function Board(props: Props): React.ReactElement {
 
   return (
     <div className={styles.board}>
-      {in_play.map((cards: CardType[], i: number) => (
-        <div key={i}>
-          {cards.map((card: CardType, j: number) => (
-            <Card
-              selected={selected.indexOf(card) !== -1}
-              key={`${card.color}${card.shape}${card.number}${card.shading}${j}`}
-              onClick={(): void => handleClick(card)}
-              card={card}
-              hidden={card.color === null}
-            />
-          ))}
-        </div>
-      ))}
+      {in_play.map((cards: CardType[]) =>
+        cards.map((card: CardType, j: number) => (
+          <Card
+            selected={selected.indexOf(card) !== -1}
+            key={`${card.color}${card.shape}${card.number}${card.shading}${j}`}
+            onClick={(): void => handleClick(card)}
+            card={card}
+            hidden={card.color === null}
+          />
+        )),
+      )}
       <div className={styles.lastSet}>
         {last_player && `${last_player} found a set: `}
         {last_set &&

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use serde_json::Map;
 use uuid::Uuid;
 
 use crate::{
@@ -74,15 +75,6 @@ impl Context {
             return Err(Error::GameError("Game not found".to_string()));
         }
 
-        log::debug!(
-            "Rooms: {:?}",
-            self.rooms
-                .clone()
-                .into_iter()
-                .map(|(k, v)| (k, v.players))
-                .collect::<HashMap<String, Vec<Player>>>()
-        );
-
         Ok("ok".to_string())
     }
 
@@ -91,25 +83,24 @@ impl Context {
         message: WsMessage,
         client_id: Uuid,
     ) -> Result<String, Error> {
-        let room_code = message
-            .payload
-            .get("room_code")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default()
-            .to_string();
-        let game_move_json = message
-            .payload
-            .get("move")
-            .ok_or(Error::GameError("Move not found".to_string()))?;
+        let payload_value = serde_json::Value::Object(message.payload.into_iter().collect());
 
-        // Deserialize the game_move
-        let game_move: Move = serde_json::from_value(game_move_json.clone())
+        // Deserialize the payload JSON Value into a Move struct
+        let game_move: Move = serde_json::from_value(payload_value)
             .map_err(|_| Error::GameError("Failed to parse move".to_string()))?;
 
+        log::debug!("Player {:?} making move {:?}", client_id, game_move);
+
         // Find the game associated with the room code
-        if let Some(game) = self.rooms.get_mut(&room_code) {
+        if let Some(game) = self.rooms.get_mut(&game_move.room_code) {
             // Apply the move to the game state
             game.make_move(client_id, game_move.cards)?;
+
+            log::debug!("Client {} ", client_id);
+            // Optionally, notify the client of the room code
+            if let Some(client) = self.clients.get(&client_id) {
+                client.send_message(game.clone()).await?;
+            }
         } else {
             return Err(Error::GameError("Game not found".to_string()));
         }
