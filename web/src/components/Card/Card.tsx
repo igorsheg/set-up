@@ -23,13 +23,13 @@ export default function Card(props: Props): React.ReactElement {
   let element: React.ReactElement;
   switch (shape) {
     case SHAPES.DIAMOND:
-      element = <Diamond color={COLORS[color]} shading={SHADINGS[shading]} />;
+      element = <Diamond color={color} shading={shading} />;
       break;
     case SHAPES.OVAL:
-      element = <Oval color={COLORS[color]} shading={SHADINGS[shading]} />;
+      element = <Oval color={color} shading={shading} />;
       break;
     case SHAPES.SQUIGGLE:
-      element = <Squiggle color={COLORS[color]} shading={SHADINGS[shading]} />;
+      element = <Squiggle color={color} shading={shading} />;
       break;
     default:
       throw new Error("Undefined shape");

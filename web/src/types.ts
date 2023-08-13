@@ -1,3 +1,5 @@
+import { COLORS, SHADINGS } from "./consts";
+
 export type Player = {
   id: number;
   name: string;
@@ -24,3 +26,10 @@ export type Data = {
 export type Move = {
   cards: Card[];
 };
+
+export type ColorMapping = typeof COLORS;
+export type ShadingMapping = typeof SHADINGS;
+export type ColorKey = keyof ColorMapping; // 0 | 1 | 2
+export type ShadingKey = keyof ShadingMapping; // 0 | 1 | 2
+export type ColorValue = ColorMapping[ColorKey]; // "red" | "green" | "purple"
+export type ShadingValue = ShadingMapping[ShadingKey]; // "solid" | "outlined" | "striped"

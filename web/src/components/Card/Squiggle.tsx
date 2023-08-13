@@ -1,20 +1,32 @@
 import * as React from "react";
-
-function Icon(props) {
+import { COLORS, SHADINGS } from "../../consts";
+import { shapeStyles } from "./Card.css"; // Adjust the path accordingly
+function Icon(props: any) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" {...props}>
-      <path d="M10 60 Q 40 10 70 60 T 130 60" strokeWidth="2" />
+    <svg
+      width={67}
+      height={67}
+      viewBox="0 0 67 67"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <rect width={67} height={67} rx={12} />
     </svg>
   );
 }
 
 type Props = {
-  shading: string;
-  color: string;
+  shading: number;
+  color: number;
 };
 
 export default function Squiggle(props: Props): React.ReactElement {
   const { shading, color } = props;
 
-  return <Icon className={`${color}-${shading}`} />;
+  const colorValue = COLORS[color];
+  const shadingValue = SHADINGS[shading];
+
+  const className = shapeStyles({ color: colorValue, shading: shadingValue });
+
+  return <Icon className={className} />;
 }

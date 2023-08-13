@@ -35,7 +35,7 @@ export default function Board(props: Props): React.ReactElement {
   return (
     <div className={styles.board}>
       {in_play.map((cards: CardType[], i: number) => (
-        <div className={styles.row} key={i}>
+        <div key={i}>
           {cards.map((card: CardType, j: number) => (
             <Card
               selected={selected.indexOf(card) !== -1}

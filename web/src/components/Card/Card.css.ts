@@ -1,5 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { vars } from "@styles/index.css"; // Adjust the path accordingly
+import { recipe } from "@vanilla-extract/recipes";
 
 export const cardStyles = {
   card: style({
@@ -26,4 +27,50 @@ export const cardStyles = {
   hidden: style({
     visibility: "hidden",
   }),
+
+  ".outlined": style({
+    fill: "red",
+    stroke: "outlined",
+  }),
+  "red-striped": style({
+    fill: "red",
+    stroke: "striped",
+  }),
 };
+
+export const colors = {
+  red: style({ fill: "red" }),
+  purple: style({ fill: "purple" }),
+  green: style({ fill: "green" }),
+};
+
+export const shadings = {
+  outlined: style({ stroke: "outlined" }),
+  striped: style({ stroke: "striped" }),
+  solid: style({ stroke: "solid" }),
+};
+
+export const shapeStyles = recipe({
+  base: {
+    stroke: "currentcolor",
+    fill: "currentcolor",
+  },
+
+  variants: {
+    color: {
+      red: { color: "rgb(248, 80, 62)" },
+      purple: { color: "rgb(65, 78, 155)" },
+      green: { color: "rgb(61, 119, 115)" },
+    },
+    shading: {
+      outlined: {
+        fillOpacity: 0,
+        strokeWidth: "4px",
+      },
+      striped: {
+        fillOpacity: 0.3,
+      },
+      solid: {},
+    },
+  },
+});
