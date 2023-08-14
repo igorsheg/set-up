@@ -651,6 +651,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nanoid"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ffa00dec017b5b1a8b7cf5e2c008bfda1aa7e0697ac1508b491fdf2622fb4d8"
+dependencies = [
+ "rand",
+]
+
+[[package]]
 name = "num_cpus"
 version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -935,9 +944,11 @@ dependencies = [
  "dotenv",
  "env_logger",
  "futures",
+ "hyper",
  "itertools",
  "lazy_static",
  "log",
+ "nanoid",
  "rand",
  "serde",
  "serde_json",
@@ -945,6 +956,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tower-http",
+ "tungstenite",
  "uuid",
 ]
 
@@ -1326,6 +1338,7 @@ checksum = "79daa5ed5740825c40b389c5e50312b9c86df53fccd33f281df655642b43869d"
 dependencies = [
  "getrandom",
  "rand",
+ "serde",
 ]
 
 [[package]]

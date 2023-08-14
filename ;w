@@ -25,15 +25,11 @@ export default function Game() {
   const prevState = usePrevious(data); // prevState of Data
 
   React.useEffect(() => {
-    handleJoin("test");
-  }, []);
-
-  React.useEffect(() => {
-    ws.onopen = (): void => { };
+    ws.onopen = (): void => handleJoin("Player");
 
     ws.onmessage = (msg): void => {
+      console.log("data", msg);
       const currentState = JSON.parse(msg.data);
-      console.log("data", currentState);
       setData(currentState);
 
       // If the in_play cards have changed, deselect any cards for the client
@@ -78,7 +74,6 @@ export default function Game() {
     ws.send(
       JSON.stringify({
         type: "request",
-        payload: { room_code },
       }),
     );
   };
@@ -111,7 +106,7 @@ export default function Game() {
   }
 
   return (
-    <div>
+    <div className="app">
       {data.in_play ? (
         <Board
           data={data}
