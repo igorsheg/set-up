@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use serde_json::Map;
 use uuid::Uuid;
 
 use crate::{
@@ -41,7 +40,7 @@ impl Context {
         match message_type {
             MessageType::Join(message) => self.handle_join(message, client_id).await,
             MessageType::Move(message) => self.handle_move(message, client_id).await,
-            MessageType::Request => self.handle_request(),
+            MessageType::Request(message) => self.handle_request(message, client_id).await,
             MessageType::New => self.handle_new(client_id).await,
         }
     }
@@ -57,11 +56,16 @@ impl Context {
             .and_then(|v| v.as_str())
             .unwrap_or_default()
             .to_string();
+
         log::debug!("Client {} joining room {}", client_id, room_code);
 
         if let Some(game) = self.rooms.get_mut(&room_code) {
             if let Some(client) = self.clients.get(&client_id) {
-                if let Some(name) = message.payload.get("name").and_then(|v| v.as_str()) {
+                if let Some(name) = message
+                    .payload
+                    .get("player_username")
+                    .and_then(|v| v.as_str())
+                {
                     let player = Player::new(client.id, name.to_string());
                     game.add_player(player);
                     client
@@ -84,8 +88,6 @@ impl Context {
         client_id: Uuid,
     ) -> Result<String, Error> {
         let payload_value = serde_json::Value::Object(message.payload.into_iter().collect());
-
-        // Deserialize the payload JSON Value into a Move struct
         let game_move: Move = serde_json::from_value(payload_value)
             .map_err(|_| Error::GameError("Failed to parse move".to_string()))?;
 
@@ -108,9 +110,45 @@ impl Context {
         Ok("ok".to_string())
     }
 
-    pub fn handle_request(&mut self) -> Result<String, Error> {
-        // Handle a generic request (e.g., requesting game state)
-        // You may want to implement specific logic here based on your requirements
+    pub async fn handle_request(
+        &mut self,
+        message: WsMessage,
+        client_id: Uuid,
+    ) -> Result<String, Error> {
+        let room_code = message
+            .payload
+            .get("room_code")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
+
+        log::debug!("Client {} requesting more cards", client_id);
+
+        if let Some(game) = self.rooms.get_mut(&room_code) {
+            // Set the request flag for the player who sent the request
+            for player in game.players.iter_mut() {
+                if player.client_id == client_id {
+                    player.request = true;
+                }
+            }
+
+            log::debug!("Game players: {:?}", game.players);
+
+            // Check if all players have requested more cards
+            let request = game.players.iter().all(|player| player.request);
+
+            // If all players have requested and there are cards in the deck, add more cards
+            if request && !game.deck.cards.is_empty() {
+                game.add_cards();
+                for player in game.players.iter_mut() {
+                    player.request = false; // Reset the request flags
+                }
+                if let Some(client) = self.clients.get(&client_id) {
+                    client.send_message(game.clone()).await?;
+                }
+            }
+        }
+
         Ok("ok".to_string())
     }
 

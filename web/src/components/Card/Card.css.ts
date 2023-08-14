@@ -6,27 +6,18 @@ export const cardStyles = {
   card: style({
     display: "flex",
     justifyContent: "center",
-    flexDirection: "column",
+    flexDirection: "row",
     alignItems: "center",
+    height: vars.spacing.s13,
+    width: vars.spacing.s13,
     padding: vars.spacing.s2,
     backgroundColor: vars.colors.card,
     boxShadow: vars.shadows.sm,
     cursor: "pointer",
+    gap: vars.spacing.s2,
     transition: "box-shadow 0.2s ease-in-out",
     ":hover": {
       boxShadow: vars.shadows.md,
-    },
-  }),
-  threeElements: style({
-    "& > div": {
-      display: "flex",
-      justifyContent: "center",
-    },
-    "& > div:first-child": {
-      justifyContent: "center",
-    },
-    "& > div:last-child": {
-      justifyContent: "space-between",
     },
   }),
   selected: style({
@@ -49,24 +40,47 @@ export const cardStyles = {
     fill: "red",
     stroke: "striped",
   }),
+  middle: style({
+    marginTop: `calc(${1} * -36px)`,
+    marginLeft: `calc(${1} * -15px)`,
+    marginRight: `calc(${1} * -15px)`,
+  }),
+  leftRight: style({
+    marginTop: `calc(${1} * ${vars.spacing.s7})`,
+  }),
 };
 
-export const colors = {
-  red: style({ fill: "red" }),
-  purple: style({ fill: "purple" }),
-  green: style({ fill: "green" }),
-};
+export const shapeWrap = recipe({
+  base: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-export const shadings = {
-  outlined: style({ stroke: "outlined" }),
-  striped: style({ stroke: "striped" }),
-  solid: style({ stroke: "solid" }),
-};
+  variants: {
+    size: {
+      1: {
+        width: vars.spacing.s10,
+        height: vars.spacing.s10,
+      },
+      2: {
+        width: vars.spacing.s8,
+        height: vars.spacing.s8,
+      },
+      3: {
+        width: vars.spacing.s7,
+        height: vars.spacing.s7,
+      },
+    },
+  },
+});
 
 export const shapeStyles = recipe({
   base: {
     stroke: "currentcolor",
     fill: "currentcolor",
+    width: "100%",
+    height: "100%",
   },
 
   variants: {
@@ -75,10 +89,23 @@ export const shapeStyles = recipe({
       purple: { color: "rgb(65, 78, 155)" },
       green: { color: "rgb(61, 119, 115)" },
     },
+    size: {
+      1: {
+        width: vars.spacing.s10,
+        height: vars.spacing.s10,
+      },
+      2: {
+        width: vars.spacing.s8,
+        height: vars.spacing.s8,
+      },
+      3: {
+        width: vars.spacing.s7,
+        height: vars.spacing.s7,
+      },
+    },
     shading: {
       outlined: {
         fillOpacity: 0,
-        strokeWidth: "4px",
       },
       striped: {
         fillOpacity: 0.3,

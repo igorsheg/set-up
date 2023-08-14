@@ -4,11 +4,10 @@ import { vars } from "@styles/index.css"; // Adjust the path accordingly
 export const boardStyles = {
   board: style({
     display: "grid",
-    gridTemplateRows: "repeat(3, 1fr)",
-    gridTemplateColumns: "repeat(4, 1fr)",
+    gridTemplateRows: "repeat(4, 1fr)",
+    gridTemplateColumns: "repeat(3, 1fr)",
     gap: vars.spacing.s4,
     width: "600px",
-    padding: vars.spacing.s4,
     backgroundColor: vars.colors.background,
   }),
   lastSet: style({

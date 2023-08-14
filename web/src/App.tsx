@@ -6,10 +6,11 @@ export default function App() {
   const joinGameHanlder = async () => {
     try {
       const newGameReq = await fetch(
-        `http://${import.meta.env.VITE_BACKEND_URL}/start-match`,
+        `http://${import.meta.env.VITE_BACKEND_URL}/new`,
       );
 
-      let code = await newGameReq.json();
+      console.log("code", newGameReq);
+      const code = await newGameReq.json();
       navigate(`/game/${code}`);
     } catch (err) {
       console.log("failed to start match", err);

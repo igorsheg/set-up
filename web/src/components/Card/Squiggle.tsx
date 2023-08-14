@@ -1,34 +1,34 @@
-import * as React from "react";
-import { COLORS, SHADINGS } from "../../consts";
-import { shapeStyles } from "./Card.css"; // Adjust the path accordingly
-function Icon(props: any) {
+export default function Icon(props: any) {
   return (
     <svg
-      width={67}
-      height={67}
-      viewBox="0 0 67 67"
+      width={18}
+      height={18}
+      viewBox="0 0 18 18"
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <rect width={67} height={67} rx={12} />
+      <defs>
+        <clipPath id="squiggle-shape">
+          <rect
+            width={16}
+            height={16}
+            rx={3}
+            x={1}
+            y={1}
+            clipPath="url(#squiggle-shape)"
+            strokeWidth={2.571428571428571}
+          />
+        </clipPath>
+      </defs>
+      <rect
+        width={16}
+        height={16}
+        rx={3}
+        x={1}
+        y={1}
+        clipPath="url(#squiggle-shape)"
+      />
     </svg>
-  );
-}
-
-type Props = {
-  shading: number;
-  color: number;
-};
-
-export default function Squiggle(props: Props): React.ReactElement {
-  const { shading, color } = props;
-
-  const colorValue = COLORS[color];
-  const shadingValue = SHADINGS[shading];
-
-  return (
-    <div className={shapeStyles({ color: colorValue as any })}>
-      <Icon className={shapeStyles({ shading: shadingValue as any })} />
-    </div>
   );
 }

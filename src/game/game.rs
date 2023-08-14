@@ -186,6 +186,28 @@ impl Game {
         true
     }
 
+    pub fn add_cards(&mut self) {
+        let mut cards = self.deck.cards.drain(0..3).collect::<Vec<_>>();
+
+        // Fill in the spaces
+        for row in self.in_play.iter_mut() {
+            for card_slot in row.iter_mut() {
+                if Some(card_slot.color).is_none() && !cards.is_empty() {
+                    *card_slot = cards.remove(0);
+                }
+            }
+        }
+
+        // Start a new column if there are no more spaces
+        if !cards.is_empty() {
+            self.in_play[0].push(cards[0].clone());
+            self.in_play[1].push(cards[1].clone());
+            self.in_play[2].push(cards[2].clone());
+        }
+
+        self.remaining = self.deck.cards.len() as i64;
+    }
+
     pub fn update_score(&mut self, player_id: Uuid, value: i64) {
         let player = self.players.iter_mut().find(|p| p.client_id == player_id);
         if let Some(player) = player {

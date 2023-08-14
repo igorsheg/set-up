@@ -74,48 +74,4 @@ export default function Board(props: Props): React.ReactElement {
       ))}
     </div>
   );
-
-  // return (
-  //   <div className="board">
-  //     {in_play.map((cards: CardType[], i: number) => (
-  //       <div className="row" key={i}>
-  //         {cards.map((card: CardType, j: number) => (
-  //           <Card
-  //             selected={selected.indexOf(card) !== -1}
-  //             key={`${card.color}${card.shape}${card.number}${card.shading}${j}`}
-  //             onClick={(): void => handleClick(card)}
-  //             card={card}
-  //             hidden={card.color === null}
-  //           />
-  //         ))}
-  //       </div>
-  //     ))}
-  //     <div className="last-set">
-  //       {last_player && `${last_player} found a set: `}
-  //       {last_set &&
-  //         last_set.map((card: CardType) => (
-  //           <Card
-  //             selected={false}
-  //             key={`${card.color}${card.shape}${card.number}${card.shading}`}
-  //             card={card}
-  //             hidden={false}
-  //           />
-  //         ))}
-  //     </div>
-  //     <button
-  //       type="button"
-  //       onClick={(): void => handleRequest()}
-  //       disabled={remaining === 0}
-  //     >
-  //       Request more cards
-  //     </button>
-  //     <div>{`Remaining cards: ${remaining}`}</div>
-  //     {players.map((player: Player) => (
-  //       <div key={player.id}>
-  //         {`${player.name}: ${player.score} ${player.request ? "Requested more cards" : ""
-  //           }`}
-  //       </div>
-  //     ))}
-  //   </div>
-  // );
 }

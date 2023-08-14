@@ -12,7 +12,7 @@ use axum::{
         WebSocketUpgrade,
     },
     response::IntoResponse,
-    Extension,
+    Extension, Json,
 };
 use futures::{sink::SinkExt, stream::StreamExt};
 use tokio::sync::{mpsc, Mutex};
@@ -43,7 +43,6 @@ pub async fn handle_connection(ws: WebSocket, context: Arc<Mutex<Context>>) -> R
 
     // Spawn separate tasks for reading and writing to better control each direction of the communication
     let (mut ws_tx, ws_rx) = ws.split();
-
     let context_clone = context.clone(); // Clone the Arc
 
     // Reader task
@@ -115,4 +114,15 @@ impl Client {
             .await
             .map_err(|_| Error::WebsocketError("Failed to send message to client".to_string()))
     }
+}
+
+pub async fn new_room_handler(
+    Extension(context): Extension<Arc<Mutex<Context>>>,
+) -> impl IntoResponse {
+    let mut ctx = context.lock().await;
+    let room_code = nanoid::nanoid!(6);
+    let game = Game::new();
+    ctx.rooms.insert(room_code.clone(), game);
+    log::debug!("Created new game with room code {}", room_code);
+    Json(room_code)
 }

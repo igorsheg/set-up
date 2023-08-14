@@ -6,6 +6,7 @@ pub struct Player {
     pub client_id: Uuid,
     pub name: String,
     pub score: i64,
+    pub request: bool,
 }
 
 impl Player {
@@ -14,6 +15,7 @@ impl Player {
             client_id,
             name, // Initialize player attributes
             score: 0,
+            request: false,
         }
     }
 }

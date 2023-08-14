@@ -13,7 +13,7 @@ pub struct WsMessage {
 pub enum MessageType {
     Join(WsMessage),
     Move(WsMessage),
-    Request,
+    Request(WsMessage),
     New,
 }
 
@@ -22,7 +22,7 @@ impl MessageType {
         match message.r#type.as_str() {
             "join" => Ok(MessageType::Join(message)),
             "move" => Ok(MessageType::Move(message)),
-            "request" => Ok(MessageType::Request),
+            "request" => Ok(MessageType::Request(message)),
             "new" => Ok(MessageType::New),
             _ => Err(Error::GameError(format!(
                 "Unrecognized message type: {}",
