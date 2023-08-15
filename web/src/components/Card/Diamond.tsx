@@ -13,13 +13,14 @@ export default function Diamond(props: any) {
           <path
             d="M7.27 1a2 2 0 013.46 0l6.93 12a2 2 0 01-1.73 3H2.07a2 2 0 01-1.73-3L7.27 1z"
             clipPath="url(#diamod-shape)"
-            strokeWidth={6}
+            strokeWidth="2.571428571428571"
           />
         </clipPath>
       </defs>
       <path
         d="M7.27 1a2 2 0 013.46 0l6.93 12a2 2 0 01-1.73 3H2.07a2 2 0 01-1.73-3L7.27 1z"
         clipPath="url(#diamod-shape)"
+        strokeWidth="2.571428571428571"
       />
     </svg>
   );

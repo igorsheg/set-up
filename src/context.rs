@@ -68,9 +68,13 @@ impl Context {
                 {
                     let player = Player::new(client.id, name.to_string());
                     game.add_player(player);
-                    client
-                        .send_message(self.rooms.get(&room_code).unwrap().clone())
-                        .await?;
+                    // client
+                    //     .send_message(self.rooms.get(&room_code).unwrap().clone())
+                    //     .await?;
+
+                    for client in self.clients.values() {
+                        client.send_message(game.clone()).await?;
+                    }
                 }
             } else {
                 return Err(Error::GameError("Client not found".to_string()));
@@ -99,8 +103,8 @@ impl Context {
             game.make_move(client_id, game_move.cards)?;
 
             log::debug!("Client {} ", client_id);
-            // Optionally, notify the client of the room code
-            if let Some(client) = self.clients.get(&client_id) {
+
+            for client in self.clients.values() {
                 client.send_message(game.clone()).await?;
             }
         } else {
@@ -126,8 +130,15 @@ impl Context {
 
         if let Some(game) = self.rooms.get_mut(&room_code) {
             // Set the request flag for the player who sent the request
+            log::info!("Game is true: {:?}", game.players);
             for player in game.players.iter_mut() {
+                log::info!(
+                    "Comparing player.client_id: {:?} with client_id: {:?}",
+                    player,
+                    client_id
+                );
                 if player.client_id == client_id {
+                    log::info!("Player set to true: {:?}", player);
                     player.request = true;
                 }
             }

@@ -8,13 +8,14 @@ export const cardStyles = {
     justifyContent: "center",
     flexDirection: "row",
     alignItems: "center",
-    height: vars.spacing.s13,
-    width: vars.spacing.s13,
-    padding: vars.spacing.s2,
-    backgroundColor: vars.colors.card,
+    height: vars.sizes.s13,
+    width: vars.sizes.s13,
+    borderRadius: "12px",
+    padding: vars.sizes.s2,
+    backgroundColor: vars.colors.foregorund,
     boxShadow: vars.shadows.sm,
     cursor: "pointer",
-    gap: vars.spacing.s2,
+    gap: vars.sizes.s2,
     transition: "box-shadow 0.2s ease-in-out",
     ":hover": {
       boxShadow: vars.shadows.md,
@@ -42,11 +43,11 @@ export const cardStyles = {
   }),
   middle: style({
     marginTop: `calc(${1} * -36px)`,
-    marginLeft: `calc(${1} * -15px)`,
-    marginRight: `calc(${1} * -15px)`,
+    marginLeft: `calc(${1} * -21px)`,
+    marginRight: `calc(${1} * -21px)`,
   }),
   leftRight: style({
-    marginTop: `calc(${1} * ${vars.spacing.s7})`,
+    marginTop: `calc(${1} * ${vars.sizes.s7})`,
   }),
 };
 
@@ -60,16 +61,16 @@ export const shapeWrap = recipe({
   variants: {
     size: {
       1: {
-        width: vars.spacing.s10,
-        height: vars.spacing.s10,
+        width: vars.sizes.s10,
+        height: vars.sizes.s10,
       },
       2: {
-        width: vars.spacing.s8,
-        height: vars.spacing.s8,
+        width: vars.sizes.s8,
+        height: vars.sizes.s8,
       },
       3: {
-        width: vars.spacing.s7,
-        height: vars.spacing.s7,
+        width: vars.sizes.s7,
+        height: vars.sizes.s7,
       },
     },
   },
@@ -91,16 +92,16 @@ export const shapeStyles = recipe({
     },
     size: {
       1: {
-        width: vars.spacing.s10,
-        height: vars.spacing.s10,
+        width: vars.sizes.s10,
+        height: vars.sizes.s10,
       },
       2: {
-        width: vars.spacing.s8,
-        height: vars.spacing.s8,
+        width: vars.sizes.s8,
+        height: vars.sizes.s8,
       },
       3: {
-        width: vars.spacing.s7,
-        height: vars.spacing.s7,
+        width: vars.sizes.s7,
+        height: vars.sizes.s7,
       },
     },
     shading: {

@@ -228,19 +228,6 @@ impl Game {
         }
         None
     }
-
-    pub fn is_valid_set(&self, selected_cards: &[Card]) -> bool {
-        // Check if the selected cards form a valid set according to the game's rules
-        // Implement the validation logic here
-        true
-    }
-
-    pub fn apply_move(&mut self, player_id: Uuid, selected_cards: Vec<Card>) {
-        // Apply the player's move to the game state
-        // Update scores, remove matched cards, draw new cards, etc.
-    }
-
-    // Additional game logic and methods can be implemented here
 }
 
 #[derive(Debug, Deserialize)]

@@ -54,6 +54,6 @@ globalStyle("a", {
 globalStyle("article p", {
   color: vars.colors.text,
   lineHeight: 1.6,
-  marginBottom: vars.spacing.s1,
+  marginBottom: vars.sizes.s1,
   fontSize: 17,
 });

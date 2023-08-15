@@ -4,17 +4,19 @@ import { vars } from "@styles/index.css"; // Adjust the path accordingly
 export const boardStyles = {
   board: style({
     display: "grid",
-    gridTemplateRows: "repeat(4, 1fr)",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: vars.spacing.s4,
+    zIndex: 1,
+    // gridTemplateRows: "repeat(4, 1fr)",
+    gridTemplateColumns: `repeat(3, ${vars.sizes.s13})`,
+    columnGap: vars.sizes.s4,
+    rowGap: vars.sizes.s4,
     width: "600px",
-    backgroundColor: vars.colors.background,
+    justifyContent: "center",
   }),
   lastSet: style({
-    marginTop: vars.spacing.s4,
+    marginTop: vars.sizes.s4,
   }),
   button: style({
-    padding: vars.spacing.s2,
+    padding: vars.sizes.s2,
     // fontSize: vars.typography.base,
     color: vars.colors.text,
     backgroundColor: vars.colors.accent,
