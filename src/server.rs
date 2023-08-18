@@ -4,7 +4,7 @@ use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::{
-    client::{new_room_handler, ws_handler},
+    client::{init_client, new_room_handler, ws_handler},
     context::Context,
 };
 
@@ -42,6 +42,7 @@ impl Server {
 
         let app = axum::Router::new()
             .route("/new", get(new_room_handler))
+            .route("/init", get(init_client))
             .route("/ws", get(ws_handler))
             .layer(cors)
             .layer(Extension(context));

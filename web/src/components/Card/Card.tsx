@@ -42,8 +42,9 @@ export default function Card(props: Props): React.ReactElement {
     const isMiddle = index === 1; // Assuming 3 elements and the middle one is at index 1
     return (
       <div
-        className={`${shapeWrap({ size: (number + 1) as any })} ${!threeElements ? "" : isMiddle ? styles.middle : styles.leftRight
-          }`}
+        className={`${shapeWrap({ size: (number + 1) as any })} ${
+          !threeElements ? "" : isMiddle ? styles.middle : styles.leftRight
+        }`}
       >
         {element}
       </div>

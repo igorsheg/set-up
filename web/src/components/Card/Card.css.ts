@@ -8,14 +8,14 @@ export const cardStyles = {
     justifyContent: "center",
     flexDirection: "row",
     alignItems: "center",
-    height: vars.sizes.s13,
-    width: vars.sizes.s13,
+    height: vars.sizes.s12,
+    width: vars.sizes.s12,
     borderRadius: "12px",
-    padding: vars.sizes.s2,
+    padding: vars.sizes.s3,
     backgroundColor: vars.colors.foregorund,
     boxShadow: vars.shadows.sm,
     cursor: "pointer",
-    gap: vars.sizes.s2,
+    gap: vars.sizes.s1,
     transition: "box-shadow 0.2s ease-in-out",
     ":hover": {
       boxShadow: vars.shadows.md,
@@ -42,12 +42,12 @@ export const cardStyles = {
     stroke: "striped",
   }),
   middle: style({
-    marginTop: `calc(${1} * -36px)`,
-    marginLeft: `calc(${1} * -21px)`,
-    marginRight: `calc(${1} * -21px)`,
+    marginTop: `calc(${1} * -24px)`,
+    marginLeft: `calc(${1} * -14px)`,
+    marginRight: `calc(${1} * -14px)`,
   }),
   leftRight: style({
-    marginTop: `calc(${1} * ${vars.sizes.s7})`,
+    marginTop: `calc(${1} * 24px)`,
   }),
 };
 
@@ -61,16 +61,16 @@ export const shapeWrap = recipe({
   variants: {
     size: {
       1: {
-        width: vars.sizes.s10,
-        height: vars.sizes.s10,
+        width: vars.sizes.s9,
+        height: vars.sizes.s9,
       },
       2: {
         width: vars.sizes.s8,
         height: vars.sizes.s8,
       },
       3: {
-        width: vars.sizes.s7,
-        height: vars.sizes.s7,
+        width: vars.sizes.s6,
+        height: vars.sizes.s6,
       },
     },
   },
@@ -92,8 +92,8 @@ export const shapeStyles = recipe({
     },
     size: {
       1: {
-        width: vars.sizes.s10,
-        height: vars.sizes.s10,
+        width: vars.sizes.s9,
+        height: vars.sizes.s9,
       },
       2: {
         width: vars.sizes.s8,

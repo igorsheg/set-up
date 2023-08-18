@@ -55,6 +55,12 @@ impl Game {
         self.players.push(player);
     }
 
+    pub fn remove_player(&mut self, client_id: Uuid) -> bool {
+        let initial_length = self.players.len();
+        self.players.retain(|player| player.client_id != client_id);
+        initial_length > self.players.len()
+    }
+
     pub fn deal(&mut self) {
         // Initialize in_play as a vector of three empty vectors
         let mut in_play = vec![Vec::new(), Vec::new(), Vec::new()];

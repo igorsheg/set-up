@@ -1,7 +1,9 @@
 import * as React from "react";
 import { Data, Card as CardType, Player } from "../../types";
 import Card from "@components/Card/Card";
-import { boardStyles as styles } from "./Board.css"; // Adjust the path as needed
+import { boardVars, boardStyles as styles } from "./Board.css"; // Adjust the path as needed
+import { AnimatePresence, motion } from "framer-motion";
+import { assignInlineVars } from "@vanilla-extract/dynamic";
 
 type Props = {
   data: Data;
@@ -11,7 +13,6 @@ type Props = {
   setSelected: React.Dispatch<React.SetStateAction<CardType[]>>;
 };
 
-/* eslint react/no-array-index-key:0 */
 export default function Board(props: Props): React.ReactElement {
   const { data, handleMove, handleRequest, selected, setSelected } = props;
 
@@ -32,49 +33,47 @@ export default function Board(props: Props): React.ReactElement {
     }
   };
 
+  const columns = in_play[0]?.length || 0;
+  const rows = in_play.length;
+
   return (
     <>
-      <div className={styles.board}>
-        {in_play.map((cards: CardType[]) =>
-          cards.map((card: CardType, j: number) => (
-            <Card
-              selected={selected.indexOf(card) !== -1}
-              key={`${card.color}${card.shape}${card.number}${card.shading}${j}`}
-              onClick={(): void => handleClick(card)}
-              card={card}
-              hidden={card.color === null}
-            />
-          )),
-        )}
-      </div>
-      <div>
-        <div className={styles.lastSet}>
-          {last_player && `${last_player} found a set: `}
-          {last_set &&
-            last_set.map((card: CardType) => (
-              <Card
-                selected={false}
-                key={`${card.color}${card.shape}${card.number}${card.shading}`}
-                card={card}
-                hidden={false}
-              />
-            ))}
-        </div>
-        <button
-          type="button"
-          onClick={(): void => handleRequest()}
-          disabled={remaining === 0}
-          className={styles.button}
-        >
-          Request more cards
-        </button>
-        <div>{`Remaining cards: ${remaining}`}</div>
-        {players.map((player: Player) => (
-          <div key={player.id}>
-            {`${player.name}: ${player.score} ${player.request ? "Requested more cards" : ""
-              }`}
-          </div>
-        ))}
+      <div
+        className={styles.board}
+        style={assignInlineVars({
+          [boardVars.columns]: `${columns}`,
+          [boardVars.rows]: `${rows}`,
+        })}
+      >
+        <AnimatePresence custom="wait">
+          {in_play.map((cards: CardType[], i: number) =>
+            cards.map((card: CardType, j: number) => (
+              <motion.div
+                layout
+                key={`${card.color}${card.shape}${card.number}${card.shading}${j}`}
+                initial={{
+                  opacity: 0,
+                  y: 10,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{
+                  delay: i * 0.05,
+                }}
+              >
+                <Card
+                  selected={selected.indexOf(card) !== -1}
+                  onClick={(): void => handleClick(card)}
+                  card={card}
+                  hidden={card.color === null}
+                />
+              </motion.div>
+            )),
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

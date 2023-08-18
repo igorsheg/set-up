@@ -1,7 +1,8 @@
+import { vars } from "../../styles/index.css";
 import { createVar, style } from "@vanilla-extract/css";
 import { calc } from "@vanilla-extract/css-utils";
 
-export const vars = {
+export const boxVars = {
   gap: createVar("gap"),
   alignItems: createVar("align-items"),
   justifyContent: createVar("justify-content"),
@@ -16,24 +17,24 @@ export const box = style({
   display: "flex",
   // Set default values so that values don't propagate beyond the element where props are applied, making it possible to reduce the amount of inline CSS variables
   vars: {
-    [vars.gap]: "1rem",
-    [vars.alignItems]: "initial",
-    [vars.justifyContent]: "initial",
-    [vars.flexDirection]: "column",
-    [vars.bleedTop]: "0px",
-    [vars.bleedRight]: "0px",
-    [vars.bleedBottom]: "0px",
-    [vars.bleedLeft]: "0px",
+    [boxVars.gap]: vars.sizes.s2,
+    [boxVars.alignItems]: "initial",
+    [boxVars.justifyContent]: "initial",
+    [boxVars.flexDirection]: "column",
+    [boxVars.bleedTop]: "0px",
+    [boxVars.bleedRight]: "0px",
+    [boxVars.bleedBottom]: "0px",
+    [boxVars.bleedLeft]: "0px",
   },
-  gap: vars.gap,
-  alignItems: vars.alignItems,
-  justifyContent: vars.justifyContent,
-  flexDirection: vars.flexDirection,
+  gap: boxVars.gap,
+  alignItems: boxVars.alignItems,
+  justifyContent: boxVars.justifyContent,
+  flexDirection: boxVars.flexDirection,
   // Make sure horizontal alignment is applied to Grid elements (like Clamp and Grid)
   // `justifyItems` does nothing in flexbox contexts
-  justifyItems: vars.justifyContent,
-  marginTop: calc(vars.bleedTop).negate().toString(),
-  marginRight: calc(vars.bleedRight).negate().toString(),
-  marginBottom: calc(vars.bleedBottom).negate().toString(),
-  marginLeft: calc(vars.bleedLeft).negate().toString(),
+  justifyItems: boxVars.justifyContent,
+  marginTop: calc(boxVars.bleedTop).negate().toString(),
+  marginRight: calc(boxVars.bleedRight).negate().toString(),
+  marginBottom: calc(boxVars.bleedBottom).negate().toString(),
+  marginLeft: calc(boxVars.bleedLeft).negate().toString(),
 });

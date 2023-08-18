@@ -15,6 +15,7 @@ pub enum MessageType {
     Move(WsMessage),
     Request(WsMessage),
     New,
+    Leave,
 }
 
 impl MessageType {

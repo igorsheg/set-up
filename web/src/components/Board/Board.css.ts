@@ -1,12 +1,17 @@
-import { style } from "@vanilla-extract/css";
+import { style, createVar } from "@vanilla-extract/css";
 import { vars } from "@styles/index.css"; // Adjust the path accordingly
+
+export const boardVars = {
+  columns: createVar(),
+  rows: createVar(),
+};
 
 export const boardStyles = {
   board: style({
     display: "grid",
     zIndex: 1,
-    // gridTemplateRows: "repeat(4, 1fr)",
-    gridTemplateColumns: `repeat(3, ${vars.sizes.s13})`,
+    gridTemplateColumns: `repeat(${boardVars.columns}, ${vars.sizes.s12})`,
+    gridTemplateRows: `repeat(${boardVars.rows}, 1fr)`,
     columnGap: vars.sizes.s4,
     rowGap: vars.sizes.s4,
     width: "600px",

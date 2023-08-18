@@ -15,23 +15,48 @@ export const pillWrap = style({
   zIndex: 2,
 });
 
-export const avatar = style({
-  width: "100%",
-  height: "100%",
+export const avatars = style({
+  display: "flex",
 });
 
-globalStyle(`${avatar} span`, {
+export const avatar = style({
+  position: "relative",
+  width: vars.sizes.s8,
+  height: vars.sizes.s8,
+
+  "::after": {
+    content: "",
+    borderRadius: "100px",
+    left: 0,
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+    border: `3px solid ${vars.colors.d12}`,
+    userSelect: "none",
+    pointerEvents: "none",
+  },
+  selectors: {
+    [`${avatars} &:not(:nth-child(1))`]: {
+      marginLeft: `-10px`,
+    },
+  },
+});
+
+export const avatarSpanRequest = style({
+  "::after": {
+    border: `3px solid ${vars.colors.sucess}`,
+  },
+});
+
+export const avatarSpan = style({
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   verticalAlign: "middle",
   overflow: "hidden",
   userSelect: "none",
-  width: vars.sizes.s7,
-  height: vars.sizes.s7,
-  boxShadow: `0 0 0 5px ${vars.colors.d12}`,
   borderRadius: "100%",
-  backgroundColor: "rgba(0, 0, 0, 0.055)",
+  boxSizing: "border-box",
 });
 
 globalStyle(`${avatar} span img`, {
@@ -39,4 +64,17 @@ globalStyle(`${avatar} span img`, {
   height: "100%",
   objectFit: "cover",
   borderRadius: "inherit",
+});
+
+export const pillSection = style({});
+
+globalStyle(`${pillSection} h5`, {
+  ...vars.typography.s,
+  fontWeight: "500",
+  color: vars.colors.d9,
+});
+
+globalStyle(`${pillSection} span`, {
+  ...vars.typography.s,
+  fontWeight: "600",
 });

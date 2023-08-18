@@ -1,6 +1,5 @@
 use crate::config::Configuration;
 
-#[macro_use]
 extern crate log;
 
 pub mod client;

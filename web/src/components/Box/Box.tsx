@@ -38,8 +38,8 @@ interface BoxProps<Direction = "row"> extends HTMLAttributes<HTMLElement> {
    * Same as CSS' `justify-content` property when `orientation='column'`.
    */
   xAlign?: Direction extends "row"
-  ? CSSProperties["justifyContent"]
-  : CSSProperties["alignItems"];
+    ? CSSProperties["justifyContent"]
+    : CSSProperties["alignItems"];
   /**
    * Vertical alignment.
    *
@@ -47,8 +47,8 @@ interface BoxProps<Direction = "row"> extends HTMLAttributes<HTMLElement> {
    * Same as CSS' `align-items` property when `orientation='column'`.
    */
   yAlign?: Direction extends "row"
-  ? CSSProperties["alignItems"]
-  : CSSProperties["justifyContent"];
+    ? CSSProperties["alignItems"]
+    : CSSProperties["justifyContent"];
 }
 
 type Ref = HTMLDivElement;
@@ -90,20 +90,20 @@ const Box = forwardRef<Ref, BoxProps>(function Box(
   const inlineVars = Object.assign(
     {},
     gap !== undefined && {
-      [styles.vars.gap]: typeof gap === "number" ? `${gap}rem` : gap,
+      [styles.boxVars.gap]: typeof gap === "number" ? `${gap}rem` : gap,
     },
-    bleedTop && { [styles.vars.bleedTop]: toCssValue(bleedTop) },
-    bleedRight && { [styles.vars.bleedRight]: toCssValue(bleedRight) },
-    bleedBottom && { [styles.vars.bleedBottom]: toCssValue(bleedBottom) },
-    bleedLeft && { [styles.vars.bleedLeft]: toCssValue(bleedLeft) },
+    bleedTop && { [styles.boxVars.bleedTop]: toCssValue(bleedTop) },
+    bleedRight && { [styles.boxVars.bleedRight]: toCssValue(bleedRight) },
+    bleedBottom && { [styles.boxVars.bleedBottom]: toCssValue(bleedBottom) },
+    bleedLeft && { [styles.boxVars.bleedLeft]: toCssValue(bleedLeft) },
     align.justifyContent !== "initial" && {
-      [styles.vars.justifyContent]: align.justifyContent,
+      [styles.boxVars.justifyContent]: align.justifyContent,
     },
     align.alignItems !== "initial" && {
-      [styles.vars.alignItems]: align.alignItems,
+      [styles.boxVars.alignItems]: align.alignItems,
     },
     align.flexDirection !== "column" && {
-      [styles.vars.flexDirection]: align.flexDirection,
+      [styles.boxVars.flexDirection]: align.flexDirection,
     },
   );
 
