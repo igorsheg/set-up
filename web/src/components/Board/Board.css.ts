@@ -1,20 +1,27 @@
-import { style } from "@vanilla-extract/css";
+import { style, createVar } from "@vanilla-extract/css";
 import { vars } from "@styles/index.css"; // Adjust the path accordingly
+
+export const boardVars = {
+  columns: createVar(),
+  rows: createVar(),
+};
 
 export const boardStyles = {
   board: style({
     display: "grid",
-    gridTemplateRows: "repeat(4, 1fr)",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: vars.spacing.s4,
+    zIndex: 1,
+    gridTemplateColumns: `repeat(${boardVars.columns}, ${vars.sizes.s12})`,
+    gridTemplateRows: `repeat(${boardVars.rows}, 1fr)`,
+    columnGap: vars.sizes.s4,
+    rowGap: vars.sizes.s4,
     width: "600px",
-    backgroundColor: vars.colors.background,
+    justifyContent: "center",
   }),
   lastSet: style({
-    marginTop: vars.spacing.s4,
+    marginTop: vars.sizes.s4,
   }),
   button: style({
-    padding: vars.spacing.s2,
+    padding: vars.sizes.s2,
     // fontSize: vars.typography.base,
     color: vars.colors.text,
     backgroundColor: vars.colors.accent,

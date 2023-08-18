@@ -20,7 +20,7 @@ import {
 import { fontFamily, typography } from "./typography";
 
 const root = createGlobalTheme(":root", {
-  spacing: {
+  sizes: {
     s1: "0.25rem", // 4px
     s2: "0.5rem", // 8px
     s3: "0.75rem", // 12px

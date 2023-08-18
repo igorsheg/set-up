@@ -55,6 +55,12 @@ impl Game {
         self.players.push(player);
     }
 
+    pub fn remove_player(&mut self, client_id: Uuid) -> bool {
+        let initial_length = self.players.len();
+        self.players.retain(|player| player.client_id != client_id);
+        initial_length > self.players.len()
+    }
+
     pub fn deal(&mut self) {
         // Initialize in_play as a vector of three empty vectors
         let mut in_play = vec![Vec::new(), Vec::new(), Vec::new()];
@@ -228,19 +234,6 @@ impl Game {
         }
         None
     }
-
-    pub fn is_valid_set(&self, selected_cards: &[Card]) -> bool {
-        // Check if the selected cards form a valid set according to the game's rules
-        // Implement the validation logic here
-        true
-    }
-
-    pub fn apply_move(&mut self, player_id: Uuid, selected_cards: Vec<Card>) {
-        // Apply the player's move to the game state
-        // Update scores, remove matched cards, draw new cards, etc.
-    }
-
-    // Additional game logic and methods can be implemented here
 }
 
 #[derive(Debug, Deserialize)]

@@ -11,6 +11,7 @@ axum = { version = "0.6.18", features = [
   "multipart",
   "macros",
 ] }
+axum-extra = { version = "0.7.7", features = ["cookie"] }
 tokio = { version = "1", features = ["full"] }
 log = { version = "0.4.19", features = ["kv_unstable_std"] }
 uuid = { version = "1.3.4", features = ["fast-rng", "v4", "serde"] }
@@ -27,3 +28,4 @@ futures = "0.3"
 tungstenite = "0.20.0"
 nanoid = "0.4.0"
 hyper = "0.14.27"
+tower = "0.4.13"

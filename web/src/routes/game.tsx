@@ -1,95 +1,27 @@
 import Board from "@components/Board/Board";
-import Join from "@components/Join/Join";
-import React from "react";
-import { useParams } from "react-router-dom";
-import { Card, Data, Move, Player } from "src/types";
-
-const ws = new WebSocket(`ws://${import.meta.env.VITE_BACKEND_URL}/ws`);
+import * as styles from "./game.css";
+import Pill from "@components/Pill/Pill";
+import { useGameWebSocket } from "../hooks/useGameSocket";
+import { Player } from "src/types";
+import { useEffect } from "react";
 
 export default function Game() {
-  const [selected, setSelected] = React.useState<Card[]>([]);
-  const [data, setData] = React.useState<Data>({} as Data);
-  const { room_code } = useParams();
+  const {
+    data,
+    selected,
+    setSelected,
+    handleMove,
+    handleRequest,
+    handleNew,
+    handleJoin,
+    status,
+  } = useGameWebSocket();
 
-  // Custom hook to keep track of the previous state of Data
-  const usePrevious = (
-    value: Data,
-  ): React.MutableRefObject<Data>["current"] => {
-    const ref = React.useRef({} as Data);
-    React.useEffect(() => {
-      ref.current = value;
-    });
-    return ref.current;
-  };
-
-  const prevState = usePrevious(data); // prevState of Data
-
-  React.useEffect(() => {
-    handleJoin("test");
-  }, []);
-
-  React.useEffect(() => {
-    ws.onopen = (): void => { };
-
-    ws.onmessage = (msg): void => {
-      const currentState = JSON.parse(msg.data);
-      console.log("data", currentState);
-      setData(currentState);
-
-      // If the in_play cards have changed, deselect any cards for the client
-      if (
-        JSON.stringify(prevState.in_play) !==
-        JSON.stringify(currentState.in_play)
-      ) {
-        setSelected([]);
-      }
-    };
-
-    ws.onclose = (): void => {
-      alert("Disconnected from server"); // eslint-disable-line
-      window.location.reload();
-    };
-  }, [data, prevState.in_play]);
-
-  const handleJoin = (playerUsername: string): void => {
-    ws.send(
-      JSON.stringify({
-        type: "join",
-        payload: {
-          room_code,
-          player_username: playerUsername,
-        },
-      }),
-    );
-  };
-
-  const handleMove = (cards: Card[]): void => {
-    const move: Move = { cards, room_code };
-    console.log("move", move);
-    ws.send(
-      JSON.stringify({
-        type: "move",
-        payload: move,
-      }),
-    );
-  };
-
-  const handleRequest = (): void => {
-    ws.send(
-      JSON.stringify({
-        type: "request",
-        payload: { room_code },
-      }),
-    );
-  };
-
-  const handleNew = (): void => {
-    ws.send(
-      JSON.stringify({
-        type: "new",
-      }),
-    );
-  };
+  useEffect(() => {
+    if (status === "OPEN") {
+      handleJoin();
+    }
+  }, [status]);
 
   if (data && data.game_over) {
     const highScore = Math.max(...data.players.map((p: Player) => p.score));
@@ -111,17 +43,20 @@ export default function Game() {
   }
 
   return (
-    <div>
+    <div className={styles.gamePageStyles}>
       {data.in_play ? (
-        <Board
-          data={data}
-          handleMove={handleMove}
-          handleRequest={handleRequest}
-          selected={selected}
-          setSelected={setSelected}
-        />
+        <>
+          <Board
+            data={data}
+            handleMove={handleMove}
+            handleRequest={handleRequest}
+            selected={selected}
+            setSelected={setSelected}
+          />
+          <Pill handleRequest={handleRequest} game={data} />
+        </>
       ) : (
-        <Join handleJoin={handleJoin} />
+        <div>Waiting for players</div>
       )}
     </div>
   );

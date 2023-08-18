@@ -54,6 +54,23 @@ globalStyle("a", {
 globalStyle("article p", {
   color: vars.colors.text,
   lineHeight: 1.6,
-  marginBottom: vars.spacing.s1,
+  marginBottom: vars.sizes.s1,
   fontSize: 17,
+});
+
+globalStyle("button", {
+  background: "none",
+  color: "inherit",
+  border: "none",
+  padding: "0",
+  font: "inherit",
+  cursor: "pointer",
+  outline: "inherit",
+  WebkitAppearance: "none",
+  MozAppearance: "none",
+  appearance: "none",
+  textAlign: "inherit",
+  display: "inline-block",
+  margin: "0",
+  verticalAlign: "baseline",
 });

@@ -17,7 +17,7 @@ export default function Icon(props: any) {
             x={1}
             y={1}
             clipPath="url(#squiggle-shape)"
-            strokeWidth={2.571428571428571}
+            strokeWidth="3.5999999999999996"
           />
         </clipPath>
       </defs>
@@ -28,6 +28,7 @@ export default function Icon(props: any) {
         x={1}
         y={1}
         clipPath="url(#squiggle-shape)"
+        strokeWidth="3.5999999999999996"
       />
     </svg>
   );
