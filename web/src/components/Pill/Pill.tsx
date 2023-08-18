@@ -1,36 +1,102 @@
-import { FC, PropsWithChildren } from "react";
+import { FC, PropsWithChildren, useEffect, useState } from "react";
 import { Data, Player } from "src/types";
 import * as styles from "./Pill.css";
 import Box from "@components/Box/Box";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Tooltip from "@components/Tooltip/Tooltip";
 import { vars } from "@styles/index.css";
-import { IconCards, IconHandThreeFingers } from "@tabler/icons-react";
+import {
+  IconCards,
+  IconHandThreeFingers,
+  IconPointFilled,
+} from "@tabler/icons-react";
 import { cx } from "../../util/cx";
+import { usePrevious } from "../../hooks/usePrevious";
 
 interface PillProps {
   game: Data;
   handleRequest: () => void;
 }
 const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
+  const prevGameState = usePrevious(game);
+
+  const [showNotification, setShowNotification] = useState(false);
+  const [newPlayerName, setNewPlayerName] = useState("");
+
+  useEffect(() => {
+    if (prevGameState && prevGameState.players) {
+      const prevPlayerNames = new Set(prevGameState.players.map((p) => p.name));
+      const newPlayer = game.players.find(
+        (player) => !prevPlayerNames.has(player.name),
+      );
+      if (newPlayer) {
+        setNewPlayerName(newPlayer.name);
+        setShowNotification(true);
+      }
+    }
+  }, [game.players, prevGameState]);
+
+  useEffect(() => {
+    if (showNotification) {
+      const timeoutId = setTimeout(() => {
+        setShowNotification(false);
+      }, 6000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [showNotification]);
+
+  const variants = {
+    collapsed: {
+      height: 64,
+      borderRadius: 300,
+    },
+    expanded: {
+      height: 120,
+      borderRadius: 18,
+    },
+  };
+
   return (
-    <Box
-      orientation="row"
-      yAlign="center"
-      gap={vars.sizes.s6}
-      className={styles.pillWrap}
+    <motion.div
+      transition={{ type: "spring", stiffness: 200, damping: 21 }}
+      variants={variants}
+      initial="collapsed"
+      animate={showNotification ? "expanded" : "collapsed"}
+      className={cx(styles.pillWrap)}
     >
-      <Players players={game.players} />
+      <Box orientation="row" yAlign="center" gap={vars.sizes.s6}>
+        <Players players={game.players} />
 
-      <Box className={styles.pillSection} xAlign="left" yAlign="left" gap={0}>
-        <span>{game.remaining}</span>
-        <h5>Remaning</h5>
+        <Box className={styles.pillSection} xAlign="left" yAlign="left" gap={0}>
+          <span>{game.remaining}</span>
+          <h5>Remaning</h5>
+        </Box>
+
+        <Box className={styles.pillSection} xAlign="left" yAlign="left" gap={0}>
+          <button className={styles.requestButton} onClick={handleRequest}>
+            Request
+          </button>
+        </Box>
       </Box>
 
-      <Box className={styles.pillSection} xAlign="left" yAlign="left" gap={0}>
-        <button onClick={handleRequest}>Request</button>
-      </Box>
-    </Box>
+      {showNotification && (
+        <AnimatePresence>
+          <Box
+            orientation="row"
+            style={{ height: "100%" }}
+            xAlign="center"
+            yAlign="center"
+            gap={vars.sizes.s1}
+          >
+            <IconPointFilled style={{ color: vars.colors.danger }} />
+            <span style={{ ...vars.typography.m }}>
+              Player {newPlayerName} Joined the game
+            </span>
+          </Box>
+        </AnimatePresence>
+      )}
+    </motion.div>
   );
 };
 
@@ -39,11 +105,26 @@ interface AvatarProps {
 }
 
 const Players: FC<PropsWithChildren<{ players: Player[] }>> = ({ players }) => {
+  const topScoredPlayers = players
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4);
+
   return (
     <div className={styles.avatars}>
-      {players.map((player: Player) => (
+      {topScoredPlayers.map((player: Player) => (
         <Avatar player={player} />
       ))}
+      {players.length - topScoredPlayers.length > 0 && (
+        <Box
+          className={cx(styles.avatar, styles.avatarCount)}
+          xAlign="center"
+          yAlign="center"
+        >
+          <span style={{ ...vars.typography.s }}>
+            +{players.length - topScoredPlayers.length}
+          </span>
+        </Box>
+      )}
     </div>
   );
 };

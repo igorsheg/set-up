@@ -7,6 +7,7 @@ import React, {
   useContext,
 } from "react";
 import { Card, Data } from "../types";
+import { usePrevious } from "./usePrevious";
 
 // 1. Enum for Message Types
 enum MessageType {
@@ -31,7 +32,7 @@ interface RequestPayload {
   room_code: string;
 }
 
-interface NewPayload {}
+interface NewPayload { }
 
 // 3. Union Type for Messages
 type WebSocketMessage =
@@ -59,15 +60,6 @@ interface GameWebSocketContextType {
 const GameWebSocketContext = createContext<
   GameWebSocketContextType | undefined
 >(undefined);
-
-// 7. Custom hook to get previous state
-const usePrevious = (value: Data): Data => {
-  const ref = useRef<Data>({} as Data);
-  useEffect(() => {
-    ref.current = value;
-  }, [value]);
-  return ref.current;
-};
 
 // 8. Hook to use the context
 export const useGameWebSocket = () => {

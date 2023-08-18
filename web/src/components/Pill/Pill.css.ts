@@ -4,14 +4,14 @@ import { style, globalStyle } from "@vanilla-extract/css";
 export const pillWrap = style({
   background: vars.colors.d12,
   color: vars.colors.d1,
-  height: vars.sizes.s10,
+  overflow: "hidden",
   display: "flex",
+  flexDirection: "column",
   borderRadius: "30em",
+  justifyContent: "space-between",
   top: vars.sizes.s6,
   position: "fixed",
-  padding: `0 ${vars.sizes.s6}`,
-  alignItems: "center",
-  justifyContent: "center",
+  padding: `${vars.sizes.s3} ${vars.sizes.s3}`,
   zIndex: 2,
 });
 
@@ -23,23 +23,31 @@ export const avatar = style({
   position: "relative",
   width: vars.sizes.s8,
   height: vars.sizes.s8,
+  maxHeight: vars.sizes.s8,
+  maxWidth: vars.sizes.s8,
+  borderRadius: "100%",
 
   "::after": {
     content: "",
     borderRadius: "100px",
-    left: 0,
-    width: "100%",
-    height: "100%",
+    left: -1,
+    top: -1,
+    width: "calc(100% + 2px)",
+    height: "calc(100% + 2px)",
     position: "absolute",
-    border: `3px solid ${vars.colors.d12}`,
+    border: `4px solid ${vars.colors.d12}`,
     userSelect: "none",
     pointerEvents: "none",
   },
   selectors: {
     [`${avatars} &:not(:nth-child(1))`]: {
-      marginLeft: `-10px`,
+      marginLeft: `-12px`,
     },
   },
+});
+
+export const avatarCount = style({
+  background: vars.colors.d11,
 });
 
 export const avatarSpanRequest = style({
@@ -77,4 +85,20 @@ globalStyle(`${pillSection} h5`, {
 globalStyle(`${pillSection} span`, {
   ...vars.typography.s,
   fontWeight: "600",
+});
+
+export const requestButton = style({
+  padding: `${vars.sizes.s2} ${vars.sizes.s4}`,
+  border: `1px solid ${vars.colors.d11}`,
+  borderRadius: "30px",
+  height: "100%",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  transition: "all .12s ease",
+  ":hover": {
+    background: vars.colors.accent,
+    border: `1px solid ${vars.colors.accent}`,
+    transition: "all .12s ease",
+  },
 });
