@@ -123,7 +123,7 @@ pub async fn handle_connection(
             "An error occurred while processing the WebSocket tasks: {:?}",
             err
         );
-        return Err(Error::GameError(
+        return Err(Error::WebsocketError(
             "An error occurred while processing the WebSocket tasks".to_string(),
         ));
     }
@@ -155,6 +155,7 @@ impl Client {
 
     pub async fn send_message(&self, message: Game) -> Result<(), Error> {
         self.tx.send(message).await.map_err(|err| {
+            log::debug!("Failed to send message to client-----------> {:?}", err);
             Error::WebsocketError(format!("Failed to send message to client: {:?}", err))
         })
     }

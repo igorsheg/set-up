@@ -1,7 +1,11 @@
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { MessageType, setRoomCode } from "./store";
 
 export default function App() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const ensureClientIdCookie = async () => {
     try {
@@ -14,16 +18,23 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    ensureClientIdCookie();
+  }, []);
+
   const joinGameHanlder = async () => {
     await ensureClientIdCookie();
     try {
       const newGameReq = await fetch(
         `http://${import.meta.env.VITE_BACKEND_URL}/new`,
       );
-
-      console.log("code", newGameReq);
-      const code = await newGameReq.json();
-      navigate(`/game/${code}`);
+      const room_code = await newGameReq.json();
+      dispatch(setRoomCode(room_code));
+      dispatch({
+        type: MessageType.JOIN,
+        payload: { room_code, player_username: "player1" },
+      });
+      navigate(`/game/${room_code}`);
     } catch (err) {
       console.log("failed to start match", err);
     }

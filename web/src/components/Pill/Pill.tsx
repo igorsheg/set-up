@@ -105,7 +105,7 @@ interface AvatarProps {
 }
 
 const Players: FC<PropsWithChildren<{ players: Player[] }>> = ({ players }) => {
-  const topScoredPlayers = players
+  const topScoredPlayers = [...players]
     .sort((a, b) => b.score - a.score)
     .slice(0, 4);
 

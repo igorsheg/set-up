@@ -1,4 +1,5 @@
 use axum::{http::Method, routing::get, Extension};
+use hyper::http::HeaderValue;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
@@ -31,7 +32,8 @@ impl Server {
                 Method::PUT,
                 Method::OPTIONS,
             ])
-            .allow_origin(Any)
+            .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
+            .allow_credentials(true)
             .allow_headers(vec![
                 axum::http::header::CONTENT_TYPE,
                 axum::http::header::CACHE_CONTROL,

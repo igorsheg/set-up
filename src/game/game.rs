@@ -13,7 +13,7 @@ use super::card::Card;
 pub struct Game {
     pub deck: Deck,                  // The deck of cards
     pub game_over: Option<bool>,     // Indicates whether the game is over
-    pub in_play: Vec<Vec<Card>>,     // The cards currently in play, organized in rows
+    pub in_play: Vec<Card>,          // The cards currently in play, organized in rows
     pub last_player: Option<String>, // The last player who made a move
     pub last_set: Option<Vec<Card>>, // The last set of cards played
     pub players: Vec<Player>,        // The players in the game
@@ -39,7 +39,7 @@ impl Game {
         let mut game = Game {
             deck: Deck::new(),
             game_over: None,
-            in_play: vec![vec![], vec![], vec![]],
+            in_play: vec![],
             last_player: None,
             last_set: None,
             players: vec![],
@@ -47,7 +47,7 @@ impl Game {
             state: GameState::WaitingForPlayers,
         };
         game.deck.shuffle();
-        game.deal(); // Call the deal method to initialize the in_play and remaining fields
+        game.deal();
         game
     }
 
@@ -62,20 +62,13 @@ impl Game {
     }
 
     pub fn deal(&mut self) {
-        // Initialize in_play as a vector of three empty vectors
-        let mut in_play = vec![Vec::new(), Vec::new(), Vec::new()];
-
-        // Iterate four times to deal 12 cards in total
-        for _ in 0..4 {
-            (0..3).for_each(|j| {
-                // Take the top card from the deck and copy it to the corresponding row
-                if let Some(card) = self.deck.draw() {
-                    in_play[j].push(card);
-                }
-            });
+        let mut in_play = Vec::with_capacity(6);
+        for _ in 0..9 {
+            if let Some(card) = self.deck.draw() {
+                in_play.push(card);
+            }
         }
 
-        // Update the InPlay and Remaining fields of the game
         self.in_play = in_play;
         self.remaining = self.deck.cards.len() as i64;
     }
@@ -87,36 +80,30 @@ impl Game {
 
         if !valid || err.is_some() {
             self.update_score(player_id, -1);
-            return Err(Error::GameError("Invalid set".to_string()));
+            return Err(Error::GameRuleError("Invalid set".to_string()));
         }
 
-        // Find the location of the 3 cards in the in_play matrix
-        let indices: Vec<(usize, usize)> = selected_cards
+        let indices: Vec<usize> = selected_cards
             .iter()
             .filter_map(|v| self.find_index(v))
             .collect();
 
-        // Sum the cards in play, ignoring the placeholder ones
         let in_play_count = self
             .in_play
             .iter()
-            .flatten()
             .filter(|c| Some(c.color).is_some())
             .count();
 
-        // Replace the found set with new cards if there are fewer than 15 cards in play
-        for (i, j) in indices {
+        for index in indices {
             if !self.deck.cards.is_empty() && in_play_count < 15 {
-                self.in_play[i][j] = self.deck.draw().unwrap();
+                self.in_play[index] = self.deck.draw().unwrap();
             } else {
-                self.in_play[i][j] = Card::new(); // Placeholder card
+                self.in_play[index] = Card::new(); // Placeholder card
             }
         }
 
-        // Give the player a point
         self.update_score(player_id, 1);
 
-        // Update the last player and last set
         self.last_player = self
             .players
             .iter()
@@ -124,10 +111,8 @@ impl Game {
             .map(|p| p.name.clone());
         self.last_set = Some(selected_cards);
 
-        // Update the remaining count
         self.remaining = self.deck.cards.len() as i64;
 
-        // If there are no cards left, check if there are any remaining sets on the board
         if self.deck.cards.is_empty() {
             return Ok(self.check_remaining_sets());
         }
@@ -167,20 +152,15 @@ impl Game {
     }
 
     pub fn check_remaining_sets(&self) -> bool {
-        let mut cards: Vec<Card> = Vec::new();
-        for row in &self.in_play {
-            for card in row {
-                if Some(card.color).is_some() {
-                    cards.push(card.clone());
-                }
-            }
-        }
-
-        for i in 0..cards.len() {
-            for j in (i + 1)..cards.len() {
-                for k in (j + 1)..cards.len() {
+        for i in 0..self.in_play.len() {
+            for j in (i + 1)..self.in_play.len() {
+                for k in (j + 1)..self.in_play.len() {
                     if self
-                        .check_set(&[cards[i].clone(), cards[j].clone(), cards[k].clone()])
+                        .check_set(&[
+                            self.in_play[i].clone(),
+                            self.in_play[j].clone(),
+                            self.in_play[k].clone(),
+                        ])
                         .0
                     {
                         return false;
@@ -194,23 +174,7 @@ impl Game {
 
     pub fn add_cards(&mut self) {
         let mut cards = self.deck.cards.drain(0..3).collect::<Vec<_>>();
-
-        // Fill in the spaces
-        for row in self.in_play.iter_mut() {
-            for card_slot in row.iter_mut() {
-                if Some(card_slot.color).is_none() && !cards.is_empty() {
-                    *card_slot = cards.remove(0);
-                }
-            }
-        }
-
-        // Start a new column if there are no more spaces
-        if !cards.is_empty() {
-            self.in_play[0].push(cards[0].clone());
-            self.in_play[1].push(cards[1].clone());
-            self.in_play[2].push(cards[2].clone());
-        }
-
+        self.in_play.append(&mut cards); // Append new cards to in_play
         self.remaining = self.deck.cards.len() as i64;
     }
 
@@ -224,15 +188,8 @@ impl Game {
         }
     }
 
-    pub fn find_index(&self, card: &Card) -> Option<(usize, usize)> {
-        for i in 0..self.in_play.len() {
-            for j in 0..self.in_play[i].len() {
-                if &self.in_play[i][j] == card {
-                    return Some((i, j));
-                }
-            }
-        }
-        None
+    pub fn find_index(&self, card: &Card) -> Option<usize> {
+        self.in_play.iter().position(|c| c == card)
     }
 }
 

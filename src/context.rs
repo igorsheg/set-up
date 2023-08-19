@@ -58,7 +58,7 @@ impl Context {
 
         if let Some(game) = self.rooms.get_mut(&room_code) {
             if let Some(client) = self.clients.get_mut(&client_id) {
-                client.room_code = Some(room_code.clone());
+                client.room_code = Some(room_code);
                 if let Some(name) = message
                     .payload
                     .get("player_username")

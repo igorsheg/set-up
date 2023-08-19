@@ -11,7 +11,7 @@ export const boardStyles = {
     display: "grid",
     zIndex: 1,
     gridTemplateColumns: `repeat(${boardVars.columns}, ${vars.sizes.s12})`,
-    gridTemplateRows: `repeat(${boardVars.rows}, 1fr)`,
+    gridTemplateRows: `repeat(${boardVars.rows}, ${vars.sizes.s12}))`,
     columnGap: vars.sizes.s4,
     rowGap: vars.sizes.s4,
     width: "600px",
