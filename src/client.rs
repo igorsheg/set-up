@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use crate::{
     context::Context,
@@ -39,8 +39,8 @@ pub async fn ws_handler(
     jar: CookieJar,
 ) -> impl IntoResponse {
     let cookie = jar.get("client_id");
-    log::debug!("Client ID: {:?}", cookie);
     let client_id = Uuid::parse_str(cookie.unwrap().value()).unwrap_or_else(|_| Uuid::new_v4());
+    log::debug!("Client ID -------------> {:?}", client_id);
 
     ws.on_upgrade(move |socket| async move {
         if let Err(err) = handle_connection(socket, context, client_id).await {
@@ -55,12 +55,14 @@ pub async fn handle_connection(
     client_id: Uuid,
 ) -> Result<(), Error> {
     let (tx, rx) = mpsc::channel(32);
-    let client = Client::new(tx, client_id);
-    let client_id = client.id;
 
     {
         let mut ctx = context.lock().await;
-        ctx.clients.insert(client_id, client);
+        if let Some(_old_client) = ctx.clients.get(&client_id) {
+            ctx.clients.remove(&client_id);
+        }
+        ctx.clients
+            .insert(client_id, Client::new(tx.clone(), client_id));
     }
 
     let (mut ws_tx, ws_rx) = ws.split();
@@ -111,8 +113,11 @@ pub async fn handle_connection(
     let writer_task = tokio::spawn(async move {
         let mut rx = rx;
         while let Some(message) = rx.recv().await {
+            log::debug!("Preparing to send game message to WebSocket...");
             let json_message = serde_json::to_string(&message).unwrap();
-            ws_tx.send(Message::Text(json_message)).await.unwrap();
+            if let Err(err) = ws_tx.send(Message::Text(json_message)).await {
+                log::error!("Failed to send game message to WebSocket. Error: {:?}", err);
+            }
         }
     });
 
@@ -155,7 +160,6 @@ impl Client {
 
     pub async fn send_message(&self, message: Game) -> Result<(), Error> {
         self.tx.send(message).await.map_err(|err| {
-            log::debug!("Failed to send message to client-----------> {:?}", err);
             Error::WebsocketError(format!("Failed to send message to client: {:?}", err))
         })
     }
@@ -170,4 +174,21 @@ pub async fn new_room_handler(
     ctx.rooms.insert(room_code.clone(), game);
     log::debug!("Created new game with room code {}", room_code);
     Json(room_code)
+}
+
+pub async fn get_past_rooms(
+    Extension(context): Extension<Arc<Mutex<Context>>>,
+    jar: CookieJar,
+) -> impl IntoResponse {
+    let cookie = jar.get("client_id");
+    let client_id = Uuid::parse_str(cookie.unwrap().value()).unwrap_or_else(|_| Uuid::new_v4());
+
+    log::debug!("Client ID: {:?}", client_id);
+
+    let ctx = context.lock().await;
+    if let Some(client_data) = ctx.clients_data.get(&client_id) {
+        log::debug!("Client: {:?}", client_data);
+        return Json(client_data.rooms_joined.clone());
+    }
+    Json(HashSet::new())
 }

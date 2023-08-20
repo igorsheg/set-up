@@ -1,48 +1,33 @@
 import * as React from "react";
-import { Data, Card as CardType, Player } from "../../types";
+import { Card as CardType } from "../../types";
 import Card from "@components/Card/Card";
 import { boardVars, boardStyles as styles } from "./Board.css"; // Adjust the path as needed
 import { AnimatePresence, motion } from "framer-motion";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import { useDispatch, useSelector } from "react-redux";
-import { GameState, setSelected } from "../../store";
+import { AppDispatch, RootState, moveCards, setSelected } from "../../store";
 
-type Props = {
-  data: Data;
-  handleMove: (cards: CardType[]) => void;
-  handleRequest: () => void;
-  selected: CardType[];
-  // setSelected: React.Dispatch<React.SetStateAction<CardType[]>>;
-};
+export default function Board(): React.ReactElement {
+  const in_play = useSelector((state: RootState) => state.game.data.in_play);
+  const dispatch = useDispatch<AppDispatch>();
+  const selected = useSelector((state: RootState) => state.game.selected);
 
-export default function Board(props: Props): React.ReactElement {
-  const { data, handleMove, handleRequest } = props;
   const [numberOfColumns, setNumberOfColumns] = React.useState(3);
   const [numberOfRows, setNumberOfRows] = React.useState(4);
-
-  const dispatch = useDispatch();
-  const selected = useSelector(
-    (state: { game: GameState }) => state.game.selected,
-  );
-
-  const { in_play, last_player, last_set, players, remaining } = data;
 
   const handleClick = (card: CardType): void => {
     const i = selected.indexOf(card);
     if (i === -1) {
       const slctd = [...selected, card];
       if (slctd.length === 3) {
-        dispatch(setSelected(slctd)); // Clearing the selected cards after a move
-        handleMove();
-        dispatch(setSelected([])); // Clearing the selected cards after a move
-        // setSelected([]);
+        dispatch(setSelected(slctd));
+        dispatch(moveCards(slctd));
+        dispatch(setSelected([]));
       } else {
-        dispatch(setSelected(slctd)); // Clearing the selected cards after a move
-        // setSelected(slctd);
+        dispatch(setSelected(slctd));
       }
     } else {
       dispatch(setSelected(selected.filter((c) => c !== card)));
-      // setSelected(selected.filter((c) => c !== card));
     }
   };
 
@@ -50,7 +35,7 @@ export default function Board(props: Props): React.ReactElement {
     if (in_play.length > 18) {
       const columns = Math.ceil(in_play.length / 3);
       setNumberOfColumns(columns);
-      setNumberOfRows((r) => r++);
+      setNumberOfRows(columns);
     } else {
       setNumberOfColumns(3);
       setNumberOfRows(3);
@@ -70,7 +55,7 @@ export default function Board(props: Props): React.ReactElement {
           {in_play.map((card: CardType, i: number) => (
             <motion.div
               layout
-              key={`${card.color}${card.shape}${card.number}${card.shading}${i}`}
+              layoutDependency={{ in_play, numberOfColumns, numberOfRows }}
               initial={{
                 opacity: 0,
                 y: 10,
@@ -83,7 +68,7 @@ export default function Board(props: Props): React.ReactElement {
               transition={{
                 type: "spring",
                 damping: 25,
-                stiffness: 500,
+                stiffness: 300,
                 delay: i * 0.01,
               }}
             >

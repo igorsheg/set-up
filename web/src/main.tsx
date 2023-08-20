@@ -19,20 +19,6 @@ const router = createBrowserRouter([
   },
 ]);
 
-// function GameRouteWrapper() {
-//   const { room_code } = useParams();
-//
-//   if (!room_code) {
-//     return <div>Error: Room code is missing!</div>;
-//   }
-//
-//   return (
-//     <GameWebSocketProvider room_code={room_code} playerUsername="player1">
-//       <Game />
-//     </GameWebSocketProvider>
-//   );
-// }
-
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Provider store={store}>

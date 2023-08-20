@@ -14,4 +14,8 @@ export default defineConfig({
       "@routes": "/src/routes",
     },
   },
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
 });

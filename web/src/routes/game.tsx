@@ -1,69 +1,48 @@
 import Board from "@components/Board/Board";
 import * as styles from "./game.css";
 import Pill from "@components/Pill/Pill";
-import { Card, Player } from "src/types";
-import { useEffect } from "react";
-import { GameState, MessageType } from "../store";
+import { Player } from "src/types";
+import { AppDispatch, MessageType, RootState, setRoomCode } from "../store";
 import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 export default function Game() {
-  // const {
-  //   data,
-  //   selected,
-  //   setSelected,
-  //   handleMove,
-  //   handleRequest,
-  //   handleNew,
-  //   handleJoin,
-  //   status,
-  // } = useGameWebSocket();
+  const data = useSelector((state: RootState) => state.game.data);
+  const [pastRooms, setPastRooms] = useState([]);
+  const { room_code } = useParams<{ room_code: string }>();
+  const dispatch = useDispatch<AppDispatch>();
 
-  // if (!room_code) {
-  //   return null;
-  // }
-
-  // const { data } = useGetGameStateQuery();
-  const data = useSelector((state: { game: GameState }) => state.game.data);
-  const selected = useSelector(
-    (state: { game: GameState }) => state.game.selected,
-  );
-
-  // dispatch({
-  //   type: MessageType.MOVE,
-  //     payload: { cards: selectedCards }
-  //     });
-  //
-  const dispatch = useDispatch();
-
-  // const handleJoin = () => {
-  //   dispatch(joinGameThunk({ room_code, playerUsername: "player1" }));
-  // };
-  //
-  const handleNew = () => false;
-  const handleMove = () => {
+  const joinGameHandler = async (room_code: string) => {
     dispatch({
-      type: MessageType.MOVE,
+      type: MessageType.JOIN,
+      payload: { player_username: "yagosh2", room_code },
     });
   };
+
+  const getPlayerPastRooms = async () => {
+    const url = "http://" + import.meta.env.VITE_BACKEND_URL + "/past_rooms";
+    console.log(url);
+    const pasrRoomsReq = await fetch(url, { credentials: "include" });
+    const pastRooms = await pasrRoomsReq.json();
+    console.log(pastRooms);
+    setPastRooms(pastRooms);
+  };
+
+  useEffect(() => {
+    if (room_code) {
+      getPlayerPastRooms();
+      dispatch(setRoomCode(room_code));
+    }
+  }, [room_code]);
+
+  const handleNew = () => false;
+
   const handleRequest = () => {
     dispatch({
       type: MessageType.REQUEST,
     });
   };
-  const setSelected = () => false;
-
-  // useEffect(() => {
-  //   if (room_code) {
-  //     dispatch({
-  //       type: MessageType.JOIN,
-  //       payload: { room_code, playerUsername: "asd" },
-  //     });
-  //   }
-  // }, [room_code]);
-
-  useEffect(() => {
-    console.log("data", data);
-  }, [data]);
 
   if (data && data.game_over) {
     const highScore = Math.max(...data.players.map((p: Player) => p.score));
@@ -88,17 +67,18 @@ export default function Game() {
     <div className={styles.gamePageStyles}>
       {data && data.in_play ? (
         <>
-          <Board
-            data={data}
-            handleMove={handleMove}
-            handleRequest={handleRequest}
-            selected={selected}
-            setSelected={setSelected}
-          />
+          <Board />
           <Pill handleRequest={handleRequest} game={data} />
         </>
       ) : (
-        <div>Waiting for players</div>
+        <>
+          <div>Waiting for players</div>
+          {pastRooms.map((room) => (
+            <button key={room} onClick={() => joinGameHandler(room)}>
+              {room}
+            </button>
+          ))}
+        </>
       )}
     </div>
   );

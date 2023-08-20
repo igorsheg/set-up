@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren, useEffect, useState } from "react";
+import { FC, PropsWithChildren, useEffect } from "react";
 import { Data, Player } from "src/types";
 import * as styles from "./Pill.css";
 import Box from "@components/Box/Box";
@@ -12,6 +12,12 @@ import {
 } from "@tabler/icons-react";
 import { cx } from "../../util/cx";
 import { usePrevious } from "../../hooks/usePrevious";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  AppDispatch,
+  RootState,
+  displayNotificationWithTimer,
+} from "../../store";
 
 interface PillProps {
   game: Data;
@@ -20,8 +26,10 @@ interface PillProps {
 const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
   const prevGameState = usePrevious(game);
 
-  const [showNotification, setShowNotification] = useState(false);
-  const [newPlayerName, setNewPlayerName] = useState("");
+  const dispatch = useDispatch<AppDispatch>();
+  const notifications = useSelector(
+    (state: RootState) => state.game.notifications,
+  );
 
   useEffect(() => {
     if (prevGameState && prevGameState.players) {
@@ -30,21 +38,15 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
         (player) => !prevPlayerNames.has(player.name),
       );
       if (newPlayer) {
-        setNewPlayerName(newPlayer.name);
-        setShowNotification(true);
+        console.log("New Player Detected:", newPlayer.name);
+        dispatch(
+          displayNotificationWithTimer(
+            `Player ${newPlayer.name} Joined the game`,
+          ),
+        );
       }
     }
-  }, [game.players, prevGameState]);
-
-  useEffect(() => {
-    if (showNotification) {
-      const timeoutId = setTimeout(() => {
-        setShowNotification(false);
-      }, 6000);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [showNotification]);
+  }, [game.players, prevGameState, dispatch]);
 
   const variants = {
     collapsed: {
@@ -62,7 +64,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
       transition={{ type: "spring", stiffness: 200, damping: 21 }}
       variants={variants}
       initial="collapsed"
-      animate={showNotification ? "expanded" : "collapsed"}
+      animate={notifications.show ? "expanded" : "collapsed"}
       className={cx(styles.pillWrap)}
     >
       <Box orientation="row" yAlign="center" gap={vars.sizes.s6}>
@@ -80,7 +82,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
         </Box>
       </Box>
 
-      {showNotification && (
+      {notifications.show && (
         <AnimatePresence>
           <Box
             orientation="row"
@@ -91,7 +93,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
           >
             <IconPointFilled style={{ color: vars.colors.danger }} />
             <span style={{ ...vars.typography.m }}>
-              Player {newPlayerName} Joined the game
+              {notifications.message}
             </span>
           </Box>
         </AnimatePresence>
@@ -181,7 +183,7 @@ const AvatarTooltipContent: FC<PropsWithChildren<AvatarProps>> = ({
       </Box>
       <Box gap={vars.sizes.s1}>
         <Box gap={vars.sizes.s1} yAlign="center" orientation="row">
-          <IconCards size={vars.sizes.s4} />
+          <IconCards style={{ width: vars.sizes.s4, height: vars.sizes.s4 }} />
           <span style={{ color: vars.colorVars.d10, ...vars.typography.m }}>
             <strong style={{ color: vars.colorVars.d12 }}>
               {player.score}

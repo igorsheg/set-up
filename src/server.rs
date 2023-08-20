@@ -2,10 +2,10 @@ use axum::{http::Method, routing::get, Extension};
 use hyper::http::HeaderValue;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
 use crate::{
-    client::{init_client, new_room_handler, ws_handler},
+    client::{get_past_rooms, init_client, new_room_handler, ws_handler},
     context::Context,
 };
 
@@ -44,6 +44,7 @@ impl Server {
 
         let app = axum::Router::new()
             .route("/new", get(new_room_handler))
+            .route("/past_rooms", get(get_past_rooms))
             .route("/init", get(init_client))
             .route("/ws", get(ws_handler))
             .layer(cors)
