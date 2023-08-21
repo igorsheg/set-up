@@ -13,7 +13,8 @@ export default function Game() {
   const { room_code } = useParams<{ room_code: string }>();
   const dispatch = useDispatch<AppDispatch>();
 
-  const joinGameHandler = async (room_code: string) => {
+  const joinGameHandler = (room_code: string) => {
+    new Audio("/sfx/navigation_forward-selection.wav").play();
     dispatch({
       type: MessageType.JOIN,
       payload: { player_username: "yagosh2", room_code },
@@ -78,6 +79,12 @@ export default function Game() {
               {room}
             </button>
           ))}
+          <hr />
+          {room_code && (
+            <button onClick={() => joinGameHandler(room_code)}>
+              Join room {room_code}
+            </button>
+          )}
         </>
       )}
     </div>

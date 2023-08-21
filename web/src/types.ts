@@ -1,7 +1,7 @@
 import { COLORS, SHADINGS } from "./consts";
 
 export type Player = {
-  id: number;
+  id: string;
   name: string;
   request: boolean;
   score: number;

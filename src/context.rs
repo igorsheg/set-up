@@ -129,7 +129,8 @@ impl Context {
     }
 
     pub async fn handle_move(&mut self, message: WsMessage, client_id: Uuid) -> Result<(), Error> {
-        let payload_value = serde_json::Value::Object(message.payload.into_iter().collect());
+        let payload_value =
+            serde_json::Value::Object(message.clone().payload.into_iter().collect());
         let game_move: Move = serde_json::from_value(payload_value)
             .map_err(|_| Error::GameError("Failed to parse move".to_string()))?;
 
@@ -138,11 +139,7 @@ impl Context {
         if let Some(game) = self.rooms.get_mut(&game_move.room_code) {
             game.make_move(client_id, game_move.cards)?;
 
-            log::debug!("Client {} ", client_id);
-
-            for client in self.clients.values() {
-                client.send_message(game.clone()).await?;
-            }
+            self.broadcast_game_state(&message).await?;
         } else {
             return Err(Error::GameError("Game not found".to_string()));
         }
@@ -207,9 +204,19 @@ impl Context {
 
         self.rooms.insert(room_code.clone(), game.clone());
 
-        if let Some(client) = self.clients.get(&client_id) {
-            client.send_message(game.clone()).await?;
-        }
+        let message = WsMessage {
+            r#type: "update".to_string(),
+            payload: {
+                let mut payload = HashMap::new();
+                payload.insert(
+                    "room_code".to_string(),
+                    serde_json::Value::String(room_code.clone()),
+                );
+                payload
+            },
+        };
+
+        self.broadcast_game_state(&message).await?;
 
         log::debug!(
             "Rooms: {:?}",

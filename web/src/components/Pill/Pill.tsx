@@ -33,9 +33,9 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
 
   useEffect(() => {
     if (prevGameState && prevGameState.players) {
-      const prevPlayerNames = new Set(prevGameState.players.map((p) => p.name));
+      const prevPlayerNames = new Set(prevGameState.players.map((p) => p.id));
       const newPlayer = game.players.find(
-        (player) => !prevPlayerNames.has(player.name),
+        (player) => !prevPlayerNames.has(player.id),
       );
       if (newPlayer) {
         console.log("New Player Detected:", newPlayer.name);

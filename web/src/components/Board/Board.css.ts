@@ -3,26 +3,33 @@ import { vars } from "@styles/index.css"; // Adjust the path accordingly
 
 export const boardVars = {
   columns: createVar(),
-  rows: createVar(),
 };
 
 export const boardStyles = {
   board: style({
     display: "grid",
     zIndex: 1,
-    gridTemplateColumns: `repeat(${boardVars.columns}, ${vars.sizes.s12})`,
-    gridTemplateRows: `repeat(${boardVars.rows}, ${vars.sizes.s12}))`,
-    columnGap: vars.sizes.s4,
-    rowGap: vars.sizes.s4,
-    width: "600px",
+    gridTemplateColumns: `repeat(${boardVars.columns}, 104px)`,
+    columnGap: vars.sizes.s3,
+    rowGap: vars.sizes.s3,
+    width: "100%",
+    overflow: "auto",
+    padding: ` ${vars.sizes.s14} 0`,
     justifyContent: "center",
+    "@media": {
+      "(max-width: 768px)": {
+        gridTemplateColumns: `repeat(3, "104px")`,
+      },
+      "(max-width: 480px)": {
+        gridTemplateColumns: `repeat(1, "104px")`,
+      },
+    },
   }),
   lastSet: style({
     marginTop: vars.sizes.s4,
   }),
   button: style({
     padding: vars.sizes.s2,
-    // fontSize: vars.typography.base,
     color: vars.colors.text,
     backgroundColor: vars.colors.accent,
     border: `1px solid ${vars.colors.border}`,
