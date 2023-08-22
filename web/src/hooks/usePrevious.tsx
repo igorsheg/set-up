@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
-import { Data } from "src/types";
 
 // 7. Custom hook to get previous state
-export const usePrevious = (value: Data): Data => {
-  const ref = useRef<Data>({} as Data);
+export const usePrevious = (value: any): any => {
+  const ref = useRef<any>({} as any);
   useEffect(() => {
     ref.current = value;
   }, [value]);

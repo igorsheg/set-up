@@ -19,7 +19,7 @@ const StyleWrapper: React.FC<{ children: React.ReactNode }> = ({
   };
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <div className={`${theme} ${styleWrapperStyles}`}>{children}</div>
+      <div className={`${lightTheme} ${styleWrapperStyles}`}>{children}</div>
     </ThemeContext.Provider>
   );
 };

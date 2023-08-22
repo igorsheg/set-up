@@ -12,6 +12,7 @@ import {
   moveCards,
   setSelected,
 } from "../../store";
+import { usePrevious } from "../../hooks/usePrevious";
 
 export default function Board(): React.ReactElement {
   const in_play = useSelector((state: RootState) => state.game.data.in_play);
@@ -22,13 +23,15 @@ export default function Board(): React.ReactElement {
     (state: RootState) => state.game.data.last_player,
   );
 
+  const prevLastSet = usePrevious(lastSet);
+
   React.useEffect(() => {
-    if (lastSet) {
+    if (lastSet && lastSet !== prevLastSet) {
       dispatch(
         displayNotificationWithTimer(`Player ${lastPlayer} found a set!`),
       );
     }
-  }, [lastSet]);
+  }, [lastSet, prevLastSet]);
 
   const [numberOfColumns, setNumberOfColumns] = React.useState(3);
 

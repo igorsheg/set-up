@@ -65,32 +65,28 @@ export type AppThunk<ReturnType = void> = ThunkAction<
 
 export const moveCards =
   (cards: Card[]): AppThunk =>
-  (dispatch, getState) => {
-    // Update the state first
-    dispatch(setSelected(cards));
+    (dispatch, getState) => {
+      dispatch(setSelected(cards));
 
-    // Then, send the WebSocket message
-    const {
-      game: { roomCode },
-    } = getState();
+      const {
+        game: { roomCode },
+      } = getState();
 
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          type: MessageType.MOVE,
-          payload: { room_code: roomCode, cards },
-        }),
-      );
-    }
-  };
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: MessageType.MOVE,
+            payload: { room_code: roomCode, cards },
+          }),
+        );
+      }
+    };
 
 export const createNewRoom = createAsyncThunk<string, void>(
   "game/createNewRoom",
   async (_, _thunkAPI) => {
     try {
-      const response = await fetch(
-        `http://${import.meta.env.VITE_BACKEND_URL}/new`,
-      );
+      const response = await fetch(`/api/new`);
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -154,7 +150,6 @@ const gameSlice = createSlice({
       .addCase(createNewRoom.fulfilled, (state, action) => {
         state.roomCode = action.payload;
       })
-      // You can add other cases here as well
       .addCase(createNewRoom.rejected, (_state, action) => {
         console.error("Failed to create a new room:", action.error);
       });
@@ -173,20 +168,20 @@ export const {
 
 export const displayNotificationWithTimer =
   (message: string): AppThunk =>
-  (dispatch, _getState) => {
-    dispatch(showNotification(message));
-    const timeoutId = setTimeout(() => {
-      dispatch(hideNotification());
-    }, 6000);
+    (dispatch, _getState) => {
+      dispatch(showNotification(message));
+      const timeoutId = setTimeout(() => {
+        dispatch(hideNotification());
+      }, 6000);
 
-    dispatch(setNotificationTimer(timeoutId));
-  };
+      dispatch(setNotificationTimer(timeoutId));
+    };
 
 const COOKIE_NAME = "client_id";
 
 const checkAndFetchInitEndpoint = async () => {
   if (!document.cookie.split("; ").find((row) => row.startsWith(COOKIE_NAME))) {
-    await fetch(`http://${import.meta.env.VITE_BACKEND_URL}/init`, {
+    await fetch(`/api/auth`, {
       credentials: "include",
     });
   }
@@ -202,8 +197,13 @@ let ws: WebSocket | null = null;
 const RECONNECT_INTERVAL = 5000;
 
 const connectWebSocket = (storeAPI: MiddlewareAPI) => {
-  ws = new WebSocket(`ws://${import.meta.env.VITE_BACKEND_URL}/ws`);
-  ws.onopen = () => storeAPI.dispatch(setStatus("OPEN"));
+  const url = new URL("/api/ws", window.location.href);
+  url.protocol = url.protocol.replace("http", "ws");
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    storeAPI.dispatch(setStatus("OPEN"));
+  };
   ws.onmessage = (event) => {
     const receivedData: Data = JSON.parse(event.data);
     storeAPI.dispatch(setData(receivedData));

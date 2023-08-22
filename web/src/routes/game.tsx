@@ -22,9 +22,9 @@ export default function Game() {
   };
 
   const getPlayerPastRooms = async () => {
-    const url = "http://" + import.meta.env.VITE_BACKEND_URL + "/past_rooms";
-    console.log(url);
-    const pasrRoomsReq = await fetch(url, { credentials: "include" });
+    const pasrRoomsReq = await fetch("/api/past_rooms", {
+      credentials: "include",
+    });
     const pastRooms = await pasrRoomsReq.json();
     console.log(pastRooms);
     setPastRooms(pastRooms);

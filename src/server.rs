@@ -1,6 +1,12 @@
-use axum::{http::Method, routing::get, Extension};
-use hyper::http::HeaderValue;
-use std::{net::SocketAddr, sync::Arc};
+use axum::{
+    extract::Path,
+    http::Method,
+    http::{uri::Uri, Request, Response},
+    routing::get,
+    Extension,
+};
+use hyper::{http::HeaderValue, Body, Client};
+use std::{convert::Infallible, net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
 
@@ -42,11 +48,15 @@ impl Server {
 
         let context = Arc::new(Mutex::new(Context::new()));
 
-        let app = axum::Router::new()
+        let api_routes = axum::Router::new()
             .route("/new", get(new_room_handler))
             .route("/past_rooms", get(get_past_rooms))
-            .route("/init", get(init_client))
-            .route("/ws", get(ws_handler))
+            .route("/auth", get(init_client))
+            .route("/ws", get(ws_handler));
+
+        let app = axum::Router::new()
+            .nest("/api", api_routes)
+            .fallback(handle_client_proxy)
             .layer(cors)
             .layer(Extension(context));
 
@@ -57,4 +67,23 @@ impl Server {
             .await
             .unwrap();
     }
+}
+
+pub async fn handle_client_proxy(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
+    let client_port = "5173".to_string();
+
+    let path = req.uri().path();
+    let path_query = req
+        .uri()
+        .path_and_query()
+        .map(|v| v.as_str())
+        .unwrap_or(path);
+
+    let uri = format!("http://{}:{}{}", "localhost", client_port, path_query);
+    *req.uri_mut() = Uri::try_from(uri).unwrap();
+
+    let client = Client::new();
+    let resp = client.request(req).await.unwrap();
+
+    Ok(resp)
 }

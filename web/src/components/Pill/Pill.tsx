@@ -33,7 +33,9 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
 
   useEffect(() => {
     if (prevGameState && prevGameState.players) {
-      const prevPlayerNames = new Set(prevGameState.players.map((p) => p.id));
+      const prevPlayerNames = new Set(
+        prevGameState.players.map((p: Player) => p.id),
+      );
       const newPlayer = game.players.find(
         (player) => !prevPlayerNames.has(player.id),
       );
@@ -114,7 +116,7 @@ const Players: FC<PropsWithChildren<{ players: Player[] }>> = ({ players }) => {
   return (
     <div className={styles.avatars}>
       {topScoredPlayers.map((player: Player) => (
-        <Avatar player={player} />
+        <Avatar key={`${player.id}-avatar`} player={player} />
       ))}
       {players.length - topScoredPlayers.length > 0 && (
         <Box

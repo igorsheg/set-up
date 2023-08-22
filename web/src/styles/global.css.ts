@@ -74,3 +74,7 @@ globalStyle("button", {
   margin: "0",
   verticalAlign: "baseline",
 });
+
+globalStyle("button, fieldset, input", {
+  all: "unset",
+});
