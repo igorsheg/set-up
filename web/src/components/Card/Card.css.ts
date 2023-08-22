@@ -1,30 +1,80 @@
-import { style } from "@vanilla-extract/css";
+import { style, keyframes, createVar } from "@vanilla-extract/css";
 import { vars } from "@styles/index.css"; // Adjust the path accordingly
 import { recipe } from "@vanilla-extract/recipes";
 
+const highlightColor = createVar();
+const highlightColorAlt = createVar();
+
+const bgRotate = keyframes({
+  "100%": {
+    transform: "rotate(1turn)",
+  },
+});
+const glow = keyframes({
+  "0%": { boxShadow: `0 0 6px ${highlightColorAlt}` },
+  to: { boxShadow: `0 0 20px ${highlightColorAlt}` },
+});
+
 export const cardStyles = {
   card: style({
+    vars: {
+      [highlightColor]: "rgb(237, 138, 92)",
+      [highlightColorAlt]: "rgb(255, 194, 145)",
+    },
     display: "flex",
     justifyContent: "center",
     flexDirection: "row",
     alignItems: "center",
-    height: vars.sizes.s12,
-    width: vars.sizes.s12,
-    borderRadius: "12px",
+    height: "104px",
+    width: "104px",
+    borderRadius: "16px",
     padding: vars.sizes.s3,
-    backgroundColor: vars.colors.foregorund,
-    boxShadow: vars.shadows.sm,
+    boxShadow: `${vars.shadows.extrude}, inset 0 0 0 2px ${vars.colors.d6}`,
     cursor: "pointer",
+    position: "relative",
+    overflow: "hidden",
     gap: vars.sizes.s1,
-    transition: "box-shadow 0.2s ease-in-out",
+    backgroundColor: vars.colors.foregorund,
+
+    ":active": {
+      transform: "translateY(2px)",
+      boxShadow: `inset 0 0 0 2px ${vars.colors.d6}`,
+    },
+
+    "::after": {
+      content: '""',
+      position: "absolute",
+      zIndex: -1,
+      left: "4px",
+      top: "4px",
+      width: "calc(100% - 8px)",
+      height: "calc(100% - 8px)",
+      backgroundColor: vars.colors.foregorund,
+      borderRadius: "12px",
+    },
+
     ":hover": {
-      boxShadow: vars.shadows.md,
+      // boxShadow: vars.shadows.lg,
     },
   }),
   selected: style({
-    borderColor: vars.colors.accent,
-    borderWidth: "2px",
-    borderStyle: "solid",
+    backgroundColor: "transparent",
+    animation: `${glow} 2s ease infinite alternate`,
+    "::before": {
+      content: '""',
+      position: "absolute",
+      zIndex: -2,
+      left: "-50%",
+      top: "-50%",
+      width: "200%",
+      height: "200%",
+      backgroundColor: "#000",
+      backgroundRepeat: "no-repeat",
+      backgroundSize: "100% 100%, 50% 50%",
+      backgroundPosition: "0 0, 100% 0, 100% 100%, 0 100%",
+      background: `conic-gradient(${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor});`,
+      animation: `${bgRotate} 2s linear infinite`,
+    },
   }),
   thumbnail: style({
     cursor: "default",

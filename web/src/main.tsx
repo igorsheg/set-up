@@ -3,13 +3,10 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import { StyleWrapper } from "@styles/ThemeProvider.tsx";
 import "@styles/global.css";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  useParams,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Game from "@routes/game.tsx";
-import { GameWebSocketProvider } from "./hooks/useGameSocket.tsx";
+import { Provider } from "react-redux";
+import { store } from "./store.tsx";
 
 const router = createBrowserRouter([
   {
@@ -18,28 +15,16 @@ const router = createBrowserRouter([
   },
   {
     path: "/game/:room_code",
-    element: <GameRouteWrapper />,
+    element: <Game />,
   },
 ]);
 
-function GameRouteWrapper() {
-  const { room_code } = useParams();
-
-  if (!room_code) {
-    return <div>Error: Room code is missing!</div>;
-  }
-
-  return (
-    <GameWebSocketProvider room_code={room_code} playerUsername="player1">
-      <Game />
-    </GameWebSocketProvider>
-  );
-}
-
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <StyleWrapper>
-      <RouterProvider router={router} />
-    </StyleWrapper>
+    <Provider store={store}>
+      <StyleWrapper>
+        <RouterProvider router={router} />
+      </StyleWrapper>
+    </Provider>
   </React.StrictMode>,
 );

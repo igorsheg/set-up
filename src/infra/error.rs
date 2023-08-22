@@ -24,6 +24,9 @@ pub enum Error {
 
     #[error("JSON serialization error. {0}")]
     GameError(String),
+
+    #[error("Game rules error. {0}")]
+    GameRuleError(String),
 }
 
 pub struct AppError(pub Error);

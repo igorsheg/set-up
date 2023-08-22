@@ -1,78 +1,101 @@
 import * as React from "react";
-import { Data, Card as CardType, Player } from "../../types";
+import { Card as CardType } from "../../types";
 import Card from "@components/Card/Card";
 import { boardVars, boardStyles as styles } from "./Board.css"; // Adjust the path as needed
 import { AnimatePresence, motion } from "framer-motion";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  AppDispatch,
+  RootState,
+  displayNotificationWithTimer,
+  moveCards,
+  setSelected,
+} from "../../store";
 
-type Props = {
-  data: Data;
-  handleMove: (cards: CardType[]) => void;
-  handleRequest: () => void;
-  selected: CardType[];
-  setSelected: React.Dispatch<React.SetStateAction<CardType[]>>;
-};
+export default function Board(): React.ReactElement {
+  const in_play = useSelector((state: RootState) => state.game.data.in_play);
+  const dispatch = useDispatch<AppDispatch>();
+  const selected = useSelector((state: RootState) => state.game.selected);
+  const lastSet = useSelector((state: RootState) => state.game.data.last_set);
+  const lastPlayer = useSelector(
+    (state: RootState) => state.game.data.last_player,
+  );
 
-export default function Board(props: Props): React.ReactElement {
-  const { data, handleMove, handleRequest, selected, setSelected } = props;
+  React.useEffect(() => {
+    if (lastSet) {
+      dispatch(
+        displayNotificationWithTimer(`Player ${lastPlayer} found a set!`),
+      );
+    }
+  }, [lastSet]);
 
-  const { in_play, last_player, last_set, players, remaining } = data;
+  const [numberOfColumns, setNumberOfColumns] = React.useState(3);
 
   const handleClick = (card: CardType): void => {
     const i = selected.indexOf(card);
     if (i === -1) {
+      new Audio("/sfx/navigation_forward-selection-minimal.wav").play();
       const slctd = [...selected, card];
       if (slctd.length === 3) {
-        handleMove(slctd);
-        setSelected([]);
+        dispatch(setSelected(slctd));
+        dispatch(moveCards(slctd));
+        dispatch(setSelected([]));
       } else {
-        setSelected(slctd);
+        dispatch(setSelected(slctd));
       }
     } else {
-      setSelected(selected.filter((c) => c !== card));
+      new Audio("/sfx/navigation_backward-selection-minimal.wav").play();
+      dispatch(setSelected(selected.filter((c) => c !== card)));
     }
   };
 
-  const columns = in_play[0]?.length || 0;
-  const rows = in_play.length;
+  React.useEffect(() => {
+    if (in_play.length > 12) {
+      const additionalColumns = Math.floor(in_play.length / 12);
+      setNumberOfColumns(3 + additionalColumns);
+    } else {
+      setNumberOfColumns(3);
+    }
+  }, [in_play]);
 
   return (
     <>
       <div
         className={styles.board}
         style={assignInlineVars({
-          [boardVars.columns]: `${columns}`,
-          [boardVars.rows]: `${rows}`,
+          [boardVars.columns]: numberOfColumns.toString(),
         })}
       >
-        <AnimatePresence custom="wait">
-          {in_play.map((cards: CardType[], i: number) =>
-            cards.map((card: CardType, j: number) => (
-              <motion.div
-                layout
-                key={`${card.color}${card.shape}${card.number}${card.shading}${j}`}
-                initial={{
-                  opacity: 0,
-                  y: 10,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{
-                  delay: i * 0.05,
-                }}
-              >
-                <Card
-                  selected={selected.indexOf(card) !== -1}
-                  onClick={(): void => handleClick(card)}
-                  card={card}
-                  hidden={card.color === null}
-                />
-              </motion.div>
-            )),
-          )}
+        <AnimatePresence>
+          {in_play.map((card: CardType, i: number) => (
+            <motion.div
+              key={`${card.color}-${card.number}-${card.shading}-${card.shape}-${i}`}
+              layout
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{
+                type: "spring",
+                damping: 25,
+                stiffness: 300,
+                delay: i * 0.01,
+              }}
+            >
+              <Card
+                selected={selected.indexOf(card) !== -1}
+                onClick={(): void => handleClick(card)}
+                card={card}
+                hidden={card.color === null}
+              />
+            </motion.div>
+          ))}
         </AnimatePresence>
       </div>
     </>

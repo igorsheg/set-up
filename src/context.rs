@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use uuid::Uuid;
 
@@ -13,9 +13,15 @@ use crate::{
 };
 
 #[derive(Debug)]
+pub struct ClientData {
+    pub rooms_joined: HashSet<String>,
+}
+
+#[derive(Debug)]
 pub struct Context {
     pub clients: HashMap<Uuid, Client>,
     pub rooms: HashMap<String, Game>,
+    pub clients_data: HashMap<Uuid, ClientData>,
 }
 
 impl Default for Context {
@@ -29,6 +35,7 @@ impl Context {
         Self {
             clients: HashMap::new(),
             rooms: HashMap::new(),
+            clients_data: HashMap::new(),
         }
     }
 
@@ -59,6 +66,7 @@ impl Context {
         if let Some(game) = self.rooms.get_mut(&room_code) {
             if let Some(client) = self.clients.get_mut(&client_id) {
                 client.room_code = Some(room_code.clone());
+
                 if let Some(name) = message
                     .payload
                     .get("player_username")
@@ -66,6 +74,14 @@ impl Context {
                 {
                     let player = Player::new(client.id, name.to_string());
                     game.add_player(player);
+
+                    let client_data =
+                        self.clients_data
+                            .entry(client_id)
+                            .or_insert_with(|| ClientData {
+                                rooms_joined: HashSet::new(),
+                            });
+                    client_data.rooms_joined.insert(room_code.clone());
                 }
             } else {
                 return Err(Error::GameError("Client not found".to_string()));
@@ -84,6 +100,13 @@ impl Context {
             if let Some(room_code) = &client.room_code {
                 if let Some(game) = self.rooms.get_mut(room_code) {
                     game.remove_player(client_id);
+
+                    if game.players.is_empty() {
+                        // Safely try to get the client data and modify it
+                        if let Some(client_data) = self.clients_data.get_mut(&client_id) {
+                            client_data.rooms_joined.remove(room_code);
+                        }
+                    }
                 }
 
                 let message = WsMessage {
@@ -106,7 +129,8 @@ impl Context {
     }
 
     pub async fn handle_move(&mut self, message: WsMessage, client_id: Uuid) -> Result<(), Error> {
-        let payload_value = serde_json::Value::Object(message.payload.into_iter().collect());
+        let payload_value =
+            serde_json::Value::Object(message.clone().payload.into_iter().collect());
         let game_move: Move = serde_json::from_value(payload_value)
             .map_err(|_| Error::GameError("Failed to parse move".to_string()))?;
 
@@ -115,11 +139,7 @@ impl Context {
         if let Some(game) = self.rooms.get_mut(&game_move.room_code) {
             game.make_move(client_id, game_move.cards)?;
 
-            log::debug!("Client {} ", client_id);
-
-            for client in self.clients.values() {
-                client.send_message(game.clone()).await?;
-            }
+            self.broadcast_game_state(&message).await?;
         } else {
             return Err(Error::GameError("Game not found".to_string()));
         }
@@ -184,9 +204,19 @@ impl Context {
 
         self.rooms.insert(room_code.clone(), game.clone());
 
-        if let Some(client) = self.clients.get(&client_id) {
-            client.send_message(game.clone()).await?;
-        }
+        let message = WsMessage {
+            r#type: "update".to_string(),
+            payload: {
+                let mut payload = HashMap::new();
+                payload.insert(
+                    "room_code".to_string(),
+                    serde_json::Value::String(room_code.clone()),
+                );
+                payload
+            },
+        };
+
+        self.broadcast_game_state(&message).await?;
 
         log::debug!(
             "Rooms: {:?}",
@@ -201,6 +231,9 @@ impl Context {
     }
 
     pub async fn broadcast_game_state(&self, message: &WsMessage) -> Result<(), Error> {
+        // Log the incoming message for context
+        log::debug!("Broadcasting game state for message: {:?}", message);
+
         let room_code = message
             .payload
             .get("room_code")
@@ -208,16 +241,42 @@ impl Context {
             .unwrap_or_default()
             .to_string();
 
+        // Log the determined room code
+        log::debug!("Determined room code: {}", room_code);
+
         if let Some(game) = self.rooms.get(&room_code) {
+            log::debug!("Found game for room code: {}", room_code);
+
             for client in self.clients.values() {
                 if client.room_code.as_ref() == Some(&room_code) {
-                    client.send_message(game.clone()).await?;
+                    log::debug!("Sending game state to client with ID: {}", client.id);
+                    if let Err(e) = client.send_message(game.clone()).await {
+                        // Log the error if send_message fails
+                        log::debug!(
+                            "Failed to send game state to client with ID: {}. Error: {:?}",
+                            client.id,
+                            e
+                        );
+                        return Err(e);
+                    }
+                } else {
+                    // Log clients that are not in the room but were checked
+                    log::debug!(
+                        "Client with ID: {} is not in room code: {}. Skipping.",
+                        client.id,
+                        room_code
+                    );
                 }
             }
         } else {
+            log::debug!("Game not found for room code: {}", room_code);
             return Err(Error::GameError("Game not found".to_string()));
         }
 
+        log::debug!(
+            "Game state broadcasted successfully for room code: {}",
+            room_code
+        );
         Ok(())
     }
 }
