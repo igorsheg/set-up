@@ -6,6 +6,7 @@ pub mod client;
 pub mod config;
 pub mod context;
 pub mod game;
+pub mod handlers;
 pub mod infra;
 pub mod message;
 pub mod server;

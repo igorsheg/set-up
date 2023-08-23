@@ -1,11 +1,13 @@
 import { vars } from "@styles/index.css";
 import { style, keyframes } from "@vanilla-extract/css";
+
 const overlayShow = keyframes({
   "0%": {
     opacity: 0,
   },
   to: { opacity: 1 },
 });
+
 const contentShow = keyframes({
   "0%": {
     transform: "translate(-50%, -50%) rotate(-15deg) scale(0.8)",
@@ -13,6 +15,7 @@ const contentShow = keyframes({
   },
   to: { transform: "translate(-50%, -50%) rotate(0deg) scale(1)", opacity: 1 },
 });
+
 export const dialogStyles = {
   overlay: style({
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -25,7 +28,7 @@ export const dialogStyles = {
     backgroundColor: vars.colors.background,
     borderRadius: vars.radius,
     boxShadow: vars.shadows.xl,
-    border: `1px solid ${vars.colorVars.d7}`,
+    border: `1px solid ${vars.colorVars.d5}`,
     position: "fixed",
     top: "50%",
     left: "50%",
@@ -33,16 +36,17 @@ export const dialogStyles = {
     width: "90vw",
     maxWidth: "450px",
     maxHeight: "85vh",
-    padding: vars.sizes.s5,
+    padding: `${vars.sizes.s6} ${vars.sizes.s6}`,
     animation: `${contentShow} 320ms cubic-bezier(0.16, 1, 0.3, 1)`,
   }),
   title: style({
     ...vars.typography.xl,
+    fontWeight: 550,
     color: vars.colorVars.d12,
   }),
 
   description: style({
-    margin: `${vars.sizes.s1} 0 ${vars.sizes.s5}`,
+    fontWeight: 400,
     color: vars.colorVars.d11,
   }),
 
@@ -61,18 +65,19 @@ export const dialogStyles = {
   }),
 
   input: style({
+    ...vars.typography.l,
     width: "100%",
     flex: 1,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: `calc(${vars.radius} - 2px)`,
-    padding: `0 ${vars.sizes.s2}`,
+    padding: `0 ${vars.sizes.s5}`,
     color: vars.colorVars.d12,
     boxShadow: `0 0 0 1px ${vars.colorVars.d7}`,
-    height: vars.sizes.s8,
+    height: vars.sizes.s10,
     ":focus": {
-      boxShadow: `0 0 0 2px ${vars.colorVars.a8}`,
+      boxShadow: `0 0 0 1px ${vars.colorVars.d12}, 0 0 0 4px ${vars.colorVars.d5}`,
     },
   }),
 };
@@ -111,17 +116,21 @@ export const buttonStyles = {
   }),
   iconButton: style({
     borderRadius: "100%",
-    height: vars.sizes.s5,
-    width: vars.sizes.s5,
+    height: vars.sizes.s4,
+    width: vars.sizes.s4,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     color: vars.colorVars.d12,
     position: "absolute",
-    top: vars.sizes.s2,
-    right: vars.sizes.s2,
+    padding: `${vars.sizes.s1}`,
+    top: vars.sizes.s4,
+    right: vars.sizes.s4,
+    transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+    cursor: "pointer",
     ":hover": {
-      backgroundColor: vars.colorVars.a4,
+      backgroundColor: vars.colorVars.a5,
+      transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
     },
     ":focus": {
       boxShadow: `0 0 0 2px ${vars.colorVars.a7}`,

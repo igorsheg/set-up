@@ -7,7 +7,8 @@ export const pillWrap = style({
   overflow: "hidden",
   display: "flex",
   flexDirection: "column",
-  borderRadius: "30em",
+  borderRadius: "64px",
+  alignItems: "center",
   justifyContent: "space-between",
   top: vars.sizes.s6,
   position: "fixed",
@@ -78,13 +79,13 @@ export const pillSection = style({});
 
 globalStyle(`${pillSection} h5`, {
   ...vars.typography.s,
-  fontWeight: "500",
+  fontWeight: "400",
   color: vars.colors.d9,
 });
 
 globalStyle(`${pillSection} span`, {
   ...vars.typography.s,
-  fontWeight: "600",
+  fontWeight: "500",
 });
 
 export const requestButton = style({

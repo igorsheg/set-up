@@ -65,22 +65,22 @@ export type AppThunk<ReturnType = void> = ThunkAction<
 
 export const moveCards =
   (cards: Card[]): AppThunk =>
-    (dispatch, getState) => {
-      dispatch(setSelected(cards));
+  (dispatch, getState) => {
+    dispatch(setSelected(cards));
 
-      const {
-        game: { roomCode },
-      } = getState();
+    const {
+      game: { roomCode },
+    } = getState();
 
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: MessageType.MOVE,
-            payload: { room_code: roomCode, cards },
-          }),
-        );
-      }
-    };
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: MessageType.MOVE,
+          payload: { room_code: roomCode, cards },
+        }),
+      );
+    }
+  };
 
 export const createNewRoom = createAsyncThunk<string, void>(
   "game/createNewRoom",
@@ -115,6 +115,9 @@ const gameSlice = createSlice({
   name: "game",
   initialState,
   reducers: {
+    reset: (state) => {
+      state.data = {} as Data;
+    },
     setStatus: (state, action: PayloadAction<WebSocketStatus>) => {
       state.status = action.payload;
     },
@@ -168,14 +171,14 @@ export const {
 
 export const displayNotificationWithTimer =
   (message: string): AppThunk =>
-    (dispatch, _getState) => {
-      dispatch(showNotification(message));
-      const timeoutId = setTimeout(() => {
-        dispatch(hideNotification());
-      }, 6000);
+  (dispatch, _getState) => {
+    dispatch(showNotification(message));
+    const timeoutId = setTimeout(() => {
+      dispatch(hideNotification());
+    }, 6000);
 
-      dispatch(setNotificationTimer(timeoutId));
-    };
+    dispatch(setNotificationTimer(timeoutId));
+  };
 
 const COOKIE_NAME = "client_id";
 
@@ -243,7 +246,7 @@ const webSocketMiddleware: Middleware = (storeAPI: MiddlewareAPI) => {
           ws.send(
             JSON.stringify({
               type: MessageType.REQUEST,
-              payload: { room_code: roomCode, player_username: "player1" },
+              payload: { room_code: roomCode },
             }),
           );
           break;

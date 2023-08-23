@@ -18,6 +18,8 @@ import {
   RootState,
   displayNotificationWithTimer,
 } from "../../store";
+import { GameMenu } from "../../menus/GameMenu";
+import Button from "@components/Button/Button";
 
 interface PillProps {
   game: Data;
@@ -63,7 +65,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
 
   return (
     <motion.div
-      transition={{ type: "spring", stiffness: 200, damping: 21 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
       variants={variants}
       initial="collapsed"
       animate={notifications.show ? "expanded" : "collapsed"}
@@ -77,10 +79,22 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
           <h5>Remaning</h5>
         </Box>
 
-        <Box className={styles.pillSection} xAlign="left" yAlign="left" gap={0}>
-          <button className={styles.requestButton} onClick={handleRequest}>
+        <Box
+          yAlign="center"
+          className={styles.pillSection}
+          xAlign="left"
+          orientation="row"
+        >
+          <Button
+            dimentions="small"
+            variant="outline"
+            buttonType="pill"
+            skin="dark"
+            onClick={handleRequest}
+          >
             Request
-          </button>
+          </Button>
+          <GameMenu />
         </Box>
       </Box>
 
@@ -93,8 +107,8 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
             yAlign="center"
             gap={vars.sizes.s1}
           >
-            <IconPointFilled style={{ color: vars.colors.danger }} />
-            <span style={{ ...vars.typography.m }}>
+            <IconPointFilled style={{ color: vars.colors.sucess }} />
+            <span style={{ ...vars.typography.base }}>
               {notifications.message}
             </span>
           </Box>
@@ -181,13 +195,13 @@ const AvatarTooltipContent: FC<PropsWithChildren<AvatarProps>> = ({
             alt="avatar"
           />
         </span>
-        <p style={{ fontWeight: 600 }}>{player.name}</p>
+        <p style={{ fontWeight: 500 }}>{player.name}</p>
       </Box>
       <Box gap={vars.sizes.s1}>
         <Box gap={vars.sizes.s1} yAlign="center" orientation="row">
           <IconCards style={{ width: vars.sizes.s4, height: vars.sizes.s4 }} />
           <span style={{ color: vars.colorVars.d10, ...vars.typography.m }}>
-            <strong style={{ color: vars.colorVars.d12 }}>
+            <strong style={{ color: vars.colorVars.d12, fontWeight: 500 }}>
               {player.score}
             </strong>{" "}
             sets found

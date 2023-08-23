@@ -1,5 +1,4 @@
 use axum::{
-    extract::Path,
     http::Method,
     http::{uri::Uri, Request, Response},
     routing::get,
@@ -11,8 +10,9 @@ use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
 
 use crate::{
-    client::{get_past_rooms, init_client, new_room_handler, ws_handler},
+    client::{init_client, ws_handler},
     context::Context,
+    handlers::game::{check_game_exists, get_past_rooms, new_room_handler},
 };
 
 pub struct Server {
@@ -51,6 +51,7 @@ impl Server {
         let api_routes = axum::Router::new()
             .route("/new", get(new_room_handler))
             .route("/past_rooms", get(get_past_rooms))
+            .route("/game/:room_code", get(check_game_exists))
             .route("/auth", get(init_client))
             .route("/ws", get(ws_handler));
 
