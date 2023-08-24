@@ -38,18 +38,16 @@ export const button = recipe({
     variant: {
       primary: {
         color: vars.colorVars.d1,
-        boxShadow: vars.shadows.xs,
+        boxShadow: `inset 0 0 0 1px ${vars.colorVars.a10}, ${vars.shadows.xs}`,
         background: vars.colorVars.a9,
-        border: `1px solid ${vars.colorVars.a10}`,
 
         ":hover": {
           backgroundColor: vars.colorVars.a10,
-          border: `1px solid ${vars.colorVars.a11}`,
+          boxShadow: `inset 0 0 0 1px ${vars.colorVars.a11}, ${vars.shadows.xs}`,
         },
 
         ":disabled": {
           backgroundColor: vars.colorVars.d6,
-          border: `1px solid ${vars.colorVars.d6}`,
           pointerEvents: "none",
           cursor: "auto",
           boxShadow: "none",
@@ -58,11 +56,10 @@ export const button = recipe({
       outline: {
         color: vars.colorVars.d12,
         backgroundColor: "transparent",
-        boxShadow: vars.shadows.xs,
-        border: `2px solid ${vars.colorVars.d8}`,
+        boxShadow: `inset 0 0 0 2px ${vars.colors.d8}, ${vars.shadows.xs}`,
 
         ":hover": {
-          border: `2px solid ${vars.colorVars.d12}`,
+          boxShadow: `inset 0 0 0 2px ${vars.colors.d12}, ${vars.shadows.xs}`,
         },
       },
       ghost: { color: vars.colors.text, backgroundColor: "transparent" },
@@ -137,9 +134,9 @@ export const button = recipe({
       },
       style: {
         color: vars.colors.background,
-        border: `2px solid ${vars.colorVars.d11}`,
+        boxShadow: `inset 0 0 0 2px ${vars.colors.d11}`,
         ":hover": {
-          border: `2px solid ${vars.colorVars.d1}`,
+          boxShadow: `inset 0 0 0 2px ${vars.colors.d1}`,
         },
       },
     },
@@ -150,10 +147,12 @@ export const button = recipe({
       },
       style: {
         color: vars.colors.background,
-        border: `2px solid ${vars.colorVars.d11}`,
+        boxShadow: `inset 0 0 0 2px ${vars.colors.d11}`,
+        // border: `2px solid ${vars.colorVars.d11}`,
 
         ":hover": {
-          border: `2px solid ${vars.colorVars.d1}`,
+          boxShadow: `inset 0 0 0 2px ${vars.colors.d1}`,
+          // border: `2px solid ${vars.colorVars.d1}`,
         },
       },
     },
@@ -164,6 +163,31 @@ export const button = recipe({
     dimentions: "medium",
     buttonType: "button",
     skin: "light",
+  },
+});
+
+export const buttonPrefix = recipe({
+  base: {},
+  variants: {
+    dimentions: {
+      small: {
+        height: vars.sizes.s4,
+      },
+      medium: {
+        height: vars.sizes.s5,
+        width: vars.sizes.s5,
+      },
+      large: {
+        height: vars.sizes.s5,
+        width: vars.sizes.s5,
+      },
+      xl: {
+        height: vars.sizes.s5,
+      },
+    },
+  },
+  defaultVariants: {
+    dimentions: "medium",
   },
 });
 

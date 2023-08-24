@@ -53,19 +53,44 @@ export default function Board(): React.ReactElement {
     }
   };
 
+  const boardRef = React.useRef(null);
+
   React.useEffect(() => {
-    if (in_play.length > 12) {
-      const additionalColumns = Math.floor(in_play.length / 12);
-      setNumberOfColumns(3 + additionalColumns);
-    } else {
-      setNumberOfColumns(3);
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      for (const entry of entries) {
+        const boardWidth = entry.contentRect.width;
+
+        if (boardWidth <= 768) {
+          setNumberOfColumns(3);
+        } else {
+          if (in_play.length > 12) {
+            const additionalColumns = Math.floor(in_play.length / 12);
+            setNumberOfColumns(3 + additionalColumns);
+          } else {
+            setNumberOfColumns(3);
+          }
+        }
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(handleResize);
+
+    if (boardRef.current) {
+      resizeObserver.observe(boardRef.current);
     }
+
+    return () => {
+      if (boardRef.current) {
+        resizeObserver.unobserve(boardRef.current);
+      }
+    };
   }, [in_play]);
 
   return (
     <>
       <div
         className={styles.board}
+        ref={boardRef}
         style={assignInlineVars({
           [boardVars.columns]: numberOfColumns.toString(),
         })}

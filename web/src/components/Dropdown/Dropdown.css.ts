@@ -41,6 +41,7 @@ export const dropdownMenuItem = style({
   outline: "none",
   ":hover": {
     backgroundColor: vars.colorVars.d4,
+    cursor: "pointer",
   },
   selectors: {
     ["&[data-highlighted]"]: {

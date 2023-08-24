@@ -18,14 +18,19 @@ import {
   RootState,
   displayNotificationWithTimer,
 } from "../../store";
-import { GameMenu } from "../../menus/GameMenu";
+import { GameMenu, GameMenuAction } from "../../menus/GameMenu";
 import Button from "@components/Button/Button";
 
 interface PillProps {
   game: Data;
   handleRequest: () => void;
+  onMenuItemSelect: (action: GameMenuAction) => void;
 }
-const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
+const Pill: FC<PropsWithChildren<PillProps>> = ({
+  game,
+  handleRequest,
+  onMenuItemSelect,
+}) => {
   const prevGameState = usePrevious(game);
 
   const dispatch = useDispatch<AppDispatch>();
@@ -86,7 +91,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
           orientation="row"
         >
           <Button
-            dimentions="small"
+            dimentions="medium"
             variant="outline"
             buttonType="pill"
             skin="dark"
@@ -94,7 +99,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({ game, handleRequest }) => {
           >
             Request
           </Button>
-          <GameMenu />
+          <GameMenu onItemSelect={onMenuItemSelect} />
         </Box>
       </Box>
 

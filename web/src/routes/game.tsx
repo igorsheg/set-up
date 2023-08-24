@@ -7,6 +7,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { RoomJoinGameDialog } from "../dialogs/RoomJoinGameDialog";
+import { InvitePlayersDialog } from "../dialogs/InvitePlayersDialog";
+import { GameMenuAction } from "../menus/GameMenu";
 
 export default function Game() {
   const gameData = useSelector((state: RootState) => state.game.data);
@@ -16,6 +18,20 @@ export default function Game() {
   const { room_code } = useParams<{ room_code: string }>();
 
   const [roomJoinDialogOpen, setRoomJoinDialogOpen] = useState(false);
+  const [invitePlayersDialogOpen, setInvitePlayersDialogOpen] = useState(false);
+
+  const handleGameMenuitemSelect = (action: GameMenuAction) => {
+    switch (action) {
+      case GameMenuAction.invite:
+        setInvitePlayersDialogOpen(true);
+        break;
+      case GameMenuAction.leave:
+        navigate("/");
+        break;
+      default:
+        console.log("Unknown action");
+    }
+  };
 
   const handleGameInit = async (room_code: string) => {
     const isRoomExists = await checkRoomExists(room_code);
@@ -88,7 +104,11 @@ export default function Game() {
         {gameData && gameData.in_play && (
           <>
             <Board />
-            <Pill handleRequest={handleRequest} game={gameData} />
+            <Pill
+              handleRequest={handleRequest}
+              game={gameData}
+              onMenuItemSelect={handleGameMenuitemSelect}
+            />
           </>
         )}
       </div>
@@ -99,6 +119,12 @@ export default function Game() {
           joinGameHandler(room_code, playerUserName)
         }
         open={roomJoinDialogOpen}
+      />
+      <InvitePlayersDialog
+        roomCode={room_code ?? ""}
+        onSubmit={() => setInvitePlayersDialogOpen(false)}
+        onClose={() => setInvitePlayersDialogOpen(false)}
+        open={invitePlayersDialogOpen}
       />
     </>
   );

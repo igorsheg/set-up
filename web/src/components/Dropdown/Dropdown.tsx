@@ -21,8 +21,9 @@ const DropdownMenu: FC<PropsWithChildren<DropdownProps>> = (props) => {
       <RadixDropdownMenu.Trigger>{props.trigger}</RadixDropdownMenu.Trigger>
       <RadixDropdownMenu.Portal>
         <RadixDropdownMenu.Content
+          collisionPadding={{ right: 16 }}
           className={styles.dropdownMenuContent}
-          sideOffset={5}
+          sideOffset={4}
           {...props.contentProps}
         >
           {props.children}

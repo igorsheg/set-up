@@ -18,13 +18,15 @@ const contentShow = keyframes({
 
 export const dialogStyles = {
   overlay: style({
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
     position: "fixed",
     inset: 0,
     backdropFilter: "blur(4px)",
     animation: `${overlayShow} 120ms ease`,
+    zIndex: 9,
   }),
   content: style({
+    zIndex: 99,
     backgroundColor: vars.colors.background,
     borderRadius: vars.radius,
     boxShadow: vars.shadows.xl,

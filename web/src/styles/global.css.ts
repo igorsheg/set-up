@@ -85,6 +85,6 @@ globalStyle("button, fieldset, input", {
   all: "unset",
 });
 
-globalStyle("button:focus", {
+globalStyle("button:focus-visible", {
   boxShadow: `0 0 0 1px ${vars.colorVars.a9}, 0 0 0 4px ${vars.colorVars.a5}`,
 });
