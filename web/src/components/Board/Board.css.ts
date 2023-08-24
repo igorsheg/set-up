@@ -14,7 +14,7 @@ export const boardStyles = {
     rowGap: vars.sizes.s3,
     width: "100%",
     overflow: "auto",
-    padding: ` ${vars.sizes.s14} 0`,
+    padding: ` ${vars.sizes.s13} 0`,
     justifyContent: "center",
     "@media": {
       "(max-width: 768px)": {

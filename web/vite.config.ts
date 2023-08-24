@@ -12,10 +12,28 @@ export default defineConfig({
       "@types": "/src/types",
       "@models": "/src/models",
       "@routes": "/src/routes",
+      "@dialogs": "/src/dialogs",
+      "@menus": "/src/menus",
+      "@services": "/src/services",
+      "@store": "/src/store",
     },
   },
   server: {
     port: 5173,
     strictPort: true,
+
+    hmr: {
+      clientPort: 443,
+      port: 5173,
+      protocol: "wss",
+    },
+
+    proxy: {
+      "/api": {
+        target: "http://localhost:5432",
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
 });

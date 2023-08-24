@@ -1,10 +1,16 @@
-import { globalStyle } from "@vanilla-extract/css";
+import { globalStyle, globalFontFace } from "@vanilla-extract/css";
 import { vars } from "./index.css";
 
 /*
   Josh's Custom CSS Reset
   https://www.joshwcomeau.com/css/custom-css-reset/
 */
+
+const generalSans = "ClashGrotesk";
+
+globalFontFace(generalSans, {
+  src: "url('/fonts/GeneralSans-Variable.woff2') format('woff2')",
+});
 
 globalStyle("*, *:before, *:after", {
   boxSizing: "border-box",
@@ -18,15 +24,15 @@ globalStyle("html, body", {
   height: "100%",
   margin: 0,
   padding: 0,
+  fontFamily: generalSans,
 });
 
 globalStyle("body", {
   lineHeight: 1.5,
-  WebkitFontSmoothing: "antialiased",
+  fontWeight: 500,
+  WebkitFontSmoothing: "grayscale",
   background: vars.colors.background,
   color: vars.colors.text,
-  fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji, 'Segoe UI Emoji', 'Segoe UI Symbol'",
 });
 
 globalStyle("img, picture, video, canvas, svg", {
@@ -73,4 +79,15 @@ globalStyle("button", {
   display: "inline-block",
   margin: "0",
   verticalAlign: "baseline",
+});
+
+globalStyle("button, fieldset, input", {
+  all: "unset",
+});
+
+globalStyle("button:focus-visible", {
+  boxShadow: `0 0 0 1px ${vars.colorVars.a9}, 0 0 0 4px ${vars.colorVars.a5}`,
+});
+globalStyle("input:focus-visible", {
+  boxShadow: `0 0 0 1px ${vars.colorVars.a9}, 0 0 0 4px ${vars.colorVars.a5}`,
 });
