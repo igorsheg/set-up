@@ -1,4 +1,4 @@
-use std::{collections::HashSet, sync::Arc};
+use std::sync::Arc;
 
 use crate::{
     context::Context,
@@ -12,7 +12,7 @@ use axum::{
         WebSocketUpgrade,
     },
     response::IntoResponse,
-    Extension, Json,
+    Extension,
 };
 use axum_extra::extract::{cookie::Cookie, CookieJar};
 use futures::{sink::SinkExt, stream::StreamExt};

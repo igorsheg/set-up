@@ -1,50 +1,70 @@
 import React, { ReactNode } from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
-import { dialogStyles, buttonStyles } from "./Dialog.css"; // Adjust the import path if necessary
-import { IconX } from "@tabler/icons-react";
+import { dialogStyles, drawerStyles, buttonStyles } from "./Dialog.css"; // Adjust the import path if necessary
 import Box from "@components/Box/Box";
 import { vars } from "@styles/index.css";
+import { Drawer } from "vaul";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import { X } from "lucide-react";
 
-export interface DialogProps {
+export interface DialogProps extends RadixDialog.DialogProps {
   title: string;
   description: string;
   children: ReactNode;
   onClose?: () => void;
   open?: boolean;
+  dismissible?: boolean;
 }
 
 const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
-  ({ title, description, children, open = false, onClose }, ref) => {
+  (
+    { title, description, children, open = false, onClose, dismissible },
+    ref,
+  ) => {
+    const isMobile = useIsMobile();
+
+    const ActiveComponent = isMobile ? Drawer : RadixDialog;
+    const styles = isMobile ? drawerStyles : dialogStyles;
+
     return (
       <div ref={ref}>
-        <RadixDialog.Root open={open}>
-          <RadixDialog.Portal container={document.getElementById("root")}>
-            <RadixDialog.Overlay className={dialogStyles.overlay} />
-            <RadixDialog.Content className={dialogStyles.content}>
+        <ActiveComponent.Root
+          dismissible={dismissible}
+          onOpenChange={(open) => !open && onClose && onClose()}
+          open={open}
+        >
+          <ActiveComponent.Portal container={document.getElementById("root")}>
+            <ActiveComponent.Overlay className={styles.overlay} />
+            <ActiveComponent.Content className={styles.content}>
+              {isMobile && <div className={drawerStyles.grabHandle} />}
               <Box gap={vars.sizes.s5}>
                 <Box gap={0}>
-                  <RadixDialog.Title className={dialogStyles.title}>
+                  <ActiveComponent.Title className={dialogStyles.title}>
                     {title}
-                  </RadixDialog.Title>
-                  <RadixDialog.Description className={dialogStyles.description}>
+                  </ActiveComponent.Title>
+                  <ActiveComponent.Description
+                    className={dialogStyles.description}
+                  >
                     {description}
-                  </RadixDialog.Description>
+                  </ActiveComponent.Description>
                 </Box>
                 <Box>{children}</Box>
 
-                <RadixDialog.Close asChild>
-                  <button
-                    onClick={onClose}
-                    className={buttonStyles.iconButton}
-                    aria-label="Close"
-                  >
-                    <IconX />
-                  </button>
-                </RadixDialog.Close>
+                {!isMobile && (
+                  <ActiveComponent.Close asChild>
+                    <button
+                      onClick={onClose}
+                      className={buttonStyles.iconButton}
+                      aria-label="Close"
+                    >
+                      <X />
+                    </button>
+                  </ActiveComponent.Close>
+                )}
               </Box>
-            </RadixDialog.Content>
-          </RadixDialog.Portal>
-        </RadixDialog.Root>
+            </ActiveComponent.Content>
+          </ActiveComponent.Portal>
+        </ActiveComponent.Root>
       </div>
     );
   },

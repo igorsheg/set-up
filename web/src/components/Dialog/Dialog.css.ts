@@ -18,7 +18,7 @@ const contentShow = keyframes({
 
 export const dialogStyles = {
   overlay: style({
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     position: "fixed",
     inset: 0,
     backdropFilter: "blur(4px)",
@@ -28,6 +28,8 @@ export const dialogStyles = {
   content: style({
     zIndex: 99,
     backgroundColor: vars.colors.background,
+    backgroundImage:
+      "radial-gradient(ellipse 90% 90% at 80% -20%, rgba(202, 153, 213, 0.4), rgba(255, 255, 255, 0))",
     borderRadius: vars.radius,
     boxShadow: vars.shadows.xl,
     border: `1px solid ${vars.colorVars.d5}`,
@@ -78,9 +80,6 @@ export const dialogStyles = {
     color: vars.colorVars.d12,
     boxShadow: `0 0 0 1px ${vars.colorVars.d7}`,
     height: vars.sizes.s10,
-    ":focus": {
-      boxShadow: `0 0 0 1px ${vars.colorVars.d12}, 0 0 0 4px ${vars.colorVars.d5}`,
-    },
   }),
 };
 
@@ -131,11 +130,44 @@ export const buttonStyles = {
     transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
     cursor: "pointer",
     ":hover": {
-      backgroundColor: vars.colorVars.a5,
+      backgroundColor: vars.colorVars.d1,
       transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
     },
     ":focus": {
       boxShadow: `0 0 0 2px ${vars.colorVars.a7}`,
     },
+  }),
+};
+
+export const drawerStyles = {
+  overlay: style({
+    position: "fixed",
+    inset: 0,
+    zIndex: 9,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+  }),
+
+  content: style({
+    backgroundColor: vars.colors.background,
+    display: "flex",
+    flexDirection: "column",
+    borderTopLeftRadius: vars.radius,
+    borderTopRightRadius: vars.radius,
+    marginTop: vars.sizes.s5,
+    position: "fixed",
+    bottom: 0,
+    zIndex: 99,
+    left: 0,
+    right: 0,
+    padding: `${vars.sizes.s6} ${vars.sizes.s6}`,
+  }),
+  grabHandle: style({
+    margin: "0 auto",
+    width: "48px",
+    height: "6px",
+    flexShrink: 0,
+    borderRadius: "9999px",
+    backgroundColor: vars.colors.d8,
+    marginBottom: "32px",
   }),
 };

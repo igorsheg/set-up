@@ -13,6 +13,7 @@ const Tooltip: FC<PropsWithChildren<{ content: ReactNode | string }>> = ({
         <RadixTooltip.Portal>
           <RadixTooltip.Content
             className={styles.tooltip.content}
+            collisionPadding={20}
             sideOffset={2}
             side="bottom"
           >

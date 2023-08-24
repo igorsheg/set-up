@@ -1888,6 +1888,11 @@ lru-cache@^6.0.0:
   dependencies:
     yallist "^4.0.0"
 
+lucide-react@^0.268.0:
+  version "0.268.0"
+  resolved "https://registry.yarnpkg.com/lucide-react/-/lucide-react-0.268.0.tgz#24ed431839f9b30eaac0dab4cbd37626aeaae1e8"
+  integrity sha512-XP/xY3ASJAViqNqVnDRcEfdxfRB7uNST8sqTLwZhL983ikmHMQ7qQak7ZxrnXOVhB3QDBawdr3ANq0P+iWHP/g==
+
 media-query-parser@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/media-query-parser/-/media-query-parser-2.0.2.tgz#ff79e56cee92615a304a1c2fa4f2bd056c0a1d29"
@@ -2401,6 +2406,13 @@ use-sync-external-store@^1.0.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/use-sync-external-store/-/use-sync-external-store-1.2.0.tgz#7dbefd6ef3fe4e767a0cf5d7287aacfb5846928a"
   integrity sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==
+
+vaul@^0.3.7:
+  version "0.3.7"
+  resolved "https://registry.yarnpkg.com/vaul/-/vaul-0.3.7.tgz#ff02c55dcf710ea85425f94a7ce191f95bd1c42a"
+  integrity sha512-1XrxVz5A6b4k1xYCLF63SQ8A4Fepwt71CkAcIUCXosgjZyj9kRWYsTov6ca2cI6FV20dXOJnlIdMycZvavYJlg==
+  dependencies:
+    "@radix-ui/react-dialog" "^1.0.4"
 
 vite-node@^0.28.5:
   version "0.28.5"

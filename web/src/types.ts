@@ -1,7 +1,7 @@
 import { COLORS, SHADINGS } from "./consts";
 
 export type Player = {
-  id: string;
+  client_id: string;
   name: string;
   request: boolean;
   score: number;
@@ -16,11 +16,11 @@ export type Card = {
 
 export type Data = {
   game_over?: boolean;
-  in_play: Card[];
-  last_player: string;
-  last_set?: Card[];
+  in_play?: Card[];
+  last_player: string | null;
+  last_set?: Card[] | null;
   players: Player[];
-  remaining: number;
+  remaining?: number;
 };
 
 export type Move = {

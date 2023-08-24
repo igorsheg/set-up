@@ -18,11 +18,26 @@ use crate::{
 pub struct Server {
     host: String,
     port: u16,
+    is_production: bool,
+}
+
+pub struct AppState {
+    is_production: bool,
+}
+
+impl AppState {
+    pub fn new(is_production: bool) -> Self {
+        Self { is_production }
+    }
 }
 
 impl Server {
-    pub fn new(host: String, port: u16) -> Self {
-        Self { host, port }
+    pub fn new(host: String, port: u16, is_production: bool) -> Self {
+        Self {
+            host,
+            port,
+            is_production,
+        }
     }
 
     pub async fn run(&self) {
@@ -47,10 +62,11 @@ impl Server {
             ]);
 
         let context = Arc::new(Mutex::new(Context::new()));
+        let app_state = Arc::new(AppState::new(self.is_production));
 
         let api_routes = axum::Router::new()
             .route("/new", get(new_room_handler))
-            .route("/past_rooms", get(get_past_rooms))
+            .route("/games", get(get_past_rooms))
             .route("/game/:room_code", get(check_game_exists))
             .route("/auth", get(init_client))
             .route("/ws", get(ws_handler));
@@ -59,6 +75,7 @@ impl Server {
             .nest("/api", api_routes)
             .fallback(handle_client_proxy)
             .layer(cors)
+            .layer(Extension(app_state))
             .layer(Extension(context));
 
         println!("Listening on {}", &addr);
@@ -70,21 +87,41 @@ impl Server {
     }
 }
 
-pub async fn handle_client_proxy(mut req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    let client_port = "5173".to_string();
+pub async fn handle_client_proxy(
+    Extension(app_state): Extension<Arc<AppState>>,
+    mut req: Request<Body>,
+) -> Result<Response<Body>, Infallible> {
+    if app_state.is_production {
+        let path = req.uri().path();
 
-    let path = req.uri().path();
-    let path_query = req
-        .uri()
-        .path_and_query()
-        .map(|v| v.as_str())
-        .unwrap_or(path);
+        let file_path = if path == "/" {
+            "build/index.html".to_string()
+        } else {
+            format!("path/to/react/build/dir{}", path)
+        };
 
-    let uri = format!("http://{}:{}{}", "localhost", client_port, path_query);
-    *req.uri_mut() = Uri::try_from(uri).unwrap();
+        let data = tokio::fs::read(file_path)
+            .await
+            .unwrap_or_else(|_| Vec::new());
 
-    let client = Client::new();
-    let resp = client.request(req).await.unwrap();
+        let resp = Response::builder().body(Body::from(data)).unwrap();
 
-    Ok(resp)
+        Ok(resp)
+    } else {
+        let client_port = "5173".to_string();
+
+        let path_query = req
+            .uri()
+            .path_and_query()
+            .map(|v| v.as_str())
+            .unwrap_or(req.uri().path());
+
+        let uri = format!("http://{}:{}{}", "localhost", client_port, path_query);
+        *req.uri_mut() = Uri::try_from(uri).unwrap();
+
+        let client = Client::new();
+        let resp = client.request(req).await.unwrap();
+
+        Ok(resp)
+    }
 }

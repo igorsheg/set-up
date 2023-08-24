@@ -30,7 +30,7 @@ globalStyle("html, body", {
 globalStyle("body", {
   lineHeight: 1.5,
   fontWeight: 500,
-  WebkitFontSmoothing: "antialiased",
+  WebkitFontSmoothing: "grayscale",
   background: vars.colors.background,
   color: vars.colors.text,
 });
@@ -86,5 +86,8 @@ globalStyle("button, fieldset, input", {
 });
 
 globalStyle("button:focus-visible", {
+  boxShadow: `0 0 0 1px ${vars.colorVars.a9}, 0 0 0 4px ${vars.colorVars.a5}`,
+});
+globalStyle("input:focus-visible", {
   boxShadow: `0 0 0 1px ${vars.colorVars.a9}, 0 0 0 4px ${vars.colorVars.a5}`,
 });

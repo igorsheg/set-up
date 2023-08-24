@@ -56,10 +56,10 @@ export const button = recipe({
       outline: {
         color: vars.colorVars.d12,
         backgroundColor: "transparent",
-        boxShadow: `inset 0 0 0 2px ${vars.colors.d8}, ${vars.shadows.xs}`,
+        boxShadow: `inset 0 0 0 1px ${vars.colors.d8}, ${vars.shadows.xs}`,
 
         ":hover": {
-          boxShadow: `inset 0 0 0 2px ${vars.colors.d12}, ${vars.shadows.xs}`,
+          boxShadow: `inset 0 0 0 1px ${vars.colors.d12}, ${vars.shadows.xs}`,
         },
       },
       ghost: { color: vars.colors.text, backgroundColor: "transparent" },
@@ -134,9 +134,9 @@ export const button = recipe({
       },
       style: {
         color: vars.colors.background,
-        boxShadow: `inset 0 0 0 2px ${vars.colors.d11}`,
+        boxShadow: `inset 0 0 0 1px ${vars.colors.d11}`,
         ":hover": {
-          boxShadow: `inset 0 0 0 2px ${vars.colors.d1}`,
+          boxShadow: `inset 0 0 0 1px ${vars.colors.d1}`,
         },
       },
     },
@@ -147,12 +147,10 @@ export const button = recipe({
       },
       style: {
         color: vars.colors.background,
-        boxShadow: `inset 0 0 0 2px ${vars.colors.d11}`,
-        // border: `2px solid ${vars.colorVars.d11}`,
+        boxShadow: `inset 0 0 0 1px ${vars.colors.d11}`,
 
         ":hover": {
-          boxShadow: `inset 0 0 0 2px ${vars.colors.d1}`,
-          // border: `2px solid ${vars.colorVars.d1}`,
+          boxShadow: `inset 0 0 0 1px ${vars.colors.d1}`,
         },
       },
     },

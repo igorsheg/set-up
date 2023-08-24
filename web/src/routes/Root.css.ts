@@ -1,8 +1,7 @@
 import { style } from "@vanilla-extract/css";
 
-export const gamePageStyles = style({
+export const rootStyles = style({
   height: "100vh",
-  width: "100vw",
   display: "flex",
   overflow: "hidden",
   justifyContent: "center",

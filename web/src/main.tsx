@@ -1,20 +1,22 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
 import "@styles/global.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Game from "@routes/game.tsx";
+import Game from "@routes/Game/Game.tsx";
 import { Provider } from "react-redux";
-import { store } from "./store.tsx";
 import "@styles/index.css.ts";
+import RootLayout from "@routes/Root.tsx";
+import Lobby from "@routes/Lobby/Lobby.tsx";
+import { store } from "@store/index";
+
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
-  },
-  {
-    path: "/game/:room_code",
-    element: <Game />,
+    element: <RootLayout />,
+    children: [
+      { path: "/", element: <Lobby /> },
+      { path: "/game/:room_code", element: <Game /> },
+    ],
   },
 ]);
 

@@ -1,7 +1,8 @@
 import Button from "@components/Button/Button";
 import DropdownMenu, { DropdownItem } from "@components/Dropdown/Dropdown";
-import { IconDots, IconLogout2, IconUsersPlus } from "@tabler/icons-react";
+import { IconDots } from "@tabler/icons-react";
 import { FC, PropsWithChildren } from "react";
+import { LogOut, UserPlus } from "lucide-react";
 
 export enum GameMenuAction {
   invite = "invite",
@@ -29,13 +30,13 @@ export const GameMenu: FC<PropsWithChildren<GameMenuProps>> = ({
       }
     >
       <DropdownItem
-        icon={<IconUsersPlus />}
+        icon={<UserPlus />}
         onSelect={() => onItemSelect(GameMenuAction.invite)}
       >
         Invite players
       </DropdownItem>
       <DropdownItem
-        icon={<IconLogout2 />}
+        icon={<LogOut />}
         onSelect={() => onItemSelect(GameMenuAction.leave)}
       >
         Leave game

@@ -1,25 +1,16 @@
-import { FC, PropsWithChildren, useEffect } from "react";
+import { FC, PropsWithChildren } from "react";
 import { Data, Player } from "src/types";
 import * as styles from "./Pill.css";
 import Box from "@components/Box/Box";
 import { AnimatePresence, motion } from "framer-motion";
 import Tooltip from "@components/Tooltip/Tooltip";
 import { vars } from "@styles/index.css";
-import {
-  IconCards,
-  IconHandThreeFingers,
-  IconPointFilled,
-} from "@tabler/icons-react";
 import { cx } from "../../util/cx";
-import { usePrevious } from "../../hooks/usePrevious";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  AppDispatch,
-  RootState,
-  displayNotificationWithTimer,
-} from "../../store";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store";
 import { GameMenu, GameMenuAction } from "../../menus/GameMenu";
 import Button from "@components/Button/Button";
+import { Hand, Sparkle } from "lucide-react";
 
 interface PillProps {
   game: Data;
@@ -31,31 +22,9 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
   handleRequest,
   onMenuItemSelect,
 }) => {
-  const prevGameState = usePrevious(game);
-
-  const dispatch = useDispatch<AppDispatch>();
   const notifications = useSelector(
-    (state: RootState) => state.game.notifications,
+    (state: RootState) => state.gameManager.notifications,
   );
-
-  useEffect(() => {
-    if (prevGameState && prevGameState.players) {
-      const prevPlayerNames = new Set(
-        prevGameState.players.map((p: Player) => p.id),
-      );
-      const newPlayer = game.players.find(
-        (player) => !prevPlayerNames.has(player.id),
-      );
-      if (newPlayer) {
-        console.log("New Player Detected:", newPlayer.name);
-        dispatch(
-          displayNotificationWithTimer(
-            `Player ${newPlayer.name} Joined the game`,
-          ),
-        );
-      }
-    }
-  }, [game.players, prevGameState, dispatch]);
 
   const variants = {
     collapsed: {
@@ -73,7 +42,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       variants={variants}
       initial="collapsed"
-      animate={notifications.show ? "expanded" : "collapsed"}
+      animate={notifications.length ? "expanded" : "collapsed"}
       className={cx(styles.pillWrap)}
     >
       <Box orientation="row" yAlign="center" gap={vars.sizes.s6}>
@@ -102,23 +71,32 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
           <GameMenu onItemSelect={onMenuItemSelect} />
         </Box>
       </Box>
-
-      {notifications.show && (
-        <AnimatePresence>
-          <Box
-            orientation="row"
-            style={{ height: "100%" }}
-            xAlign="center"
-            yAlign="center"
-            gap={vars.sizes.s1}
-          >
-            <IconPointFilled style={{ color: vars.colors.sucess }} />
-            <span style={{ ...vars.typography.base }}>
-              {notifications.message}
-            </span>
-          </Box>
-        </AnimatePresence>
-      )}
+      <AnimatePresence>
+        {notifications.map(
+          (notification, index) =>
+            notification.active && (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{ height: "100%" }}
+              >
+                <Box
+                  orientation="row"
+                  style={{ height: "100%" }}
+                  xAlign="center"
+                  yAlign="center"
+                  gap={vars.sizes.s1}
+                >
+                  <span style={{ ...vars.typography.base }}>
+                    {notification.message}
+                  </span>
+                </Box>
+              </motion.div>
+            ),
+        )}
+      </AnimatePresence>{" "}
     </motion.div>
   );
 };
@@ -135,7 +113,7 @@ const Players: FC<PropsWithChildren<{ players: Player[] }>> = ({ players }) => {
   return (
     <div className={styles.avatars}>
       {topScoredPlayers.map((player: Player) => (
-        <Avatar key={`${player.id}-avatar`} player={player} />
+        <Avatar key={`${player.client_id}-avatar`} player={player} />
       ))}
       {players.length - topScoredPlayers.length > 0 && (
         <Box
@@ -174,7 +152,7 @@ const Avatar: FC<PropsWithChildren<AvatarProps>> = ({ player }) => {
       <Tooltip content={<AvatarTooltipContent player={player} />}>
         <span className={styles.avatarSpan}>
           <img
-            src={`https://source.boringavatars.com/beam/36/${player.name}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
+            src={`https://source.boringavatars.com/beam/40/${player.name}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
             alt="avatar"
           />
         </span>
@@ -196,7 +174,7 @@ const AvatarTooltipContent: FC<PropsWithChildren<AvatarProps>> = ({
       <Box xAlign="start" gap={0}>
         <span className={styles.avatarSpan}>
           <img
-            src={`https://source.boringavatars.com/beam/36/${player.name}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
+            src={`https://source.boringavatars.com/beam/40/${player.name}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
             alt="avatar"
           />
         </span>
@@ -204,7 +182,7 @@ const AvatarTooltipContent: FC<PropsWithChildren<AvatarProps>> = ({
       </Box>
       <Box gap={vars.sizes.s1}>
         <Box gap={vars.sizes.s1} yAlign="center" orientation="row">
-          <IconCards style={{ width: vars.sizes.s4, height: vars.sizes.s4 }} />
+          <Sparkle style={{ width: vars.sizes.s4, height: vars.sizes.s4 }} />
           <span style={{ color: vars.colorVars.d10, ...vars.typography.m }}>
             <strong style={{ color: vars.colorVars.d12, fontWeight: 500 }}>
               {player.score}
@@ -214,8 +192,8 @@ const AvatarTooltipContent: FC<PropsWithChildren<AvatarProps>> = ({
         </Box>
         {player.request && (
           <Box gap={vars.sizes.s1} yAlign="center" orientation="row">
-            <IconHandThreeFingers size={vars.sizes.s4} />
-            <span style={{ ...vars.typography.m }}>Requseted cards</span>
+            <Hand size={vars.sizes.s4} />
+            <span style={{ ...vars.typography.m }}>Requested cards</span>
           </Box>
         )}
       </Box>

@@ -2,7 +2,7 @@ import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
 import Dialog, { DialogProps, RadixDialog } from "@components/Dialog/Dialog";
 import { buttonStyles, dialogStyles } from "@components/Dialog/Dialog.css";
-import { IconShare2 } from "@tabler/icons-react";
+import { Share } from "lucide-react";
 import { FC, PropsWithChildren } from "react";
 
 interface InvitePlayersProps extends Pick<DialogProps, "open" | "onClose"> {
@@ -17,7 +17,24 @@ export const InvitePlayersDialog: FC<PropsWithChildren<InvitePlayersProps>> = (
     text: "Join a game of Set!",
     url: "https://developer.mozilla.org",
   };
-
+  const handleSharing = async () => {
+    if (navigator.share) {
+      try {
+        await navigator
+          .share(shareData)
+          .then(() =>
+            console.log("Hooray! Your content was shared to tha world"),
+          );
+      } catch (error) {
+        console.log(`Oops! I couldn't share to the world because: ${error}`);
+      }
+    } else {
+      // fallback code
+      console.log(
+        "Web share is currently not supported on this browser. Please provide a callback",
+      );
+    }
+  };
   return (
     <Dialog
       {...props}
@@ -36,8 +53,8 @@ export const InvitePlayersDialog: FC<PropsWithChildren<InvitePlayersProps>> = (
         <Button
           dimentions="large"
           variant="outline"
-          onClick={() => navigator.share(shareData)}
-          btnPrefix={<IconShare2 />}
+          onClick={handleSharing}
+          btnPrefix={<Share />}
         >
           Share
         </Button>

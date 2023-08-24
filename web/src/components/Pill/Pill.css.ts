@@ -79,13 +79,13 @@ export const pillSection = style({});
 
 globalStyle(`${pillSection} h5`, {
   ...vars.typography.s,
-  fontWeight: "400",
+  fontWeight: "500",
   color: vars.colors.d9,
 });
 
 globalStyle(`${pillSection} span`, {
   ...vars.typography.s,
-  fontWeight: "500",
+  fontWeight: "600",
 });
 
 export const requestButton = style({

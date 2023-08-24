@@ -4,7 +4,8 @@ import Dialog, { DialogProps, RadixDialog } from "@components/Dialog/Dialog";
 import { buttonStyles, dialogStyles } from "@components/Dialog/Dialog.css";
 import { FC, PropsWithChildren, useState } from "react";
 
-interface NewGameDialogProps extends Pick<DialogProps, "open" | "onClose"> {
+interface NewGameDialogProps
+  extends Pick<DialogProps, "open" | "onClose" | "onOpenChange"> {
   onSubmit: (playerUserName: string) => void;
 }
 export const NewGameDialog: FC<PropsWithChildren<NewGameDialogProps>> = (

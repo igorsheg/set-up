@@ -21,6 +21,7 @@ pub struct ServerConfiguration {
 
 pub struct Configuration {
     pub server: ServerConfiguration,
+    pub is_production: bool,
 }
 
 impl Default for ServerConfiguration {
@@ -42,6 +43,10 @@ impl Default for Configuration {
     fn default() -> Configuration {
         Configuration {
             server: ServerConfiguration::new(),
+            is_production: match env::var("APP_ENV") {
+                Ok(value) => value == "production",
+                Err(_) => panic!("APP_ENV must be set"),
+            },
         }
     }
 }

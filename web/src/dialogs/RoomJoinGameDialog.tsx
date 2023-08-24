@@ -5,7 +5,7 @@ import { buttonStyles, dialogStyles } from "@components/Dialog/Dialog.css";
 import { FC, PropsWithChildren, useState } from "react";
 
 interface RoomJoinGameDialogProps
-  extends Pick<DialogProps, "open" | "onClose"> {
+  extends Pick<DialogProps, "open" | "onClose" | "dismissible"> {
   onSubmit: (room_code: string, playerUserName: string) => void;
   room_code: string;
 }

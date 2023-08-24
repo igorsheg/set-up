@@ -18,7 +18,9 @@ export interface DropdownProps extends PropsWithChildren {
 const DropdownMenu: FC<PropsWithChildren<DropdownProps>> = (props) => {
   return (
     <RadixDropdownMenu.Root {...props.menuProps}>
-      <RadixDropdownMenu.Trigger>{props.trigger}</RadixDropdownMenu.Trigger>
+      <RadixDropdownMenu.Trigger asChild>
+        {props.trigger}
+      </RadixDropdownMenu.Trigger>
       <RadixDropdownMenu.Portal>
         <RadixDropdownMenu.Content
           collisionPadding={{ right: 16 }}

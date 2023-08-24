@@ -35,7 +35,6 @@ export const dropdownMenuItem = style({
   display: "flex",
   alignItems: "center",
   height: vars.sizes.s8,
-  // padding: `0 ${vars.sizes.s3}`,
   position: "relative",
   userSelect: "none",
   outline: "none",

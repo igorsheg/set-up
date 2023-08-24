@@ -1,17 +1,21 @@
 import Board from "@components/Board/Board";
-import * as styles from "./game.css";
+import * as styles from "./Game.css";
 import Pill from "@components/Pill/Pill";
 import { Player } from "src/types";
-import { AppDispatch, MessageType, RootState, setRoomCode } from "../store";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { RoomJoinGameDialog } from "../dialogs/RoomJoinGameDialog";
-import { InvitePlayersDialog } from "../dialogs/InvitePlayersDialog";
-import { GameMenuAction } from "../menus/GameMenu";
+import { RoomJoinGameDialog } from "@dialogs/RoomJoinGameDialog";
+import { InvitePlayersDialog } from "@dialogs/InvitePlayersDialog";
+import { GameMenuAction } from "@menus/GameMenu";
+import { checkRoomExists, joinRoom } from "@services/roomService";
+import { AppDispatch, RootState } from "@store/index";
+import { requestCards } from "@services/gameService";
 
 export default function Game() {
-  const gameData = useSelector((state: RootState) => state.game.data);
+  const gameData = useSelector(
+    (state: RootState) => state.gameManager.gameData,
+  );
   const dispatch = useDispatch<AppDispatch>();
 
   const navigate = useNavigate();
@@ -34,30 +38,18 @@ export default function Game() {
   };
 
   const handleGameInit = async (room_code: string) => {
-    const isRoomExists = await checkRoomExists(room_code);
+    const isRoomExists = await dispatch(checkRoomExists(room_code));
 
-    if (isRoomExists) {
+    if (isRoomExists.payload) {
       setRoomJoinDialogOpen(true);
     } else {
       console.log("Room does not exist");
     }
   };
 
-  const checkRoomExists = async (room_code: string): Promise<boolean> => {
-    const res = await fetch(`/api/game/${room_code}`, {
-      credentials: "include",
-    });
-
-    return res.status === 200;
-  };
-
   const joinGameHandler = (room_code: string, playerUsername: string) => {
     new Audio("/sfx/navigation_forward-selection.wav").play();
-    dispatch(setRoomCode(room_code));
-    dispatch({
-      type: MessageType.JOIN,
-      payload: { player_username: playerUsername, room_code },
-    });
+    dispatch(joinRoom(room_code, playerUsername));
     setRoomJoinDialogOpen(false);
   };
 
@@ -71,14 +63,6 @@ export default function Game() {
     }
   }, [room_code, gameData]);
 
-  const handleNew = () => false;
-
-  const handleRequest = () => {
-    dispatch({
-      type: MessageType.REQUEST,
-    });
-  };
-
   if (gameData && gameData.game_over) {
     const highScore = Math.max(...gameData.players.map((p: Player) => p.score));
     const winners = gameData.players
@@ -90,7 +74,7 @@ export default function Game() {
         <div className="game-over">
           <img width="100%" src="" alt="game-over" />
           <div>{`Winner: ${winners.join("& ")}`}</div>
-          <button type="button" onClick={() => handleNew()}>
+          <button type="button" onClick={() => false}>
             Play again?
           </button>
         </div>
@@ -105,7 +89,7 @@ export default function Game() {
           <>
             <Board />
             <Pill
-              handleRequest={handleRequest}
+              handleRequest={() => dispatch(requestCards())}
               game={gameData}
               onMenuItemSelect={handleGameMenuitemSelect}
             />
@@ -113,12 +97,10 @@ export default function Game() {
         )}
       </div>
       <RoomJoinGameDialog
-        onClose={() => navigate("/")}
         room_code={room_code ?? ""}
-        onSubmit={(room_code, playerUserName) =>
-          joinGameHandler(room_code, playerUserName)
-        }
+        onSubmit={joinGameHandler}
         open={roomJoinDialogOpen}
+        dismissible={false}
       />
       <InvitePlayersDialog
         roomCode={room_code ?? ""}

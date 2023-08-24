@@ -192,7 +192,7 @@ impl Context {
         Ok(())
     }
 
-    pub async fn handle_new(&mut self, client_id: Uuid) -> Result<(), Error> {
+    pub async fn handle_new(&mut self, _client_id: Uuid) -> Result<(), Error> {
         let room_code = nanoid::nanoid!(6);
 
         let mut game = Game::new();
