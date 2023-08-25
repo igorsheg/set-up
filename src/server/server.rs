@@ -9,12 +9,6 @@ use std::{convert::Infallible, net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 use tower_http::cors::CorsLayer;
 
-use crate::{
-    client::{init_client, ws_handler},
-    context::Context,
-    handlers::game::{check_game_exists, get_past_rooms, new_room_handler},
-};
-
 pub struct Server {
     host: String,
     port: u16,

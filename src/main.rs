@@ -1,3 +1,5 @@
+use server::Server;
+
 use crate::config::Configuration;
 
 extern crate log;
@@ -9,6 +11,7 @@ pub mod game;
 pub mod handlers;
 pub mod infra;
 pub mod message;
+pub mod room;
 pub mod server;
 
 #[tokio::main]
@@ -16,7 +19,7 @@ async fn main() -> std::io::Result<()> {
     let config = Configuration::new();
     env_logger::init();
 
-    let server = server::Server::new(
+    let server = Server::new(
         config.server.host,
         config.server.port.parse().unwrap(),
         config.is_production,
