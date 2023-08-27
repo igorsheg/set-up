@@ -4,13 +4,22 @@ use uuid::Uuid;
 
 use crate::{
     client::ClientManager,
-    game::{game::Game, player::Player},
+    game::{
+        game::{Game, Move},
+        player::Player,
+    },
     infra::error::Error,
     message::WsMessage,
 };
 
 pub struct RoomManager {
     rooms: HashMap<String, Game>,
+}
+
+impl Default for RoomManager {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RoomManager {
@@ -28,8 +37,8 @@ impl RoomManager {
         self.rooms.remove(name);
     }
 
-    pub fn get_game_state(&self, room_code: &str) -> Result<&Game, Error> {
-        if let Some(game_state) = self.rooms.get(room_code) {
+    pub fn get_game_state(&mut self, room_code: &str) -> Result<&mut Game, Error> {
+        if let Some(game_state) = self.rooms.get_mut(room_code) {
             Ok(game_state)
         } else {
             Err(Error::GameError("Game not found".to_string()))
@@ -42,64 +51,93 @@ impl RoomManager {
         client_id: Uuid,
         client_manager: &mut ClientManager,
     ) -> Result<(), Error> {
-        let room_code = message
-            .payload
-            .get("room_code")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default()
-            .to_string();
+        let room_code = message.get_room_code()?;
+        let game_state = self.get_game_state(&room_code)?;
+        let client = client_manager.find_client(client_id)?;
+        let player_username = message.get_player_username()?;
+        let player = Player::new(client.id, player_username);
 
-        log::debug!("Client {} joining room {}", client_id, room_code);
+        client.set_room_code(room_code);
+        game_state.add_player(player);
 
-        if let Some(game) = self.rooms.get_mut(&room_code) {
-            if let Ok(client) = client_manager.find_client(client_id) {
-                client.room_code = Some(room_code.clone());
-
-                if let Some(name) = message
-                    .payload
-                    .get("player_username")
-                    .and_then(|v| v.as_str())
-                {
-                    let player = Player::new(client.id, name.to_string());
-                    game.add_player(player);
-                }
-            } else {
-                return Err(Error::GameError("Client not found".to_string()));
-            }
-        } else {
-            return Err(Error::GameError("Game not found".to_string()));
-        }
-
-        self.broadcast_game_state(&message, client_manager).await?;
+        client_manager.broadcast_game_state(&message, self).await?;
 
         Ok(())
     }
 
-    pub async fn broadcast_game_state(
-        &self,
-        message: &WsMessage,
+    pub async fn handle_leave(
+        &mut self,
+        client_id: Uuid,
         client_manager: &mut ClientManager,
     ) -> Result<(), Error> {
-        let room_code = message
-            .payload
-            .get("room_code")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default()
-            .to_string();
+        let client = client_manager.find_client(client_id)?;
+        let room_code = client.get_room_code()?;
+        let game_state = self.get_game_state(room_code)?;
 
-        let game_state = self.get_game_state(&room_code)?;
-        let clients_in_room = client_manager.get_clients_in_room(&room_code);
+        game_state.remove_player(client_id);
 
-        for client in clients_in_room {
-            client_manager
-                .send_message(game_state, client.id)
-                .await
-                .map_err(|err| {
-                    Error::WebsocketError("Failed to send message to client".to_string())
-                })?;
-            // ... send game_state to client ...
-        }
+        let message = WsMessage::new_update_message(room_code);
+        client_manager.broadcast_game_state(&message, self).await?;
 
         Ok(())
+    }
+
+    pub async fn handle_move(
+        &mut self,
+        message: WsMessage,
+        client_id: Uuid,
+        client_manager: &mut ClientManager,
+    ) -> Result<(), Error> {
+        let game_move: Move = message.get_payload_as()?;
+
+        let game_state = self.get_game_state(&game_move.room_code)?;
+        game_state.make_move(client_id, game_move.cards)?;
+
+        client_manager.broadcast_game_state(&message, self).await?;
+
+        Ok(())
+    }
+
+    pub async fn handle_request(
+        &mut self,
+        message: WsMessage,
+        client_id: Uuid,
+        client_manager: &mut ClientManager,
+    ) -> Result<(), Error> {
+        let room_code = message.get_room_code()?;
+        let game_state = self.get_game_state(&room_code)?;
+
+        for player in game_state.players.iter_mut() {
+            if player.client_id == client_id {
+                player.request = true;
+            }
+        }
+        let request = game_state.players.iter().all(|player| player.request);
+
+        if request && !game_state.deck.cards.is_empty() {
+            game_state.add_cards();
+            for player in game_state.players.iter_mut() {
+                player.request = false; // Reset the request flags
+            }
+        }
+
+        client_manager.broadcast_game_state(&message, self).await?;
+
+        Ok(())
+    }
+
+    pub async fn handle_new(&mut self) -> Result<String, Error> {
+        let room_code = nanoid::nanoid!(6);
+
+        let mut game = Game::new();
+        let mut players = game.players.clone();
+        for player in &mut players {
+            player.score = 0;
+        }
+        game.players = players;
+
+        self.rooms.insert(room_code.clone(), game);
+
+        Ok(room_code)
     }
 }

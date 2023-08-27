@@ -53,7 +53,22 @@ impl Default for Configuration {
 
 impl Configuration {
     pub fn new() -> Self {
-        dotenv().expect("Unable to find .env file. Create one based on the .env.example");
-        Configuration::default()
+        let _ = dotenv();
+
+        let is_production = match env::var("APP_ENV") {
+            Ok(value) => value == "production",
+            Err(_) => panic!("APP_ENV must be set"),
+        };
+
+        let conf = Configuration {
+            server: ServerConfiguration::new(),
+            is_production,
+        };
+
+        if !is_production && dotenv().is_err() {
+            panic!("Unable to find .env file. Create one based on the .env.example");
+        }
+
+        conf
     }
 }

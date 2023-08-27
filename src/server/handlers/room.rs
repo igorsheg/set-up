@@ -1,48 +1,41 @@
-use std::{collections::HashSet, sync::Arc};
-
+use crate::context::Context;
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
 use axum_extra::extract::CookieJar;
-use tokio::sync::Mutex;
+use std::{collections::HashSet, sync::Arc};
 use uuid::Uuid;
-
-use crate::{context::Context, game::game::Game};
 
 pub async fn check_game_exists(
     Path(room_code): Path<String>,
-    Extension(context): Extension<Arc<Mutex<Context>>>,
+    Extension(context): Extension<Arc<Context>>,
 ) -> impl IntoResponse {
-    let ctx = context.lock().await;
+    let mut room_manager = context.room_manager().lock().await;
 
-    match ctx.rooms.get(&room_code) {
-        Some(_) => StatusCode::OK,
-        None => StatusCode::NOT_FOUND,
+    match room_manager.get_game_state(&room_code) {
+        Ok(_) => StatusCode::OK,
+        Err(_) => StatusCode::NOT_FOUND,
     }
 }
 
-pub async fn new_room_handler(
-    Extension(context): Extension<Arc<Mutex<Context>>>,
-) -> impl IntoResponse {
-    let mut ctx = context.lock().await;
-    let room_code = nanoid::nanoid!(6);
-    let game = Game::new();
-    ctx.rooms.insert(room_code.clone(), game);
-    log::debug!("Created new game with room code {}", room_code);
-    Json(room_code)
+#[axum::debug_handler]
+pub async fn new_room_handler(Extension(context): Extension<Arc<Context>>) -> impl IntoResponse {
+    if let Ok(room_code) = context.new_room().await {
+        Json(room_code)
+    } else {
+        Json("Error creating room".to_string())
+    }
 }
 
 pub async fn get_past_rooms(
-    Extension(context): Extension<Arc<Mutex<Context>>>,
+    Extension(context): Extension<Arc<Context>>,
     jar: CookieJar,
 ) -> impl IntoResponse {
     let cookie = jar.get("client_id");
     let client_id = Uuid::parse_str(cookie.unwrap().value()).unwrap_or_else(|_| Uuid::new_v4());
 
-    log::debug!("Client ID: {:?}", client_id);
-
-    let ctx = context.lock().await;
-    if let Some(client_data) = ctx.clients_data.get(&client_id) {
-        log::debug!("Client: {:?}", client_data);
-        return Json(client_data.rooms_joined.clone());
-    }
-    Json(HashSet::new())
+    // let ctx = context.lock().await;
+    // if let Some(client_data) = ctx.clients_data.get(&client_id) {
+    //     log::debug!("Client: {:?}", client_data);
+    //     return Json(client_data.rooms_joined.clone());
+    // }
+    Json(HashSet::<String>::new())
 }

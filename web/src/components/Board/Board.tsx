@@ -57,7 +57,7 @@ export default function Board(): React.ReactElement {
       setNumberOfColumns(3);
     } else {
       if (in_play && in_play.length > 12) {
-        const additionalColumns = Math.floor(in_play.length / 12);
+        const additionalColumns = Math.floor(in_play.length / 11);
         setNumberOfColumns(3 + additionalColumns);
       } else {
         setNumberOfColumns(3);

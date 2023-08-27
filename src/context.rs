@@ -1,47 +1,71 @@
+use crate::{client::ClientManager, infra::error::Error, message::MessageType, room::RoomManager};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use crate::{client::ClientManager, infra::error::Error, message::MessageType, room::RoomManager};
-
 pub struct Context {
-    client_manager: ClientManager,
-    room_manager: RoomManager,
+    client_manager: Arc<Mutex<ClientManager>>,
+    room_manager: Arc<Mutex<RoomManager>>,
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Context {
     pub fn new() -> Self {
         Self {
-            client_manager: ClientManager::new(),
-            room_manager: RoomManager::new(),
+            client_manager: Arc::new(Mutex::new(ClientManager::new())),
+            room_manager: Arc::new(Mutex::new(RoomManager::new())),
         }
     }
 
-    pub fn client_manager(&self) -> &ClientManager {
+    pub fn client_manager(&self) -> &Arc<Mutex<ClientManager>> {
         &self.client_manager
     }
 
-    pub fn room_manager(&self) -> &RoomManager {
+    pub fn room_manager(&self) -> &Arc<Mutex<RoomManager>> {
         &self.room_manager
     }
 
+    pub async fn new_room(&self) -> Result<String, Error> {
+        let mut room_manager = self.room_manager.lock().await;
+        let room_code = room_manager.handle_new().await?;
+        Ok(room_code)
+    }
+
     pub async fn handle_message(
-        &mut self,
+        &self,
         message_type: MessageType,
         client_id: Uuid,
     ) -> Result<(), Error> {
+        let mut room_manager = self.room_manager.lock().await;
+        let mut client_manager = self.client_manager.lock().await;
         match message_type {
             MessageType::Join(message) => {
-                self.client_manager
-                    .handle_join(message, client_id, &mut self.room_manager)
+                room_manager
+                    .handle_join(message, client_id, &mut client_manager)
                     .await
             }
-            MessageType::Move(message) => self.room_manager.handle_move(message, client_id).await,
-            MessageType::Request(message) => {
-                self.room_manager.handle_request(message, client_id).await
+            MessageType::Move(message) => {
+                room_manager
+                    .handle_move(message, client_id, &mut client_manager)
+                    .await
             }
-            MessageType::New => self.room_manager.handle_new().await,
+            MessageType::Request(message) => {
+                room_manager
+                    .handle_request(message, client_id, &mut client_manager)
+                    .await
+            }
+            MessageType::New => {
+                let _ = room_manager.handle_new().await;
+                Ok(())
+            }
             MessageType::Leave => {
-                self.client_manager
-                    .handle_leave(client_id, &mut self.room_manager)
+                room_manager
+                    .handle_leave(client_id, &mut client_manager)
                     .await
             }
         }

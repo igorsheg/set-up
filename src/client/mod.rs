@@ -1,5 +1,6 @@
-pub mod entity;
+#[allow(clippy::module_inception)]
+pub mod client;
 pub mod manager;
 
-pub use entity::Client;
+pub use client::Client;
 pub use manager::ClientManager;
