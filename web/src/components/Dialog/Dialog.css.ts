@@ -80,6 +80,10 @@ export const dialogStyles = {
     color: vars.colorVars.d12,
     boxShadow: `0 0 0 1px ${vars.colorVars.d7}`,
     height: vars.sizes.s10,
+
+    ":read-only": {
+      background: vars.colorVars.d4,
+    },
   }),
 };
 

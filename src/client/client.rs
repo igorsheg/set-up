@@ -14,7 +14,7 @@ pub struct Client {
     pub id: Uuid,
     pub tx: mpsc::Sender<Game>,
     state: ClientState,
-    // pub room_code: Option<String>,
+    past_rooms: Vec<String>,
 }
 
 impl Client {
@@ -23,6 +23,7 @@ impl Client {
             id,
             tx,
             state: ClientState::Lobby,
+            past_rooms: vec![],
         }
     }
 
@@ -40,6 +41,19 @@ impl Client {
     }
 
     pub fn set_room_code(&mut self, room_code: String) {
-        self.state = ClientState::InRoom(room_code);
+        self.state = ClientState::InRoom(room_code.clone());
+        self.add_past_room(room_code);
+    }
+
+    pub fn get_past_rooms(&self) -> &Vec<String> {
+        &self.past_rooms
+    }
+
+    pub fn add_past_room(&mut self, room_code: String) {
+        self.past_rooms.push(room_code.clone());
+    }
+
+    pub fn remove_past_room(&mut self, room_code: &str) {
+        self.past_rooms.retain(|room| room != room_code);
     }
 }

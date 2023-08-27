@@ -18,3 +18,6 @@ Thumbs.db
 # Ignore user-specific IDE configuration files
 .idea/
 .vscode/
+
+dist
+web/dist
