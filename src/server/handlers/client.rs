@@ -36,32 +36,22 @@ pub async fn handle_client_proxy(
         }
 
         let path = Path::new(ASSETS_DIR).join(filename);
-        if !path.exists() {
-            return Ok(Response::builder()
-                .status(StatusCode::NOT_FOUND)
-                .body(Body::empty())
-                .unwrap());
-        }
+        let buf = if path.exists() {
+            read(&path).await.unwrap()
+        } else {
+            read(Path::new(ASSETS_DIR).join("index.html"))
+                .await
+                .unwrap()
+        };
 
-        match read(&path).await {
-            Ok(buf) => {
-                let mime_type = mime_guess::from_path(&path).first_or_octet_stream();
-                let resp = Response::builder()
-                    .header("Content-Type", mime_type.as_ref())
-                    .header("Content-Length", buf.len().to_string())
-                    .body(Body::from(buf))
-                    .unwrap();
+        let mime_type = mime_guess::from_path(&path).first_or_octet_stream();
+        let resp = Response::builder()
+            .header("Content-Type", mime_type.as_ref())
+            .header("Content-Length", buf.len().to_string())
+            .body(Body::from(buf))
+            .unwrap();
 
-                Ok(resp)
-            }
-            Err(e) => {
-                log::error!("{}", e);
-                Ok(Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
-                    .body(Body::empty())
-                    .unwrap())
-            }
-        }
+        Ok(resp)
     } else {
         let client_port = "5173".to_string();
 
