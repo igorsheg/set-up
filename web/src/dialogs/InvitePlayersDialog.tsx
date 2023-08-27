@@ -81,6 +81,10 @@ export const InvitePlayersDialog: FC<PropsWithChildren<InvitePlayersProps>> = (
         <Tooltip side="top" open={roomCodeCopied} content="Copied to clipboard">
           <input
             readOnly
+            style={{
+              letterSpacing: "0.2em",
+              textAlign: "center",
+            }}
             onClick={() => handleCopyToClipboard("code")}
             value={props.roomCode}
             className={dialogStyles.input}

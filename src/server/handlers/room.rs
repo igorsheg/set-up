@@ -1,7 +1,10 @@
-use crate::context::Context;
+use crate::{
+    context::Context,
+    infra::error::{AppError, Error},
+};
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
 use axum_extra::extract::CookieJar;
-use std::{collections::HashSet, sync::Arc};
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub async fn check_game_exists(
@@ -25,17 +28,20 @@ pub async fn new_room_handler(Extension(context): Extension<Arc<Context>>) -> im
     }
 }
 
+#[axum::debug_handler]
 pub async fn get_past_rooms(
     Extension(context): Extension<Arc<Context>>,
     jar: CookieJar,
-) -> impl IntoResponse {
-    let cookie = jar.get("client_id");
-    let client_id = Uuid::parse_str(cookie.unwrap().value()).unwrap_or_else(|_| Uuid::new_v4());
+) -> Result<Json<Vec<String>>, AppError> {
+    let cookie = jar
+        .get("client_id")
+        .ok_or_else(|| Error::AxumError("No client_id cookie found".to_string()))?;
+    let client_id = Uuid::parse_str(cookie.value()).unwrap_or_else(|_| Uuid::new_v4());
 
-    // let ctx = context.lock().await;
-    // if let Some(client_data) = ctx.clients_data.get(&client_id) {
-    //     log::debug!("Client: {:?}", client_data);
-    //     return Json(client_data.rooms_joined.clone());
-    // }
-    Json(HashSet::<String>::new())
+    let mut client_manager = context.client_manager().lock().await;
+    let client = client_manager.find_client(client_id)?;
+
+    let past_rooms = client.get_past_rooms();
+
+    Ok(Json(past_rooms.clone()))
 }

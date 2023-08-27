@@ -13,7 +13,7 @@ use crate::server::server::AppState;
 
 const ASSETS_DIR: &str = "dist";
 
-pub async fn auth(jar: CookieJar) -> Result<(CookieJar, String), StatusCode> {
+pub async fn auth(jar: CookieJar) -> Result<CookieJar, StatusCode> {
     let mut new_jar = jar.clone();
     if new_jar.get("client_id").is_none() {
         let new_id = Uuid::new_v4().to_string();
@@ -22,7 +22,7 @@ pub async fn auth(jar: CookieJar) -> Result<(CookieJar, String), StatusCode> {
         new_jar = new_jar.add(cookie);
     }
 
-    Ok((new_jar, "Please connect to the WebSocket at /ws".into()))
+    Ok(new_jar)
 }
 
 pub async fn handle_client_proxy(
@@ -31,20 +31,24 @@ pub async fn handle_client_proxy(
 ) -> Result<Response<Body>, Infallible> {
     if app_state.is_production {
         let mut filename = req.uri().path().trim_start_matches('/');
-        if filename.is_empty() || filename == "/" {
+        if filename.is_empty() {
             filename = "index.html";
         }
 
         let path = Path::new(ASSETS_DIR).join(filename);
-        let buf = if path.exists() {
-            read(&path).await.unwrap()
+        let (buf, mime_type) = if path.exists() {
+            let mime_type = mime_guess::from_path(&path).first_or_octet_stream();
+            (read(&path).await.unwrap(), mime_type)
         } else {
-            read(Path::new(ASSETS_DIR).join("index.html"))
-                .await
-                .unwrap()
+            let mime_type = mime_guess::from_ext("html").first_or_octet_stream();
+            (
+                read(Path::new(ASSETS_DIR).join("index.html"))
+                    .await
+                    .unwrap(),
+                mime_type,
+            )
         };
 
-        let mime_type = mime_guess::from_path(&path).first_or_octet_stream();
         let resp = Response::builder()
             .header("Content-Type", mime_type.as_ref())
             .header("Content-Length", buf.len().to_string())

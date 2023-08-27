@@ -1,13 +1,13 @@
+import Box from "@components/Box/Box";
+import Button from "@components/Button/Button";
+import { RoomJoinGameDialog } from "@dialogs/RoomJoinGameDialog";
+import { createNewRoom, getPastRooms, joinRoom } from "@services/roomService";
+import { AppDispatch, RootState } from "@store/index";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { NewGameDialog } from "../../dialogs/NewGameDialog";
-import React, { useEffect } from "react";
-import Button from "@components/Button/Button";
-import Box from "@components/Box/Box";
-import { AppDispatch, RootState } from "@store/index";
-import { createNewRoom, getPastRooms, joinRoom } from "@services/roomService";
-import { RoomJoinGameDialog } from "@dialogs/RoomJoinGameDialog";
-import { lobbyStyles } from "./Lobby.css";
+import { lobbyStyles, lobbyButtonStyles } from "./Lobby.css";
 
 export default function Lobby() {
   const navigate = useNavigate();
@@ -80,12 +80,13 @@ export default function Lobby() {
         onSubmit={joinGameHandler}
         open={reqGame.req === "join"}
       />
-      <Button
-        dimentions="large"
+      <button
+        className={lobbyButtonStyles.container}
         onClick={() => setReqGame((draft) => ({ ...draft, req: "new" }))}
       >
-        Start a New Game
-      </Button>
+        <p>Classic Game</p>
+        <span>Play with friends in the classic mode</span>
+      </button>
       {pastRooms.map((roomCode) => (
         <Button
           variant="outline"
