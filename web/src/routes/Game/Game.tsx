@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { RoomJoinGameDialog } from "@dialogs/RoomJoinGameDialog";
 import { InvitePlayersDialog } from "@dialogs/InvitePlayersDialog";
 import { GameMenuAction } from "@menus/GameMenu";
-import { checkRoomExists, joinRoom } from "@services/roomService";
+import { joinRoom } from "@services/roomService";
 import { AppDispatch, RootState } from "@store/index";
 import { requestCards } from "@services/gameService";
 
@@ -37,16 +37,6 @@ export default function Game() {
     }
   };
 
-  const handleGameInit = async (room_code: string) => {
-    const isRoomExists = await dispatch(checkRoomExists(room_code));
-
-    if (isRoomExists.payload) {
-      setRoomJoinDialogOpen(true);
-    } else {
-      console.log("Room does not exist");
-    }
-  };
-
   const joinGameHandler = (room_code: string, playerUsername: string) => {
     new Audio("/sfx/navigation_forward-selection.wav").play();
     dispatch(joinRoom(room_code, playerUsername));
@@ -55,10 +45,10 @@ export default function Game() {
 
   useEffect(() => {
     if (room_code) {
-      if (gameData && gameData.in_play) {
+      if (gameData && gameData.in_play?.length) {
         setRoomJoinDialogOpen(false);
       } else {
-        handleGameInit(room_code);
+        setRoomJoinDialogOpen(true);
       }
     }
   }, [room_code, gameData]);

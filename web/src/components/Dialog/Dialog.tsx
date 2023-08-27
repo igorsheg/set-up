@@ -50,17 +50,18 @@ const Dialog = React.forwardRef<HTMLDivElement, DialogProps>(
                 </Box>
                 <Box>{children}</Box>
 
-                {!isMobile && (
-                  <ActiveComponent.Close asChild>
-                    <button
-                      onClick={onClose}
-                      className={buttonStyles.iconButton}
-                      aria-label="Close"
-                    >
-                      <X />
-                    </button>
-                  </ActiveComponent.Close>
-                )}
+                {!isMobile ||
+                  (dismissible && (
+                    <ActiveComponent.Close asChild>
+                      <button
+                        onClick={onClose}
+                        className={buttonStyles.iconButton}
+                        aria-label="Close"
+                      >
+                        <X />
+                      </button>
+                    </ActiveComponent.Close>
+                  ))}
               </Box>
             </ActiveComponent.Content>
           </ActiveComponent.Portal>

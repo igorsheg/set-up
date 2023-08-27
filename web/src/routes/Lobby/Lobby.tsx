@@ -12,6 +12,13 @@ import { lobbyStyles } from "./Lobby.css";
 export default function Lobby() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const activeRoom = useSelector(
+    (state: RootState) => state.roomManager.activeRoom,
+  );
+  const gameData = useSelector(
+    (state: RootState) => state.gameManager.gameData,
+  );
+
   const [reqGame, setReqGame] = React.useState<{
     req: undefined | "new" | "join";
     roomCode: string | null;
@@ -39,9 +46,8 @@ export default function Lobby() {
   };
 
   const joinGameHandler = (roomCode: string, playerUsername: string) => {
-    new Audio("/sfx/navigation_forward-selection.wav").play();
     dispatch(joinRoom(roomCode, playerUsername));
-    navigate("/game/" + roomCode);
+    // navigate("/game/" + roomCode);
   };
 
   const getPlayerPastRooms = async () => {
@@ -51,6 +57,15 @@ export default function Lobby() {
   useEffect(() => {
     getPlayerPastRooms();
   }, []);
+
+  useEffect(() => {
+    if (reqGame.req === "join" && activeRoom && gameData.in_play?.length) {
+      new Audio("/sfx/navigation_forward-selection.wav").play();
+      navigate("/game/" + activeRoom);
+      // joinGameHandler(reqGame.roomCode!, "Player");
+    }
+    // getPlayerPastRooms();
+  }, [reqGame, activeRoom, gameData]);
 
   return (
     <Box xAlign="center" className={lobbyStyles.container}>

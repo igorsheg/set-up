@@ -72,6 +72,7 @@ export const cardStyles = {
       backgroundRepeat: "no-repeat",
       backgroundSize: "100% 100%, 50% 50%",
       backgroundPosition: "0 0, 100% 0, 100% 100%, 0 100%",
+      //@ts-ignore
       background: `conic-gradient(${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor});`,
       animation: `${bgRotate} 2s linear infinite`,
     },

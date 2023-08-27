@@ -2,21 +2,32 @@ import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
 import Dialog, { DialogProps, RadixDialog } from "@components/Dialog/Dialog";
 import { buttonStyles, dialogStyles } from "@components/Dialog/Dialog.css";
+import Tooltip from "@components/Tooltip/Tooltip";
+import { vars } from "@styles/index.css";
 import { Share } from "lucide-react";
-import { FC, PropsWithChildren } from "react";
+import { FC, PropsWithChildren, useState } from "react";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 interface InvitePlayersProps extends Pick<DialogProps, "open" | "onClose"> {
   roomCode: string;
   onSubmit: (playerUserName: string) => void;
 }
+
 export const InvitePlayersDialog: FC<PropsWithChildren<InvitePlayersProps>> = (
   props,
 ) => {
+  const [gameUrlCopied, setGameUrlCopied] = useState(false);
+  const [roomCodeCopied, setRoomCodeCopied] = useState(false);
+  const gameUrl = new URL(window.location.href).toString();
+
+  const isMobile = useIsMobile();
+
   const shareData = {
     title: "Set Up - join room",
     text: "Join a game of Set!",
-    url: "https://developer.mozilla.org",
+    url: gameUrl,
   };
+
   const handleSharing = async () => {
     if (navigator.share) {
       try {
@@ -35,29 +46,59 @@ export const InvitePlayersDialog: FC<PropsWithChildren<InvitePlayersProps>> = (
       );
     }
   };
+
+  const handleCopyToClipboard = (type: "url" | "code") => {
+    const action = {
+      fn: type === "url" ? setGameUrlCopied : setRoomCodeCopied,
+      string: type === "url" ? gameUrl : props.roomCode,
+    };
+
+    navigator.clipboard.writeText(action.string).then(
+      () => {
+        action.fn(true);
+        setTimeout(() => {
+          action.fn(false);
+        }, 2000);
+        console.log("Room code copied to clipboard");
+      },
+      (err) => {
+        console.error("Could not copy text: ", err);
+      },
+    );
+  };
+
   return (
     <Dialog
       {...props}
       title="Invite Players"
-      description="Share the room code or share the rooms url"
+      description="Share the room code or url"
     >
-      <Box orientation="row" xAlign="flex-end">
-        <fieldset className={dialogStyles.fieldset}>
+      <Box
+        style={{ marginBottom: vars.sizes.s4 }}
+        orientation="row"
+        xAlign="flex-end"
+      >
+        <Tooltip side="top" open={roomCodeCopied} content="Copied to clipboard">
           <input
             readOnly
+            onClick={() => handleCopyToClipboard("code")}
             value={props.roomCode}
             className={dialogStyles.input}
             id="roomCode"
           />
-        </fieldset>
-        <Button
-          dimentions="large"
-          variant="outline"
-          onClick={handleSharing}
-          btnPrefix={<Share />}
-        >
-          Share
-        </Button>
+        </Tooltip>
+        <Tooltip side="top" open={gameUrlCopied} content="Copied to clipboard">
+          <Button
+            dimentions="large"
+            variant="outline"
+            onClick={() =>
+              isMobile ? handleSharing() : handleCopyToClipboard("url")
+            }
+            btnPrefix={<Share />}
+          >
+            Share
+          </Button>
+        </Tooltip>
       </Box>
 
       <Box orientation="row" xAlign="flex-end">
