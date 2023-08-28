@@ -1,6 +1,6 @@
 import { Middleware, MiddlewareAPI } from "@reduxjs/toolkit";
 import { Card, Data } from "@types";
-import { AppDispatch, setWebsocketStatus } from ".";
+import { AppDispatch, RootState, setWebsocketStatus } from ".";
 import { setGameState } from "@services/gameService";
 
 export type WebSocketStatus = "IDLE" | "CONNECTING" | "OPEN" | "CLOSED";
@@ -10,6 +10,8 @@ export enum MessageType {
   MOVE = "move",
   REQUEST = "request",
   NEW = "new",
+  INIT = "init",
+  CLOSE = "close",
 }
 
 export interface JoinGameAction {
@@ -34,10 +36,21 @@ export interface RequestCardsAction {
     room_code: string;
   };
 }
+export interface InitWebSocketAction {
+  type: MessageType.INIT;
+}
+export interface CloseWebSocketAction {
+  type: MessageType.CLOSE;
+}
 
-export type GameAction = JoinGameAction | MoveGameAction | RequestCardsAction;
+export type GameAction =
+  | JoinGameAction
+  | MoveGameAction
+  | RequestCardsAction
+  | InitWebSocketAction
+  | CloseWebSocketAction;
+
 export let ws: WebSocket | null = null;
-const RECONNECT_INTERVAL = 5000;
 
 const connectWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
   const url = new URL("/api/ws", window.location.href);
@@ -48,24 +61,40 @@ const connectWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
     storeAPI.dispatch(setWebsocketStatus("OPEN"));
   };
   ws.onmessage = (event) => {
+    console.log("RECEIVED", event.data);
     const receivedData: Data = JSON.parse(event.data);
     storeAPI.dispatch(setGameState(receivedData));
   };
   ws.onclose = () => {
     storeAPI.dispatch(setWebsocketStatus("CLOSED"));
-    setTimeout(() => connectWebSocket(storeAPI), RECONNECT_INTERVAL);
   };
   ws.onerror = (error) => console.error("WebSocket Error:", error);
 };
 
-export const webSocketMiddleware: Middleware = (storeAPI: MiddlewareAPI) => {
-  connectWebSocket(storeAPI);
+export const initializeWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
+  if (ws === null) {
+    connectWebSocket(storeAPI);
+  }
+};
 
+export const webSocketMiddleware: Middleware = (storeAPI: MiddlewareAPI) => {
   return (next) => (action: GameAction) => {
+    if (action.type === MessageType.INIT) {
+      initializeWebSocket(storeAPI);
+    }
+
+    if (action.type === MessageType.CLOSE) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+      ws = null;
+    }
+
     const result = next(action);
+
     const {
       roomManager: { activeRoom },
-    } = storeAPI.getState();
+    } = storeAPI.getState() as RootState;
 
     if (ws && ws.readyState === WebSocket.OPEN) {
       switch (action.type) {
@@ -78,7 +107,10 @@ export const webSocketMiddleware: Middleware = (storeAPI: MiddlewareAPI) => {
           ws.send(
             JSON.stringify({
               type: MessageType.MOVE,
-              payload: { room_code: activeRoom, cards: action.payload.cards },
+              payload: {
+                room_code: activeRoom?.code,
+                cards: action.payload.cards,
+              },
             }),
           );
           break;
@@ -86,7 +118,7 @@ export const webSocketMiddleware: Middleware = (storeAPI: MiddlewareAPI) => {
           ws.send(
             JSON.stringify({
               type: MessageType.REQUEST,
-              payload: { room_code: activeRoom },
+              payload: { room_code: activeRoom?.code },
             }),
           );
           break;

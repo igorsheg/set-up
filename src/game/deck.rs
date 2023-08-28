@@ -15,7 +15,6 @@ impl Default for Deck {
 
 impl Deck {
     pub fn new() -> Self {
-        // Initialize the deck with all possible combinations of cards
         let mut cards = Vec::new();
         for &shape in &[Shape::Diamond, Shape::Oval, Shape::Squiggle] {
             for &color in &[Color::Red, Color::Purple, Color::Green] {
@@ -35,14 +34,12 @@ impl Deck {
     }
 
     pub fn shuffle(&mut self) {
-        // Shuffle the deck of cards
         use rand::seq::SliceRandom;
         let mut rng = rand::thread_rng();
         self.cards.shuffle(&mut rng);
     }
 
     pub fn draw(&mut self) -> Option<Card> {
-        // Draw a card from the deck
         self.cards.pop()
     }
 }

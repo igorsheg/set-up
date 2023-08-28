@@ -161,7 +161,7 @@ const root = createGlobalTheme(":root", {
     a11: orange.orange11,
     a12: orange.orange12,
   },
-  radius: "0.5rem",
+  radius: "0.6rem",
 });
 
 export const darkTheme = createTheme(colors, {

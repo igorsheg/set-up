@@ -42,6 +42,7 @@ export const dialogStyles = {
     maxHeight: "85vh",
     padding: `${vars.sizes.s6} ${vars.sizes.s6}`,
     animation: `${contentShow} 320ms cubic-bezier(0.16, 1, 0.3, 1)`,
+    willChange: "transform",
   }),
   title: style({
     ...vars.typography.xl,
@@ -82,6 +83,7 @@ export const dialogStyles = {
     height: vars.sizes.s10,
 
     ":read-only": {
+      boxShadow: "none",
       background: vars.colorVars.d4,
     },
   }),

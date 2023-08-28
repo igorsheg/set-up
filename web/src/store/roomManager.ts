@@ -1,22 +1,26 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { createNewRoom, getPastRooms } from "@services/roomService";
+import { getPastRooms } from "@services/roomService";
 import { WebSocketStatus } from "./websocket";
 
+export type ActiveRoom = {
+  code: string;
+  username: string;
+};
 export type RoomManagerState = {
-  activeRoom: string | null;
   webSocketStatus: WebSocketStatus;
   pastRooms: string[];
+  activeRoom: ActiveRoom | null;
 };
 
 export const roomMangerSlice = createSlice({
   name: "roomManager",
   initialState: {
-    activeRoom: null,
+    activeRoom: {} as ActiveRoom,
     webSocketStatus: "IDLE",
     pastRooms: [],
   } as RoomManagerState,
   reducers: {
-    setActiveRoom: (state, action: PayloadAction<string | null>) => {
+    setActiveRoom: (state, action: PayloadAction<ActiveRoom | null>) => {
       state.activeRoom = action.payload;
     },
     setWebsocketStatus: (state, action: PayloadAction<WebSocketStatus>) => {
@@ -24,16 +28,9 @@ export const roomMangerSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder
-      .addCase(createNewRoom.fulfilled, (state, action) => {
-        state.activeRoom = action.payload;
-      })
-      .addCase(createNewRoom.rejected, (_state, action) => {
-        console.error("Failed to create a new room:", action.error);
-      })
-      .addCase(getPastRooms.fulfilled, (state, action) => {
-        state.pastRooms = action.payload;
-      });
+    builder.addCase(getPastRooms.fulfilled, (state, action) => {
+      state.pastRooms = action.payload;
+    });
   },
 });
 

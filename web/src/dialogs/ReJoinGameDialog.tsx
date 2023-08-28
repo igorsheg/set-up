@@ -4,14 +4,14 @@ import Dialog, { DialogProps, RadixDialog } from "@components/Dialog/Dialog";
 import { buttonStyles, dialogStyles } from "@components/Dialog/Dialog.css";
 import { FC, PropsWithChildren, useState } from "react";
 
-interface RoomJoinGameDialogProps
+interface RejoinGameDialogProps
   extends Pick<DialogProps, "open" | "onClose" | "dismissible"> {
   onSubmit: (room_code: string, playerUserName: string) => void;
   room_code: string;
 }
-export const RoomJoinGameDialog: FC<
-  PropsWithChildren<RoomJoinGameDialogProps>
-> = (props) => {
+export const ReJoinGameDialog: FC<PropsWithChildren<RejoinGameDialogProps>> = (
+  props,
+) => {
   const [inputValue, setInputValue] = useState<string>("");
   return (
     <Dialog

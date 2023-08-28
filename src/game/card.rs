@@ -1,3 +1,4 @@
+use rand::Rng;
 use serde::{de, Deserialize, Deserializer, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -140,11 +141,41 @@ impl Default for Card {
 
 impl Card {
     pub fn new() -> Self {
+        let mut rng = rand::thread_rng();
+
+        let shape = match rng.gen_range(0..3) {
+            0 => Shape::Diamond,
+            1 => Shape::Oval,
+            2 => Shape::Squiggle,
+            _ => unreachable!(),
+        };
+
+        let color = match rng.gen_range(0..3) {
+            0 => Color::Red,
+            1 => Color::Purple,
+            2 => Color::Green,
+            _ => unreachable!(),
+        };
+
+        let number = match rng.gen_range(0..3) {
+            0 => Number::One,
+            1 => Number::Two,
+            2 => Number::Three,
+            _ => unreachable!(),
+        };
+
+        let shading = match rng.gen_range(0..3) {
+            0 => Shading::Outlined,
+            1 => Shading::Striped,
+            2 => Shading::Solid,
+            _ => unreachable!(),
+        };
+
         Self {
-            shape: Shape::Diamond,
-            color: Color::Red,
-            number: Number::One,
-            shading: Shading::Outlined,
+            shape,
+            color,
+            number,
+            shading,
         }
     }
 }

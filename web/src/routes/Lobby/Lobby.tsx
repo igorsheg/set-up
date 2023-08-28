@@ -1,23 +1,42 @@
 import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
-import { RoomJoinGameDialog } from "@dialogs/RoomJoinGameDialog";
-import { createNewRoom, getPastRooms, joinRoom } from "@services/roomService";
-import { AppDispatch, RootState } from "@store/index";
+import { createNewRoom, getPastRooms } from "@services/roomService";
+import { AppDispatch, RootState, setActiveRoom } from "@store/index";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { NewGameDialog } from "../../dialogs/NewGameDialog";
 import { lobbyStyles, lobbyButtonStyles } from "./Lobby.css";
+import { ChevronRight } from "lucide-react";
+import { vars } from "@styles/index.css";
+import { JoinGameDialog } from "@dialogs/JoinGameDialog";
+
+function SetLogo() {
+  return (
+    <svg
+      width={158}
+      height={158}
+      viewBox="0 0 158 158"
+      fill="none"
+      style={{ width: "60px", height: "60px" }}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M76 38c0 20.987-17.013 38-38 38S0 58.987 0 38 17.013 0 38 0s38 17.013 38 38zM0 120c0-20.987 17.013-38 38-38h38v38c0 20.987-17.013 38-38 38S0 140.987 0 120z"
+        fill="#F76808"
+      />
+      <circle cx={120} cy={120} r={38} fill="#F76808" />
+      <path
+        d="M82 38c0-20.987 17.013-38 38-38s38 17.013 38 38-17.013 38-38 38H82V38z"
+        fill="#F76808"
+      />
+    </svg>
+  );
+}
 
 export default function Lobby() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const activeRoom = useSelector(
-    (state: RootState) => state.roomManager.activeRoom,
-  );
-  const gameData = useSelector(
-    (state: RootState) => state.gameManager.gameData,
-  );
 
   const [reqGame, setReqGame] = React.useState<{
     req: undefined | "new" | "join";
@@ -36,8 +55,14 @@ export default function Lobby() {
       const actionResult = await dispatch(createNewRoom());
 
       if (createNewRoom.fulfilled.match(actionResult)) {
-        dispatch(joinRoom(actionResult.payload, playerUsername));
+        dispatch(
+          setActiveRoom({
+            code: actionResult.payload,
+            username: playerUsername,
+          }),
+        );
         new Audio("/sfx/navigation_forward-selection.wav").play();
+        setReqGame({ req: "new", roomCode: actionResult.payload });
         navigate("/game/" + actionResult.payload);
       }
     } catch (error) {
@@ -46,8 +71,15 @@ export default function Lobby() {
   };
 
   const joinGameHandler = (roomCode: string, playerUsername: string) => {
-    dispatch(joinRoom(roomCode, playerUsername));
-    // navigate("/game/" + roomCode);
+    dispatch(
+      setActiveRoom({
+        code: roomCode,
+        username: playerUsername,
+      }),
+    );
+    new Audio("/sfx/navigation_forward-selection.wav").play();
+    setReqGame({ req: "join", roomCode });
+    navigate("/game/" + roomCode);
   };
 
   const getPlayerPastRooms = async () => {
@@ -58,25 +90,19 @@ export default function Lobby() {
     getPlayerPastRooms();
   }, []);
 
-  useEffect(() => {
-    if (reqGame.req === "join" && activeRoom && gameData.in_play?.length) {
-      new Audio("/sfx/navigation_forward-selection.wav").play();
-      navigate("/game/" + activeRoom);
-      // joinGameHandler(reqGame.roomCode!, "Player");
-    }
-    // getPlayerPastRooms();
-  }, [reqGame, activeRoom, gameData]);
-
   return (
     <Box xAlign="center" className={lobbyStyles.container}>
-      <h1>Set Up!</h1>
+      <Box gap={vars.sizes.s4} yAlign="center" orientation="row">
+        <SetLogo />
+        <h1>Set Up!</h1>
+      </Box>
       <NewGameDialog
         onClose={() => setReqGame({ req: undefined, roomCode: null })}
         onSubmit={createGameHandler}
         open={reqGame.req === "new"}
       />
-      <RoomJoinGameDialog
-        room_code={reqGame.roomCode || ""}
+      <JoinGameDialog
+        onClose={() => setReqGame({ req: undefined, roomCode: null })}
         onSubmit={joinGameHandler}
         open={reqGame.req === "join"}
       />
@@ -84,8 +110,22 @@ export default function Lobby() {
         className={lobbyButtonStyles.container}
         onClick={() => setReqGame((draft) => ({ ...draft, req: "new" }))}
       >
-        <p>Classic Game</p>
-        <span>Play with friends in the classic mode</span>
+        <Box>
+          <p>Start a classic game</p>
+          <span>Play with friends in the classic mode</span>
+        </Box>
+
+        <ChevronRight />
+      </button>
+      <button
+        className={lobbyButtonStyles.container}
+        onClick={() => setReqGame((draft) => ({ ...draft, req: "join" }))}
+      >
+        <Box>
+          <p>Join a game</p>
+          <span>Join an existing room</span>
+        </Box>
+        <ChevronRight />
       </button>
       {pastRooms.map((roomCode) => (
         <Button

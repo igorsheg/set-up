@@ -9,8 +9,9 @@ export const button = recipe({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: 550,
+    fontWeight: 500,
     transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+    willChange: "box-shadow, transform, background-color",
 
     ":hover": {
       transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -38,12 +39,12 @@ export const button = recipe({
     variant: {
       primary: {
         color: vars.colorVars.d1,
-        boxShadow: `inset 0 0 0 1px ${vars.colorVars.a10}, ${vars.shadows.xs}`,
+        boxShadow: `inset 0 1px 0 -1px ${vars.colorVars.a8}, ${vars.shadows.xs}`,
         background: vars.colorVars.a9,
 
         ":hover": {
-          backgroundColor: vars.colorVars.a10,
-          boxShadow: `inset 0 0 0 1px ${vars.colorVars.a11}, ${vars.shadows.xs}`,
+          backgroundColor: vars.colorVars.a8,
+          boxShadow: `inset 0 1px 0 -1px ${vars.colorVars.a7}, ${vars.shadows.xs}`,
         },
 
         ":disabled": {
@@ -59,7 +60,8 @@ export const button = recipe({
         boxShadow: `inset 0 0 0 1px ${vars.colors.d8}, ${vars.shadows.xs}`,
 
         ":hover": {
-          boxShadow: `inset 0 0 0 1px ${vars.colors.d12}, ${vars.shadows.xs}`,
+          backgroundColor: vars.colorVars.d8,
+          boxShadow: `inset 0 0 0 1px ${vars.colors.d8}, ${vars.shadows.xs}`,
         },
       },
       ghost: { color: vars.colors.text, backgroundColor: "transparent" },
@@ -136,6 +138,7 @@ export const button = recipe({
         color: vars.colors.background,
         boxShadow: `inset 0 0 0 1px ${vars.colors.d11}`,
         ":hover": {
+          background: "transparent",
           boxShadow: `inset 0 0 0 1px ${vars.colors.d1}`,
         },
       },

@@ -4,18 +4,29 @@ import Pill from "@components/Pill/Pill";
 import { Player } from "src/types";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { RoomJoinGameDialog } from "@dialogs/RoomJoinGameDialog";
+import { useEffect, useRef, useState } from "react";
+import { ReJoinGameDialog } from "@dialogs/ReJoinGameDialog";
 import { InvitePlayersDialog } from "@dialogs/InvitePlayersDialog";
 import { GameMenuAction } from "@menus/GameMenu";
-import { joinRoom } from "@services/roomService";
+import { joinRoom, leaveRoom } from "@services/roomService";
 import { AppDispatch, RootState } from "@store/index";
 import { requestCards } from "@services/gameService";
+import { setActiveRoom } from "@store/roomManager";
+import { MessageType } from "@store/websocket";
 
 export default function Game() {
   const gameData = useSelector(
     (state: RootState) => state.gameManager.gameData,
   );
+  const activeRoom = useSelector(
+    (state: RootState) => state.roomManager.activeRoom,
+  );
+  const websockerStatus = useSelector(
+    (state: RootState) => state.roomManager.webSocketStatus,
+  );
+
+  const firstRender = useRef(true);
+
   const dispatch = useDispatch<AppDispatch>();
 
   const navigate = useNavigate();
@@ -39,19 +50,37 @@ export default function Game() {
 
   const joinGameHandler = (room_code: string, playerUsername: string) => {
     new Audio("/sfx/navigation_forward-selection.wav").play();
-    dispatch(joinRoom(room_code, playerUsername));
+    dispatch(setActiveRoom({ code: room_code, username: playerUsername }));
     setRoomJoinDialogOpen(false);
   };
 
   useEffect(() => {
-    if (room_code) {
-      if (gameData && gameData.in_play?.length) {
-        setRoomJoinDialogOpen(false);
-      } else {
-        setRoomJoinDialogOpen(true);
-      }
+    if (
+      websockerStatus !== "OPEN" &&
+      activeRoom?.code &&
+      activeRoom?.username
+    ) {
+      dispatch({ type: MessageType.INIT });
+    } else if (
+      websockerStatus === "OPEN" &&
+      activeRoom?.code &&
+      activeRoom?.username
+    ) {
+      dispatch(joinRoom(activeRoom.code, activeRoom.username));
+    } else if (room_code) {
+      setRoomJoinDialogOpen(true);
     }
-  }, [room_code, gameData]);
+  }, [websockerStatus, activeRoom, room_code]);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    return () => {
+      dispatch(leaveRoom());
+    };
+  }, []);
 
   if (gameData && gameData.game_over) {
     const highScore = Math.max(...gameData.players.map((p: Player) => p.score));
@@ -86,7 +115,7 @@ export default function Game() {
           </>
         )}
       </div>
-      <RoomJoinGameDialog
+      <ReJoinGameDialog
         room_code={room_code ?? ""}
         onSubmit={joinGameHandler}
         open={roomJoinDialogOpen}

@@ -35,6 +35,7 @@ export const cardStyles = {
     overflow: "hidden",
     gap: vars.sizes.s1,
     backgroundColor: vars.colors.foregorund,
+    willChange: "transform, box-shadow, background-color",
 
     ":active": {
       transform: "translateY(2px)",
@@ -60,6 +61,7 @@ export const cardStyles = {
   selected: style({
     backgroundColor: "transparent",
     animation: `${glow} 2s ease infinite alternate`,
+    willChange: "box-shadow",
     "::before": {
       content: '""',
       position: "absolute",
@@ -75,6 +77,7 @@ export const cardStyles = {
       //@ts-ignore
       background: `conic-gradient(${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor});`,
       animation: `${bgRotate} 2s linear infinite`,
+      willChange: "transform",
     },
   }),
   thumbnail: style({
