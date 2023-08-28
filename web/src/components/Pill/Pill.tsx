@@ -89,14 +89,14 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
                   yAlign="center"
                   gap={vars.sizes.s1}
                 >
-                  <span style={{ ...vars.typography.base }}>
+                  <span style={{ ...vars.typography.m }}>
                     {notification.message}
                   </span>
                 </Box>
               </motion.div>
             ),
         )}
-      </AnimatePresence>{" "}
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -29,6 +29,14 @@ export const gameManagerSlice = createSlice({
     setSelectedCards: (state, action: PayloadAction<Card[]>) => {
       state.selectedCards = action.payload;
     },
+    resetGameData: (state) => {
+      state.gameData = {
+        last_player: null,
+        last_set: null,
+        players: [],
+      };
+      state.selectedCards = [];
+    },
     showNotification: (
       state,
       action: PayloadAction<React.ReactElement | string>,

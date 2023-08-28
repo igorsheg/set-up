@@ -1,6 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { AppThunk } from "@store/index";
-import { setActiveRoom } from "@store/roomManager";
+import { AppThunk, resetGameData, setActiveRoom } from "@store/index";
 import { JoinGameAction, MessageType } from "@store/websocket";
 
 export const createNewRoom = createAsyncThunk<string, void>(
@@ -39,8 +38,6 @@ export const checkRoomExists = createAsyncThunk<
 export const joinRoom =
   (roomCode: string, playerUsername: string): AppThunk =>
   (dispatch) => {
-    dispatch(setActiveRoom(roomCode));
-
     const joinAction: JoinGameAction = {
       type: MessageType.JOIN,
       payload: {
@@ -50,6 +47,12 @@ export const joinRoom =
     };
     dispatch(joinAction);
   };
+
+export const leaveRoom = (): AppThunk => (dispatch) => {
+  dispatch({ type: MessageType.CLOSE });
+  dispatch(setActiveRoom(null));
+  dispatch(resetGameData());
+};
 
 export const getPastRooms = createAsyncThunk<
   string[],

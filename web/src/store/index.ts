@@ -23,6 +23,7 @@ export type AppThunk<ReturnType = void> = ThunkAction<
 export const { setActiveRoom, setWebsocketStatus } = roomMangerSlice.actions;
 
 export const {
+  resetGameData,
   setGameData,
   setSelectedCards,
   showNotification,

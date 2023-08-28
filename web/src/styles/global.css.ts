@@ -29,7 +29,7 @@ globalStyle("html, body", {
 
 globalStyle("body", {
   lineHeight: 1.5,
-  fontWeight: 500,
+  fontWeight: 450,
   WebkitFontSmoothing: "grayscale",
   background: vars.colors.background,
   color: vars.colors.text,

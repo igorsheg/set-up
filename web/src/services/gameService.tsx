@@ -1,5 +1,6 @@
 import {
   AppThunk,
+  RootState,
   hideNotification,
   setGameData,
   setNotificationTimer,
@@ -20,7 +21,7 @@ export const setGameState =
     ) {
       const lastPlayer = newData.last_player;
 
-      dispatch(displayNotificationWithTimer(`${lastPlayer} found a set!  🎉`));
+      dispatch(displayNotificationWithTimer(`${lastPlayer} found a set!`));
     }
 
     if (currentState.players && newData.players) {
@@ -35,7 +36,7 @@ export const setGameState =
       if (newPlayer) {
         dispatch(
           displayNotificationWithTimer(
-            `Player ${newPlayer.name} joined the game! 🎉`,
+            `✦ ${" "} Player ${newPlayer.name} joined the game`,
           ),
         );
       }
@@ -51,13 +52,13 @@ export const moveCards =
 
     const {
       roomManager: { activeRoom },
-    } = getState();
+    } = getState() as RootState;
 
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(
         JSON.stringify({
           type: MessageType.MOVE,
-          payload: { room_code: activeRoom, cards },
+          payload: { room_code: activeRoom?.code, cards },
         }),
       );
     }
