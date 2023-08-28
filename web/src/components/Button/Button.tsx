@@ -15,16 +15,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    {
-      children,
-      dimentions,
-      variant,
-      type,
-      buttonType,
-      skin,
-      btnPrefix,
-      ...rest
-    },
+    { children, dimentions, variant, buttonType, skin, btnPrefix, ...rest },
     ref,
   ) => {
     return (

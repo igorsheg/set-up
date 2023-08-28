@@ -1,7 +1,6 @@
 import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
-import { ReJoinGameDialog } from "@dialogs/ReJoinGameDialog";
-import { createNewRoom, getPastRooms, joinRoom } from "@services/roomService";
+import { createNewRoom, getPastRooms } from "@services/roomService";
 import { AppDispatch, RootState, setActiveRoom } from "@store/index";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,6 +9,7 @@ import { NewGameDialog } from "../../dialogs/NewGameDialog";
 import { lobbyStyles, lobbyButtonStyles } from "./Lobby.css";
 import { ChevronRight } from "lucide-react";
 import { vars } from "@styles/index.css";
+import { JoinGameDialog } from "@dialogs/JoinGameDialog";
 
 function SetLogo() {
   return (
@@ -55,7 +55,6 @@ export default function Lobby() {
       const actionResult = await dispatch(createNewRoom());
 
       if (createNewRoom.fulfilled.match(actionResult)) {
-        // dispatch(joinRoom(actionResult.payload, playerUsername));
         dispatch(
           setActiveRoom({
             code: actionResult.payload,
@@ -72,7 +71,13 @@ export default function Lobby() {
   };
 
   const joinGameHandler = (roomCode: string, playerUsername: string) => {
-    dispatch(joinRoom(roomCode, playerUsername));
+    dispatch(
+      setActiveRoom({
+        code: roomCode,
+        username: playerUsername,
+      }),
+    );
+    new Audio("/sfx/navigation_forward-selection.wav").play();
     setReqGame({ req: "join", roomCode });
     navigate("/game/" + roomCode);
   };
@@ -96,8 +101,8 @@ export default function Lobby() {
         onSubmit={createGameHandler}
         open={reqGame.req === "new"}
       />
-      <ReJoinGameDialog
-        room_code={reqGame.roomCode || ""}
+      <JoinGameDialog
+        onClose={() => setReqGame({ req: undefined, roomCode: null })}
         onSubmit={joinGameHandler}
         open={reqGame.req === "join"}
       />
@@ -114,7 +119,7 @@ export default function Lobby() {
       </button>
       <button
         className={lobbyButtonStyles.container}
-        onClick={() => setReqGame((draft) => ({ ...draft, req: "new" }))}
+        onClick={() => setReqGame((draft) => ({ ...draft, req: "join" }))}
       >
         <Box>
           <p>Join a game</p>
