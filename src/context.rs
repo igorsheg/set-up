@@ -1,4 +1,7 @@
-use crate::{client::ClientManager, infra::error::Error, message::MessageType, room::RoomManager};
+use crate::{
+    client::ClientManager, game::game::GameMode, infra::error::Error, message::MessageType,
+    room::RoomManager,
+};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -30,9 +33,9 @@ impl Context {
         &self.room_manager
     }
 
-    pub async fn new_room(&self) -> Result<String, Error> {
+    pub async fn new_room(&self, mode: GameMode) -> Result<String, Error> {
         let mut room_manager = self.room_manager.lock().await;
-        let room_code = room_manager.handle_new().await?;
+        let room_code = room_manager.handle_new(mode).await?;
         Ok(room_code)
     }
 
@@ -59,10 +62,10 @@ impl Context {
                     .handle_request(message, client_id, &mut client_manager)
                     .await
             }
-            MessageType::New => {
-                let _ = room_manager.handle_new().await;
-                Ok(())
-            }
+            // MessageType::New => {
+            //     let _ = room_manager.handle_new().await;
+            //     Ok(())
+            // }
             MessageType::Leave => {
                 room_manager
                     .handle_leave(client_id, &mut client_manager)

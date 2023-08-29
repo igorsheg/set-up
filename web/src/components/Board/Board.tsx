@@ -25,12 +25,17 @@ export default function Board(): React.ReactElement {
   const in_play = useSelector(
     (state: RootState) => state.gameManager.gameData.in_play,
   );
+
+  const game_over = useSelector(
+    (state: RootState) => state.gameManager.gameData.game_over,
+  );
   const dispatch = useDispatch<AppDispatch>();
   const selected = useSelector(
     (state: RootState) => state.gameManager.selectedCards,
   );
 
   const [numberOfColumns, setNumberOfColumns] = React.useState(3);
+  const isMobile = useIsMobile();
 
   const handleClick = (card: CardType): void => {
     const i = selected.indexOf(card);
@@ -50,20 +55,25 @@ export default function Board(): React.ReactElement {
     }
   };
 
-  const isMobile = useIsMobile();
-
   React.useEffect(() => {
     if (isMobile) {
       setNumberOfColumns(3);
     } else {
       if (in_play && in_play.length > 12) {
-        const additionalColumns = Math.floor(in_play.length / 11);
+        const additionalColumns = Math.floor(in_play.length / 12);
         setNumberOfColumns(3 + additionalColumns);
       } else {
         setNumberOfColumns(3);
       }
     }
   }, [in_play, isMobile]);
+
+  const cardMotionVariants = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+    transition: { type: "spring", damping: 30, stiffness: 500 },
+  };
 
   return (
     <>
@@ -75,24 +85,18 @@ export default function Board(): React.ReactElement {
       >
         <AnimatePresence>
           {in_play &&
+            !game_over &&
             in_play.map((card: CardType, i: number) => (
               <motion.div
                 key={`${card.color}-${card.number}-${card.shading}-${card.shape}-${i}`}
                 layout
-                initial={{
-                  opacity: 0,
-                  y: 20,
-                }}
-                animate={{
-                  opacity: 1,
-                  y: 0,
-                }}
-                exit={{ opacity: 0, y: -20 }}
+                variants={cardMotionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
                 transition={{
-                  type: "spring",
-                  damping: 25,
-                  stiffness: 300,
-                  delay: i * 0.01,
+                  ...cardMotionVariants.transition,
+                  delay: i * 0.005,
                 }}
               >
                 <Card

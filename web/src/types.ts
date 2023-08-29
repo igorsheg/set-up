@@ -14,6 +14,11 @@ export type Card = {
   shading: number;
 };
 
+export enum GameMode {
+  Classic = "classic",
+  Bestof3 = "bestof3",
+}
+
 export type Data = {
   game_over?: boolean;
   in_play?: Card[];
@@ -21,6 +26,7 @@ export type Data = {
   last_set?: Card[] | null;
   players: Player[];
   remaining?: number;
+  mode: GameMode;
 };
 
 export type Move = {

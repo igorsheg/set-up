@@ -11,6 +11,7 @@ export const boardStyles = {
     zIndex: 1,
     gridTemplateColumns: `repeat(${boardVars.columns}, 104px)`,
     columnGap: vars.sizes.s3,
+    flexDirection: "column-reverse",
     rowGap: vars.sizes.s3,
     width: "100%",
     overflow: "auto",

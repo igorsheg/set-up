@@ -28,8 +28,9 @@ export const dialogStyles = {
   content: style({
     zIndex: 99,
     backgroundColor: vars.colors.background,
-    backgroundImage:
-      "radial-gradient(ellipse 90% 90% at 80% -20%, rgba(202, 153, 213, 0.4), rgba(255, 255, 255, 0))",
+    // TODO - Add gradient
+    // backgroundImage:
+    //   "radial-gradient(ellipse 90% 90% at 80% -20%, rgba(202, 153, 213, 0.4), rgba(255, 255, 255, 0))",
     borderRadius: vars.radius,
     boxShadow: vars.shadows.xl,
     border: `1px solid ${vars.colorVars.d5}`,

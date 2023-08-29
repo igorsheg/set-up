@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     client::ClientManager,
     game::{
-        game::{Game, Move},
+        game::{Game, GameMode, Move},
         player::Player,
     },
     infra::error::Error,
@@ -126,10 +126,10 @@ impl RoomManager {
         Ok(())
     }
 
-    pub async fn handle_new(&mut self) -> Result<String, Error> {
+    pub async fn handle_new(&mut self, mode: GameMode) -> Result<String, Error> {
         let room_code = nanoid::nanoid!(6);
 
-        let mut game = Game::new();
+        let mut game = Game::new(mode);
         let mut players = game.players.clone();
         for player in &mut players {
             player.score = 0;

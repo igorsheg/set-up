@@ -1,7 +1,5 @@
-use axum::{http::Method, routing::get, Extension};
-use hyper::http::HeaderValue;
+use axum::{routing::get, Extension};
 use std::{net::SocketAddr, sync::Arc};
-use tower_http::cors::CorsLayer;
 
 use crate::{
     context::Context,
@@ -42,22 +40,6 @@ impl Server {
             .parse()
             .expect("Unable to parse address");
 
-        let cors = CorsLayer::new()
-            .allow_methods(vec![
-                Method::GET,
-                Method::POST,
-                Method::PATCH,
-                Method::PUT,
-                Method::OPTIONS,
-            ])
-            .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
-            .allow_credentials(true)
-            .allow_headers(vec![
-                axum::http::header::CONTENT_TYPE,
-                axum::http::header::CACHE_CONTROL,
-                axum::http::header::AUTHORIZATION,
-            ]);
-
         let context = Arc::new(Context::new());
         let app_state = Arc::new(AppState::new(self.is_production));
 
@@ -71,7 +53,6 @@ impl Server {
         let app = axum::Router::new()
             .nest("/api", api_routes)
             .fallback(handle_client_proxy)
-            .layer(cors)
             .layer(Extension(app_state))
             .layer(Extension(context));
 

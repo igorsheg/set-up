@@ -61,7 +61,6 @@ const connectWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
     storeAPI.dispatch(setWebsocketStatus("OPEN"));
   };
   ws.onmessage = (event) => {
-    console.log("RECEIVED", event.data);
     const receivedData: Data = JSON.parse(event.data);
     storeAPI.dispatch(setGameState(receivedData));
   };

@@ -1,5 +1,5 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { Card, Data } from "@types";
+import { Card, Data, GameMode } from "@types";
 
 export type GameManagerState = {
   gameData: Data;
@@ -18,6 +18,7 @@ export const gameManagerSlice = createSlice({
       last_player: null,
       last_set: null,
       players: [],
+      mode: GameMode.Classic,
     } as Data,
     selectedCards: [],
     notifications: [],
@@ -34,6 +35,7 @@ export const gameManagerSlice = createSlice({
         last_player: null,
         last_set: null,
         players: [],
+        mode: GameMode.Classic,
       };
       state.selectedCards = [];
     },

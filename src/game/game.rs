@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::fmt;
+use std::str::FromStr;
 
 use crate::game::deck::Deck;
 use crate::game::player::Player;
@@ -8,6 +10,36 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use super::card::Card;
+
+const BEST_OF_3_SCORE: i64 = 3;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub enum GameMode {
+    Classic,
+    BestOf3,
+}
+
+impl FromStr for GameMode {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "classic" => Ok(GameMode::Classic),
+            "bestof3" => Ok(GameMode::BestOf3),
+            _ => Err("Invalid game mode"),
+        }
+    }
+}
+
+impl fmt::Display for GameMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let string_representation = match self {
+            GameMode::Classic => "classic",
+            GameMode::BestOf3 => "bestof3",
+        };
+        write!(f, "{}", string_representation)
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Game {
@@ -19,6 +51,7 @@ pub struct Game {
     pub players: Vec<Player>,        // The players in the game
     pub remaining: i64,              // The number of remaining cards in the deck
     pub state: GameState,
+    pub mode: GameMode,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -30,12 +63,12 @@ pub enum GameState {
 
 impl Default for Game {
     fn default() -> Self {
-        Self::new()
+        Self::new(GameMode::Classic)
     }
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(mode: GameMode) -> Self {
         let mut game = Game {
             deck: Deck::new(),
             game_over: None,
@@ -45,6 +78,7 @@ impl Game {
             players: vec![],
             remaining: 0,
             state: GameState::WaitingForPlayers,
+            mode,
         };
         game.deck.shuffle();
         game.deal();
@@ -113,8 +147,18 @@ impl Game {
 
         self.remaining = self.deck.cards.len() as i64;
 
-        if self.deck.cards.is_empty() {
-            return Ok(self.check_remaining_sets());
+        if self.mode == GameMode::Classic {
+            if self.deck.cards.is_empty() && self.check_remaining_sets() {
+                log::info!("Game over in Classic mode!");
+                self.state = GameState::Ended;
+                self.game_over = Some(true);
+            }
+        } else if self.mode == GameMode::BestOf3
+            && self.players.iter().any(|p| p.score >= BEST_OF_3_SCORE)
+        {
+            log::info!("Game over in BestOf3 mode!");
+            self.state = GameState::Ended;
+            self.game_over = Some(true);
         }
 
         Ok(false)

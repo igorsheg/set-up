@@ -1,8 +1,14 @@
 use crate::{
     context::Context,
+    game::game::GameMode,
     infra::error::{AppError, Error},
 };
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
+use axum::{
+    extract::{Path, Query},
+    http::StatusCode,
+    response::IntoResponse,
+    Extension, Json,
+};
 use axum_extra::extract::CookieJar;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -19,12 +25,27 @@ pub async fn check_game_exists(
     }
 }
 
+#[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
+pub struct NewGameQuery {
+    mode: Option<String>,
+}
+
 #[axum::debug_handler]
-pub async fn new_room_handler(Extension(context): Extension<Arc<Context>>) -> impl IntoResponse {
-    if let Ok(room_code) = context.new_room().await {
-        Json(room_code)
-    } else {
-        Json("Error creating room".to_string())
+pub async fn new_room_handler(
+    Extension(context): Extension<Arc<Context>>,
+    Query(query): Query<NewGameQuery>,
+) -> impl IntoResponse {
+    let mode_str = query.mode.unwrap_or_else(|| "classic".to_string());
+
+    match mode_str.parse::<GameMode>() {
+        Ok(mode) => {
+            if let Ok(room_code) = context.new_room(mode).await {
+                Json(room_code)
+            } else {
+                Json("Error creating room".to_string())
+            }
+        }
+        Err(_) => Json("Invalid game mode".to_string()),
     }
 }
 

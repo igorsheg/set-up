@@ -10,6 +10,7 @@ import { lobbyStyles, lobbyButtonStyles } from "./Lobby.css";
 import { ChevronRight } from "lucide-react";
 import { vars } from "@styles/index.css";
 import { JoinGameDialog } from "@dialogs/JoinGameDialog";
+import { GameMode } from "@types";
 
 function SetLogo() {
   return (
@@ -41,18 +42,20 @@ export default function Lobby() {
   const [reqGame, setReqGame] = React.useState<{
     req: undefined | "new" | "join";
     roomCode: string | null;
+    mode: GameMode;
   }>({
     req: undefined,
     roomCode: null,
+    mode: GameMode.Classic,
   });
 
   const pastRooms = useSelector(
     (state: RootState) => state.roomManager.pastRooms,
   );
 
-  const createGameHandler = async (playerUsername: string) => {
+  const createGameHandler = async (playerUsername: string, mode: GameMode) => {
     try {
-      const actionResult = await dispatch(createNewRoom());
+      const actionResult = await dispatch(createNewRoom(mode));
 
       if (createNewRoom.fulfilled.match(actionResult)) {
         dispatch(
@@ -62,7 +65,7 @@ export default function Lobby() {
           }),
         );
         new Audio("/sfx/navigation_forward-selection.wav").play();
-        setReqGame({ req: "new", roomCode: actionResult.payload });
+        setReqGame({ req: "new", roomCode: actionResult.payload, mode });
         navigate("/game/" + actionResult.payload);
       }
     } catch (error) {
@@ -78,7 +81,7 @@ export default function Lobby() {
       }),
     );
     new Audio("/sfx/navigation_forward-selection.wav").play();
-    setReqGame({ req: "join", roomCode });
+    setReqGame({ ...reqGame, req: "join", roomCode });
     navigate("/game/" + roomCode);
   };
 
@@ -97,20 +100,31 @@ export default function Lobby() {
         <h1>Set Up!</h1>
       </Box>
       <NewGameDialog
-        onClose={() => setReqGame({ req: undefined, roomCode: null })}
+        onClose={() =>
+          setReqGame({ ...reqGame, req: undefined, roomCode: null })
+        }
         onSubmit={createGameHandler}
         open={reqGame.req === "new"}
+        mode={reqGame.mode}
       />
       <JoinGameDialog
-        onClose={() => setReqGame({ req: undefined, roomCode: null })}
+        onClose={() =>
+          setReqGame({ ...reqGame, req: undefined, roomCode: null })
+        }
         onSubmit={joinGameHandler}
         open={reqGame.req === "join"}
       />
       <button
         className={lobbyButtonStyles.container}
-        onClick={() => setReqGame((draft) => ({ ...draft, req: "new" }))}
+        onClick={() =>
+          setReqGame((draft) => ({
+            ...draft,
+            req: "new",
+            mode: GameMode.Classic,
+          }))
+        }
       >
-        <Box>
+        <Box gap={vars.sizes.s1}>
           <p>Start a classic game</p>
           <span>Play with friends in the classic mode</span>
         </Box>
@@ -119,9 +133,26 @@ export default function Lobby() {
       </button>
       <button
         className={lobbyButtonStyles.container}
+        onClick={() =>
+          setReqGame((draft) => ({
+            ...draft,
+            req: "new",
+            mode: GameMode.Bestof3,
+          }))
+        }
+      >
+        <Box gap={vars.sizes.s1}>
+          <p>Start a quick standoff</p>
+          <span>Compete at a best of 3 round</span>
+        </Box>
+
+        <ChevronRight />
+      </button>
+      <button
+        className={lobbyButtonStyles.container}
         onClick={() => setReqGame((draft) => ({ ...draft, req: "join" }))}
       >
-        <Box>
+        <Box gap={vars.sizes.s1}>
           <p>Join a game</p>
           <span>Join an existing room</span>
         </Box>
@@ -131,7 +162,7 @@ export default function Lobby() {
         <Button
           variant="outline"
           key={roomCode}
-          onClick={() => setReqGame({ req: "join", roomCode })}
+          onClick={() => setReqGame({ ...reqGame, req: "join", roomCode })}
         >
           {roomCode}
         </Button>

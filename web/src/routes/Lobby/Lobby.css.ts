@@ -24,7 +24,6 @@ export const lobbyButtonStyles = {
     height: vars.sizes.s12,
     padding: `${vars.sizes.s2} ${vars.sizes.s6}`,
     borderRadius: vars.radius,
-    // boxShadow: `${vars.shadows.sm},  0px 0px 0px 1px ${vars.colors.d6}`,
     boxShadow: `${vars.shadows.sm}, 0 0 0 1px ${vars.colorVars.d4}, inset 0px 0.6px 0px rgba(255,255,255, 0.1),inset 0px 1.2px 0px rgba(255, 255, 255, 0.1),inset -1.2px 0px 0px rgba(255, 255, 255, 0.04),inset 1.2px 0px 0px rgba(255, 255, 255, 0.04)`,
     background: vars.colors.background,
     transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -38,7 +37,7 @@ export const lobbyButtonStyles = {
     },
     ":active": {
       transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-      boxShadow: `${vars.shadows.md},  0px 0px 0px 1px ${vars.colorVars.d6}`,
+      boxShadow: `${vars.shadows.sm}, 0px 0px 0px 1px ${vars.colorVars.d6}`,
       transform: "translateY(2px)",
     },
   }),
