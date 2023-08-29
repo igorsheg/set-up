@@ -103,3 +103,10 @@ export const requestButton = style({
     transition: "all .12s ease",
   },
 });
+
+export const notificationStyles = {
+  icon: style({
+    width: vars.sizes.s5,
+    height: vars.sizes.s5,
+  }),
+};
