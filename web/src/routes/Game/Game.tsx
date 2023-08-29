@@ -14,6 +14,9 @@ import { setActiveRoom } from "@store/roomManager";
 import { MessageType } from "@store/websocket";
 import ReactCanvasConfetti from "@components/Confetti";
 import confetti from "canvas-confetti";
+import Box from "@components/Box/Box";
+import { Player } from "@types";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function Game() {
   const gameData = useSelector(
@@ -83,72 +86,19 @@ export default function Game() {
     };
   }, []);
 
-  // if (gameData && gameData.game_over) {
-  //   const highScore = Math.max(...gameData.players.map((p: Player) => p.score));
-  //   const winners = gameData.players
-  //     .filter((p: Player) => p.score === highScore)
-  //     .map((p: Player) => p.name);
-  //
-  //   const confettiProps: confetti.Options = {
-  //     spread: 360,
-  //     ticks: 50,
-  //     gravity: 0,
-  //     decay: 0.94,
-  //     startVelocity: 30,
-  //     shapes: ["star"],
-  //     colors: ["FFE400", "FFBD00", "E89400", "FFCA6C", "FDFFB8"],
-  //     particleCount: 40,
-  //     scalar: 1.2,
-  //   };
-  //
-  //   return (
-  //     <AnimatePresence>
-  //       <motion.div
-  //         initial={{ opacity: 0 }}
-  //         animate={{ opacity: 1 }}
-  //         exit={{ opacity: 0 }}
-  //       >
-  //         <ReactCanvasConfetti
-  //           {...confettiProps}
-  //           style={{
-  //             position: "fixed",
-  //             top: 0,
-  //             left: 0,
-  //             zIndex: 1000,
-  //             width: "100vw",
-  //             height: "100vh",
-  //             userSelect: "none",
-  //             pointerEvents: "none",
-  //           }}
-  //           fire={true}
-  //           className="canvas"
-  //         />
-  //         <Box>
-  //           <div>{`Winner: ${winners.join("& ")}`}</div>
-  //           <button type="button" onClick={() => false}>
-  //             Play again?
-  //           </button>
-  //         </Box>
-  //       </motion.div>
-  //     </AnimatePresence>
-  //   );
-  // }
-
-  const confettiProps: confetti.Options = {
-    spread: 360,
-    ticks: 50,
-    gravity: 0,
-    decay: 0.94,
-    startVelocity: 30,
-    shapes: ["star"],
-    colors: ["FFE400", "FFBD00", "E89400", "FFCA6C", "FDFFB8"],
-    particleCount: 40,
-    scalar: 1.2,
+  const gameOverAnimationProps = {
+    initial: { opacity: 0, y: 50 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -60 },
   };
 
-  return (
-    <>
-      {gameData && gameData.game_over && (
+  const GameEnded = () => {
+    const highScore = Math.max(...gameData.players.map((p: Player) => p.score));
+    const winners = gameData.players
+      .filter((p: Player) => p.score === highScore)
+      .map((p: Player) => p.name);
+    return (
+      <>
         <ReactCanvasConfetti
           {...confettiProps}
           style={{
@@ -164,18 +114,72 @@ export default function Game() {
           fire={true}
           className="canvas"
         />
-      )}
+        <motion.div
+          initial="initial"
+          animate="animate"
+          className={styles.gameOverStyles.container}
+          exit="exit"
+          variants={gameOverAnimationProps}
+          transition={{
+            type: "tween",
+            duration: 0.6,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+        >
+          <Box xAlign="center">
+            <h1>Game Over</h1>
+            <p>Winners: {winners.join("& ")}</p>
+          </Box>
+        </motion.div>
+      </>
+    );
+  };
+
+  const confettiProps: confetti.Options = {
+    spread: 360,
+    ticks: 50,
+    gravity: 0,
+    decay: 0.94,
+    startVelocity: 30,
+    shapes: ["star"],
+    colors: ["FFE400", "FFBD00", "E89400", "FFCA6C", "FDFFB8"],
+    particleCount: 40,
+    scalar: 1.2,
+  };
+
+  return (
+    <>
       <div className={styles.gamePageStyles}>
-        {gameData && gameData.in_play && (
-          <>
-            <Board />
-            <Pill
-              handleRequest={() => dispatch(requestCards())}
-              game={gameData}
-              onMenuItemSelect={handleGameMenuitemSelect}
-            />
-          </>
-        )}
+        <AnimatePresence>
+          {gameData && gameData.in_play?.length && !gameData.game_over ? (
+            <motion.div
+              animate="animate"
+              exit="exit"
+              initial={false}
+              style={{
+                overflowX: "hidden",
+                overflowY: "auto",
+                zIndex: 2,
+                width: "100%",
+              }}
+              variants={gameOverAnimationProps}
+              transition={{
+                type: "tween",
+                duration: 0.6,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+            >
+              <Board />
+            </motion.div>
+          ) : (
+            <GameEnded />
+          )}
+        </AnimatePresence>
+        <Pill
+          handleRequest={() => dispatch(requestCards())}
+          game={gameData}
+          onMenuItemSelect={handleGameMenuitemSelect}
+        />
       </div>
       <ReJoinGameDialog
         room_code={room_code ?? ""}

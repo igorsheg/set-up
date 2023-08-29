@@ -72,8 +72,9 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
         </Box>
       </Box>
       <AnimatePresence>
-        {notifications.map(
-          (notification, index) =>
+        {notifications.map((notification, index) => {
+          const Icon = notification.message.icon;
+          return (
             notification.active && (
               <motion.div
                 key={index}
@@ -87,15 +88,17 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
                   style={{ height: "100%" }}
                   xAlign="center"
                   yAlign="center"
-                  gap={vars.sizes.s1}
+                  gap={vars.sizes.s2}
                 >
+                  <Icon className={styles.notificationStyles.icon} />
                   <span style={{ ...vars.typography.m }}>
-                    {notification.message}
+                    {notification.message.content}
                   </span>
                 </Box>
               </motion.div>
-            ),
-        )}
+            )
+          );
+        })}
       </AnimatePresence>
     </motion.div>
   );

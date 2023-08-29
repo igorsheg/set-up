@@ -1,12 +1,18 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Card, Data, GameMode } from "@types";
+import { LucideIcon } from "lucide-react";
+
+export type NotificationMessage = {
+  content: string;
+  icon: LucideIcon;
+};
 
 export type GameManagerState = {
   gameData: Data;
   selectedCards: Card[];
   notifications: {
     active: boolean;
-    message: React.ReactNode | string;
+    message: NotificationMessage;
     timer?: number | undefined;
   }[];
 };
@@ -39,10 +45,7 @@ export const gameManagerSlice = createSlice({
       };
       state.selectedCards = [];
     },
-    showNotification: (
-      state,
-      action: PayloadAction<React.ReactElement | string>,
-    ) => {
+    showNotification: (state, action: PayloadAction<NotificationMessage>) => {
       const newNotification = {
         active: true,
         message: action.payload,
