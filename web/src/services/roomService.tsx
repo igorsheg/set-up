@@ -1,12 +1,13 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AppThunk, resetGameData, setActiveRoom } from "@store/index";
 import { JoinGameAction, MessageType } from "@store/websocket";
+import { GameMode } from "@types";
 
-export const createNewRoom = createAsyncThunk<string, void>(
+export const createNewRoom = createAsyncThunk<string, GameMode>(
   "game/createNewRoom",
-  async (_, _thunkAPI) => {
+  async (mode, _thunkAPI) => {
     try {
-      const response = await fetch(`/api/new`);
+      const response = await fetch(`/api/new?mode=${mode}`);
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -37,16 +38,16 @@ export const checkRoomExists = createAsyncThunk<
 
 export const joinRoom =
   (roomCode: string, playerUsername: string): AppThunk =>
-  (dispatch) => {
-    const joinAction: JoinGameAction = {
-      type: MessageType.JOIN,
-      payload: {
-        room_code: roomCode,
-        player_username: playerUsername,
-      },
+    (dispatch) => {
+      const joinAction: JoinGameAction = {
+        type: MessageType.JOIN,
+        payload: {
+          room_code: roomCode,
+          player_username: playerUsername,
+        },
+      };
+      dispatch(joinAction);
     };
-    dispatch(joinAction);
-  };
 
 export const leaveRoom = (): AppThunk => (dispatch) => {
   dispatch({ type: MessageType.CLOSE });

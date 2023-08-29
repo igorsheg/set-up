@@ -31,11 +31,7 @@ export const InvitePlayersDialog: FC<PropsWithChildren<InvitePlayersProps>> = (
   const handleSharing = async () => {
     if (navigator.share) {
       try {
-        await navigator
-          .share(shareData)
-          .then(() =>
-            console.log("Hooray! Your content was shared to tha world"),
-          );
+        await navigator.share(shareData);
       } catch (error) {
         console.log(`Oops! I couldn't share to the world because: ${error}`);
       }
@@ -54,7 +50,6 @@ export const InvitePlayersDialog: FC<PropsWithChildren<InvitePlayersProps>> = (
         setTimeout(() => {
           action.fn(false);
         }, 2000);
-        console.log("Room code copied to clipboard");
       },
       (err) => {
         console.error("Could not copy text: ", err);

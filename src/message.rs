@@ -53,7 +53,7 @@ pub enum MessageType {
     Join(WsMessage),
     Move(WsMessage),
     Request(WsMessage),
-    New,
+    // New,
     Leave,
 }
 
@@ -63,7 +63,7 @@ impl MessageType {
             "join" => Ok(MessageType::Join(message)),
             "move" => Ok(MessageType::Move(message)),
             "request" => Ok(MessageType::Request(message)),
-            "new" => Ok(MessageType::New),
+            // "new" => Ok(MessageType::New),
             _ => Err(Error::GameError(format!(
                 "Unrecognized message type: {}",
                 message.r#type

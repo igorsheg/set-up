@@ -1,7 +1,6 @@
 import Board from "@components/Board/Board";
 import * as styles from "./Game.css";
 import Pill from "@components/Pill/Pill";
-import { Player } from "src/types";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +12,8 @@ import { AppDispatch, RootState } from "@store/index";
 import { requestCards } from "@services/gameService";
 import { setActiveRoom } from "@store/roomManager";
 import { MessageType } from "@store/websocket";
+import ReactCanvasConfetti from "@components/Confetti";
+import confetti from "canvas-confetti";
 
 export default function Game() {
   const gameData = useSelector(
@@ -82,27 +83,88 @@ export default function Game() {
     };
   }, []);
 
-  if (gameData && gameData.game_over) {
-    const highScore = Math.max(...gameData.players.map((p: Player) => p.score));
-    const winners = gameData.players
-      .filter((p: Player) => p.score === highScore)
-      .map((p: Player) => p.name);
+  // if (gameData && gameData.game_over) {
+  //   const highScore = Math.max(...gameData.players.map((p: Player) => p.score));
+  //   const winners = gameData.players
+  //     .filter((p: Player) => p.score === highScore)
+  //     .map((p: Player) => p.name);
+  //
+  //   const confettiProps: confetti.Options = {
+  //     spread: 360,
+  //     ticks: 50,
+  //     gravity: 0,
+  //     decay: 0.94,
+  //     startVelocity: 30,
+  //     shapes: ["star"],
+  //     colors: ["FFE400", "FFBD00", "E89400", "FFCA6C", "FDFFB8"],
+  //     particleCount: 40,
+  //     scalar: 1.2,
+  //   };
+  //
+  //   return (
+  //     <AnimatePresence>
+  //       <motion.div
+  //         initial={{ opacity: 0 }}
+  //         animate={{ opacity: 1 }}
+  //         exit={{ opacity: 0 }}
+  //       >
+  //         <ReactCanvasConfetti
+  //           {...confettiProps}
+  //           style={{
+  //             position: "fixed",
+  //             top: 0,
+  //             left: 0,
+  //             zIndex: 1000,
+  //             width: "100vw",
+  //             height: "100vh",
+  //             userSelect: "none",
+  //             pointerEvents: "none",
+  //           }}
+  //           fire={true}
+  //           className="canvas"
+  //         />
+  //         <Box>
+  //           <div>{`Winner: ${winners.join("& ")}`}</div>
+  //           <button type="button" onClick={() => false}>
+  //             Play again?
+  //           </button>
+  //         </Box>
+  //       </motion.div>
+  //     </AnimatePresence>
+  //   );
+  // }
 
-    return (
-      <div className="app">
-        <div className="game-over">
-          <img width="100%" src="" alt="game-over" />
-          <div>{`Winner: ${winners.join("& ")}`}</div>
-          <button type="button" onClick={() => false}>
-            Play again?
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const confettiProps: confetti.Options = {
+    spread: 360,
+    ticks: 50,
+    gravity: 0,
+    decay: 0.94,
+    startVelocity: 30,
+    shapes: ["star"],
+    colors: ["FFE400", "FFBD00", "E89400", "FFCA6C", "FDFFB8"],
+    particleCount: 40,
+    scalar: 1.2,
+  };
 
   return (
     <>
+      {gameData && gameData.game_over && (
+        <ReactCanvasConfetti
+          {...confettiProps}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            zIndex: 1000,
+            width: "100vw",
+            height: "100vh",
+            userSelect: "none",
+            pointerEvents: "none",
+          }}
+          fire={true}
+          className="canvas"
+        />
+      )}
       <div className={styles.gamePageStyles}>
         {gameData && gameData.in_play && (
           <>

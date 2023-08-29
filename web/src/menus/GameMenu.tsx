@@ -1,8 +1,7 @@
 import Button from "@components/Button/Button";
 import DropdownMenu, { DropdownItem } from "@components/Dropdown/Dropdown";
-import { IconDots } from "@tabler/icons-react";
 import { FC, PropsWithChildren } from "react";
-import { LogOut, UserPlus } from "lucide-react";
+import { LogOut, MoreHorizontal, UserPlus } from "lucide-react";
 
 export enum GameMenuAction {
   invite = "invite",
@@ -25,7 +24,7 @@ export const GameMenu: FC<PropsWithChildren<GameMenuProps>> = ({
           variant="outline"
           buttonType="icon"
         >
-          <IconDots />
+          <MoreHorizontal />
         </Button>
       }
     >

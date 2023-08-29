@@ -2,11 +2,13 @@ import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
 import Dialog, { DialogProps, RadixDialog } from "@components/Dialog/Dialog";
 import { buttonStyles, dialogStyles } from "@components/Dialog/Dialog.css";
+import { GameMode } from "@types";
 import { FC, PropsWithChildren, useState } from "react";
 
 interface NewGameDialogProps
   extends Pick<DialogProps, "open" | "onClose" | "onOpenChange"> {
-  onSubmit: (playerUserName: string) => void;
+  onSubmit: (playerUserName: string, mode: GameMode) => void;
+  mode: GameMode;
 }
 export const NewGameDialog: FC<PropsWithChildren<NewGameDialogProps>> = (
   props,
@@ -43,7 +45,7 @@ export const NewGameDialog: FC<PropsWithChildren<NewGameDialogProps>> = (
           <Button
             disabled={!inputValue.length}
             className={buttonStyles.green}
-            onClick={() => props.onSubmit(inputValue)}
+            onClick={() => props.onSubmit(inputValue, props.mode)}
           >
             Start Game
           </Button>
