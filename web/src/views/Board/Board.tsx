@@ -1,12 +1,12 @@
 import * as React from "react";
 import { Card as CardType } from "../../types";
 import Card from "@components/Card/Card";
-import { boardVars, boardStyles as styles } from "./Board.css"; // Adjust the path as needed
+import { boardVars, boardStyles as styles } from "./Board.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState, setSelectedCards } from "../../store";
-import { useIsMobile } from "../../hooks/useIsMobile";
+import { useIsMobile } from "@hooks/useIsMobile";
 import { moveCards } from "@services/gameService";
 
 const selectSound = new Audio("/sfx/navigation_forward-selection-minimal.wav");
@@ -17,7 +17,7 @@ selectSound.preload = "auto";
 unSelectSound.preload = "auto";
 
 const playSound = (sound: HTMLAudioElement) => {
-  sound.currentTime = 0; // Reset the sound to the start
+  sound.currentTime = 0;
   sound.play();
 };
 
@@ -75,9 +75,19 @@ export default function Board(): React.ReactElement {
     transition: { type: "spring", damping: 30, stiffness: 500 },
   };
 
+  const viewAnimationProps = {
+    initial: { opacity: 0, y: 50 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -60 },
+  };
+
   return (
     <>
-      <div
+      <motion.div
+        animate="animate"
+        exit="exit"
+        initial={false}
+        variants={viewAnimationProps}
         className={styles.board}
         style={assignInlineVars({
           [boardVars.columns]: numberOfColumns.toString(),
@@ -108,7 +118,7 @@ export default function Board(): React.ReactElement {
               </motion.div>
             ))}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </>
   );
 }
