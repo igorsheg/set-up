@@ -16,6 +16,8 @@ export default defineConfig({
       "@menus": "/src/menus",
       "@services": "/src/services",
       "@store": "/src/store",
+      "@hooks": "/src/hooks",
+      "@views": "/src/views",
     },
   },
   server: {
