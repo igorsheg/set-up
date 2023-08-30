@@ -14,6 +14,7 @@ use super::card::Card;
 const BEST_OF_3_SCORE: i64 = 3;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum GameMode {
     Classic,
     BestOf3,
