@@ -13,6 +13,11 @@ export const lobbyStyles = {
 
 globalStyle(`${lobbyStyles.container} > div > h1`, {
   ...vars.typography["7xl"],
+  "@media": {
+    "(max-width: 768px)": {
+      ...vars.typography["4xl"],
+    },
+  },
 });
 
 export const lobbyButtonStyles = {

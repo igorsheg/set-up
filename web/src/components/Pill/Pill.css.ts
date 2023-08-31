@@ -16,63 +16,10 @@ export const pillWrap = style({
   zIndex: 2,
 });
 
-export const avatars = style({
-  display: "flex",
-});
-
-export const avatar = style({
-  position: "relative",
-  width: vars.sizes.s8,
-  height: vars.sizes.s8,
-  maxHeight: vars.sizes.s8,
-  maxWidth: vars.sizes.s8,
-  borderRadius: "100%",
-
-  "::after": {
-    content: "",
-    borderRadius: "100px",
-    left: -1,
-    top: -1,
-    width: "calc(100% + 2px)",
-    height: "calc(100% + 2px)",
-    position: "absolute",
-    border: `4px solid ${vars.colors.d12}`,
-    userSelect: "none",
-    pointerEvents: "none",
-  },
-  selectors: {
-    [`${avatars} &:not(:nth-child(1))`]: {
-      marginLeft: `-12px`,
-    },
-  },
-});
-
-export const avatarCount = style({
-  background: vars.colors.d11,
-});
-
 export const avatarSpanRequest = style({
   "::after": {
     border: `3px solid ${vars.colors.sucess}`,
   },
-});
-
-export const avatarSpan = style({
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  verticalAlign: "middle",
-  overflow: "hidden",
-  userSelect: "none",
-  borderRadius: "100%",
-  boxSizing: "border-box",
-});
-
-globalStyle(`${avatar} span img`, {
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-  borderRadius: "inherit",
 });
 
 export const pillSection = style({});
@@ -106,7 +53,7 @@ export const requestButton = style({
 
 export const notificationStyles = {
   icon: style({
-    width: vars.sizes.s5,
-    height: vars.sizes.s5,
+    width: vars.sizes.s4,
+    height: vars.sizes.s4,
   }),
 };

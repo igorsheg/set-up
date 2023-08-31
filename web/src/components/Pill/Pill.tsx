@@ -3,7 +3,6 @@ import { Data, Player } from "src/types";
 import * as styles from "./Pill.css";
 import Box from "@components/Box/Box";
 import { AnimatePresence, motion } from "framer-motion";
-import Tooltip from "@components/Tooltip/Tooltip";
 import { vars } from "@styles/index.css";
 import { cx } from "../../util/cx";
 import { useSelector } from "react-redux";
@@ -11,6 +10,8 @@ import { RootState } from "../../store";
 import { GameMenu, GameMenuAction } from "../../menus/GameMenu";
 import Button from "@components/Button/Button";
 import { Hand, Sparkle } from "lucide-react";
+import { AvatarGroup } from "@components/Avatar/AvatarGroup";
+import { Avatar } from "@components/Avatar/Avatar";
 
 interface PillProps {
   game: Data;
@@ -24,6 +25,10 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
 }) => {
   const notifications = useSelector(
     (state: RootState) => state.gameManager.notifications,
+  );
+
+  const websocketState = useSelector(
+    (state: RootState) => state.roomManager.webSocketStatus,
   );
 
   const variants = {
@@ -45,61 +50,76 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
       animate={notifications.length ? "expanded" : "collapsed"}
       className={cx(styles.pillWrap)}
     >
-      <Box orientation="row" yAlign="center" gap={vars.sizes.s6}>
-        <Players players={game.players} />
+      {websocketState === "OPEN" ? (
+        <>
+          <Box orientation="row" yAlign="center" gap={vars.sizes.s6}>
+            <Players players={game.players} />
 
-        <Box className={styles.pillSection} xAlign="left" yAlign="left" gap={0}>
-          <span>{game.remaining}</span>
-          <h5>Remaning</h5>
-        </Box>
+            <Box
+              className={styles.pillSection}
+              xAlign="left"
+              yAlign="left"
+              gap={0}
+            >
+              <span>{game.remaining}</span>
+              <h5>Remaning</h5>
+            </Box>
 
-        <Box
-          yAlign="center"
-          className={styles.pillSection}
-          xAlign="left"
-          orientation="row"
-        >
-          <Button
-            dimentions="medium"
-            variant="outline"
-            buttonType="pill"
-            skin="dark"
-            onClick={handleRequest}
-          >
-            Request
-          </Button>
-          <GameMenu onItemSelect={onMenuItemSelect} />
-        </Box>
-      </Box>
-      <AnimatePresence>
-        {notifications.map((notification, index) => {
-          const Icon = notification.message.icon;
-          return (
-            notification.active && (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                style={{ height: "100%" }}
+            <Box
+              yAlign="center"
+              className={styles.pillSection}
+              xAlign="left"
+              orientation="row"
+            >
+              <Button
+                dimentions="medium"
+                variant="outline"
+                buttonType="pill"
+                skin="dark"
+                onClick={handleRequest}
               >
-                <Box
-                  orientation="row"
-                  style={{ height: "100%" }}
-                  xAlign="center"
-                  yAlign="center"
-                  gap={vars.sizes.s2}
-                >
-                  <Icon className={styles.notificationStyles.icon} />
-                  <span style={{ ...vars.typography.m }}>
-                    {notification.message.content}
-                  </span>
-                </Box>
-              </motion.div>
-            )
-          );
-        })}
-      </AnimatePresence>
+                Request
+              </Button>
+              <GameMenu onItemSelect={onMenuItemSelect} />
+            </Box>
+          </Box>
+          <AnimatePresence>
+            {notifications.map((notification, index) => {
+              const Icon = notification.message.icon;
+              return (
+                notification.active && (
+                  <motion.div
+                    layout="position"
+                    key={index}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={{ height: "100%" }}
+                  >
+                    <Box
+                      orientation="row"
+                      style={{ height: "100%" }}
+                      xAlign="center"
+                      yAlign="center"
+                      gap={vars.sizes.s2}
+                    >
+                      <Icon
+                        strokeWidth={1.5}
+                        className={styles.notificationStyles.icon}
+                      />
+                      <span style={{ ...vars.typography.m }}>
+                        {notification.message.content}
+                      </span>
+                    </Box>
+                  </motion.div>
+                )
+              );
+            })}
+          </AnimatePresence>
+        </>
+      ) : (
+        <span>Connecting...</span>
+      )}
     </motion.div>
   );
 };
@@ -109,58 +129,18 @@ interface AvatarProps {
 }
 
 const Players: FC<PropsWithChildren<{ players: Player[] }>> = ({ players }) => {
-  const topScoredPlayers = [...players]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 4);
+  const topScoredPlayers = [...players].sort((a, b) => b.score - a.score);
 
   return (
-    <div className={styles.avatars}>
-      {topScoredPlayers.map((player: Player) => (
-        <Avatar key={`${player.client_id}-avatar`} player={player} />
-      ))}
-      {players.length - topScoredPlayers.length > 0 && (
-        <Box
-          className={cx(styles.avatar, styles.avatarCount)}
-          xAlign="center"
-          yAlign="center"
-        >
-          <span style={{ ...vars.typography.s }}>
-            +{players.length - topScoredPlayers.length}
-          </span>
-        </Box>
-      )}
-    </div>
-  );
-};
-
-const Avatar: FC<PropsWithChildren<AvatarProps>> = ({ player }) => {
-  return (
-    <motion.div
-      className={cx(
-        styles.avatar,
-        player.request ? styles.avatarSpanRequest : "",
-      )}
-      layout
-      key={player.name}
-      initial={{
-        opacity: 0,
-        scale: 0.5,
-      }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-      }}
-      exit={{ opacity: 0, scale: 0.5 }}
-    >
-      <Tooltip content={<AvatarTooltipContent player={player} />}>
-        <span className={styles.avatarSpan}>
-          <img
-            src={`https://source.boringavatars.com/beam/40/${player.name}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
-            alt="avatar"
-          />
-        </span>
-      </Tooltip>
-    </motion.div>
+    <AvatarGroup
+      items={topScoredPlayers.map((tp) => ({
+        image: `https://source.boringavatars.com/beam/40/${tp.client_id}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`,
+        fallback: tp.name.substring(0, 1),
+        alt: `${tp.name}'s avatar`,
+        popoverContent: <AvatarTooltipContent player={tp} />,
+        ping: tp.score || undefined,
+      }))}
+    />
   );
 };
 
@@ -170,17 +150,20 @@ const AvatarTooltipContent: FC<PropsWithChildren<AvatarProps>> = ({
   return (
     <Box
       gap={vars.sizes.s2}
-      style={{ width: vars.sizes.s14, padding: vars.sizes.s2 }}
+      style={{
+        width: vars.sizes.s14,
+        padding: vars.sizes.s2,
+        background: vars.colors.background,
+      }}
       xAlign="start"
       orientation="column"
     >
       <Box xAlign="start" gap={0}>
-        <span className={styles.avatarSpan}>
-          <img
-            src={`https://source.boringavatars.com/beam/40/${player.name}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
-            alt="avatar"
-          />
-        </span>
+        <Avatar
+          alt={`${player.name}'s avatar`}
+          fallback={player.name.substring(0, 1)}
+          image={`https://source.boringavatars.com/beam/40/${player.name}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
+        />
         <p style={{ fontWeight: 500 }}>{player.name}</p>
       </Box>
       <Box gap={vars.sizes.s1}>
