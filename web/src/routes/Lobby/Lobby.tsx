@@ -12,29 +12,6 @@ import { vars } from "@styles/index.css";
 import { JoinGameDialog } from "@dialogs/JoinGameDialog";
 import { GameMode } from "@types";
 
-function SetLogo() {
-  return (
-    <svg
-      width={158}
-      height={158}
-      viewBox="0 0 158 158"
-      fill="none"
-      style={{ width: "60px", height: "60px" }}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M76 38c0 20.987-17.013 38-38 38S0 58.987 0 38 17.013 0 38 0s38 17.013 38 38zM0 120c0-20.987 17.013-38 38-38h38v38c0 20.987-17.013 38-38 38S0 140.987 0 120z"
-        fill="#F76808"
-      />
-      <circle cx={120} cy={120} r={38} fill="#F76808" />
-      <path
-        d="M82 38c0-20.987 17.013-38 38-38s38 17.013 38 38-17.013 38-38 38H82V38z"
-        fill="#F76808"
-      />
-    </svg>
-  );
-}
-
 export default function Lobby() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
@@ -96,7 +73,6 @@ export default function Lobby() {
   return (
     <Box xAlign="center" className={lobbyStyles.container}>
       <Box gap={vars.sizes.s4} yAlign="center" orientation="row">
-        <SetLogo />
         <h1>Set Up!</h1>
       </Box>
       <NewGameDialog

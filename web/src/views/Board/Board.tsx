@@ -57,7 +57,7 @@ export default function Board(): React.ReactElement {
 
   React.useEffect(() => {
     if (isMobile) {
-      setNumberOfColumns(3);
+      setNumberOfColumns(4);
     } else {
       if (in_play && in_play.length > 12) {
         const additionalColumns = Math.floor(in_play.length / 12);

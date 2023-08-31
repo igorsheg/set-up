@@ -3,6 +3,11 @@ import { Card, Data } from "@types";
 import { AppDispatch, RootState, setWebsocketStatus } from ".";
 import { setGameState } from "@services/gameService";
 
+let retryCount = 0;
+const maxRetry = 5;
+let retryInterval: number;
+let userRequestedClose = false;
+
 export type WebSocketStatus = "IDLE" | "CONNECTING" | "OPEN" | "CLOSED";
 
 export enum MessageType {
@@ -52,6 +57,14 @@ export type GameAction =
 
 export let ws: WebSocket | null = null;
 
+export const simulateUnintentionalDisconnect = () => {
+  setTimeout(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.close();
+    }
+  }, Math.random() * 10000);
+};
+
 const connectWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
   const url = new URL("/api/ws", window.location.href);
   url.protocol = url.protocol.replace("http", "ws");
@@ -59,13 +72,38 @@ const connectWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
 
   ws.onopen = () => {
     storeAPI.dispatch(setWebsocketStatus("OPEN"));
+    retryCount = 0;
+    if (retryInterval) {
+      clearInterval(retryInterval); // Clear retry interval
+    }
   };
   ws.onmessage = (event) => {
     const receivedData: Data = JSON.parse(event.data);
+
     storeAPI.dispatch(setGameState(receivedData));
   };
   ws.onclose = () => {
     storeAPI.dispatch(setWebsocketStatus("CLOSED"));
+    ws = null;
+    if (retryInterval) {
+      clearInterval(retryInterval);
+    }
+
+    if (!userRequestedClose) {
+      if (retryCount < maxRetry) {
+        retryInterval = setInterval(() => {
+          if (retryCount < maxRetry) {
+            retryCount++;
+            console.log(`Retry attempt ${retryCount}`);
+            initializeWebSocket(storeAPI);
+          } else {
+            clearInterval(retryInterval);
+          }
+        }, 5000);
+      }
+    } else {
+      userRequestedClose = false;
+    }
   };
   ws.onerror = (error) => console.error("WebSocket Error:", error);
 };
@@ -84,6 +122,7 @@ export const webSocketMiddleware: Middleware = (storeAPI: MiddlewareAPI) => {
 
     if (action.type === MessageType.CLOSE) {
       if (ws && ws.readyState === WebSocket.OPEN) {
+        userRequestedClose = true; // Set the flag before closing
         ws.close();
       }
       ws = null;

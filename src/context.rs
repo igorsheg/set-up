@@ -62,10 +62,7 @@ impl Context {
                     .handle_request(message, client_id, &mut client_manager)
                     .await
             }
-            // MessageType::New => {
-            //     let _ = room_manager.handle_new().await;
-            //     Ok(())
-            // }
+            MessageType::Ping => Ok(()),
             MessageType::Leave => {
                 room_manager
                     .handle_leave(client_id, &mut client_manager)

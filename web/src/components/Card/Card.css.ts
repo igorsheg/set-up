@@ -37,6 +37,13 @@ export const cardStyles = {
     backgroundColor: vars.colors.foregorund,
     willChange: "transform, box-shadow, background-color",
 
+    "@media": {
+      "(max-width: 768px)": {
+        height: "78px",
+        width: "78px",
+      },
+    },
+
     ":active": {
       transform: "translateY(2px)",
       boxShadow: `inset 0 0 0 2px ${vars.colors.d6}`,
@@ -74,7 +81,7 @@ export const cardStyles = {
       backgroundRepeat: "no-repeat",
       backgroundSize: "100% 100%, 50% 50%",
       backgroundPosition: "0 0, 100% 0, 100% 100%, 0 100%",
-      //@ts-ignore
+      // @ts-ignore: complain about gradient
       background: `conic-gradient(${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor});`,
       animation: `${bgRotate} 2s linear infinite`,
       willChange: "transform",

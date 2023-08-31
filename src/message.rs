@@ -53,7 +53,7 @@ pub enum MessageType {
     Join(WsMessage),
     Move(WsMessage),
     Request(WsMessage),
-    // New,
+    Ping,
     Leave,
 }
 
@@ -62,6 +62,7 @@ impl MessageType {
         match message.r#type.as_str() {
             "join" => Ok(MessageType::Join(message)),
             "move" => Ok(MessageType::Move(message)),
+            "ping" => Ok(MessageType::Ping),
             "request" => Ok(MessageType::Request(message)),
             // "new" => Ok(MessageType::New),
             _ => Err(Error::GameError(format!(

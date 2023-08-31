@@ -19,10 +19,8 @@ export const boardStyles = {
     justifyContent: "center",
     "@media": {
       "(max-width: 768px)": {
-        gridTemplateColumns: `repeat(3, "104px")`,
-      },
-      "(max-width: 480px)": {
-        gridTemplateColumns: `repeat(1, "104px")`,
+        gridTemplateColumns: `repeat(4, 78px)`,
+        rowGap: vars.sizes.s2,
       },
     },
   }),
