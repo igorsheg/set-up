@@ -5,7 +5,6 @@ import {
   RootState,
   hideNotification,
   setGameData,
-  setNotificationTimer,
   setSelectedCards,
   showNotification,
 } from "@store/index";
@@ -15,7 +14,15 @@ import { Hand, Sparkles, User } from "lucide-react";
 
 type Dispatch = ThunkDispatch<RootState, unknown, Action<string>>;
 
-const deepEqual = <T extends any>(obj1: T, obj2: T): boolean => {
+type JsonSerializable =
+  | null
+  | boolean
+  | number
+  | string
+  | JsonSerializable[]
+  | { [key: string]: JsonSerializable };
+
+const deepEqual = <T extends JsonSerializable>(obj1: T, obj2: T): boolean => {
   return JSON.stringify(obj1) === JSON.stringify(obj2);
 };
 
@@ -96,34 +103,34 @@ const checkPayerRequested = (newData: Data, currentState: Data): Player[] => {
 
 export const setGameState =
   (newData: Data): AppThunk =>
-  (dispatch, getState) => {
-    const currentState = getState().gameManager.gameData;
+    (dispatch, getState) => {
+      const currentState = getState().gameManager.gameData;
 
-    checkAndDispatchPlayersRequested(newData, currentState, dispatch);
-    checkAndDispatchLastSet(newData, currentState, dispatch);
-    checkAndDispatchNewPlayer(newData, currentState, dispatch);
+      checkAndDispatchPlayersRequested(newData, currentState, dispatch);
+      checkAndDispatchLastSet(newData, currentState, dispatch);
+      checkAndDispatchNewPlayer(newData, currentState, dispatch);
 
-    dispatch(setGameData(newData));
-  };
+      dispatch(setGameData(newData));
+    };
 
 export const moveCards =
   (cards: Card[]): AppThunk =>
-  (dispatch, getState) => {
-    dispatch(setSelectedCards(cards));
+    (dispatch, getState) => {
+      dispatch(setSelectedCards(cards));
 
-    const {
-      roomManager: { activeRoom },
-    } = getState() as RootState;
+      const {
+        roomManager: { activeRoom },
+      } = getState() as RootState;
 
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          type: MessageType.MOVE,
-          payload: { room_code: activeRoom?.code, cards },
-        }),
-      );
-    }
-  };
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: MessageType.MOVE,
+            payload: { room_code: activeRoom?.code, cards },
+          }),
+        );
+      }
+    };
 
 export const requestCards = (): AppThunk => (dispatch) => {
   dispatch({
@@ -133,12 +140,12 @@ export const requestCards = (): AppThunk => (dispatch) => {
 
 export const displayNotificationWithTimer =
   (message: NotificationMessage): AppThunk =>
-  (dispatch, getState) => {
-    dispatch(showNotification(message));
-    const index = getState().gameManager.notifications.length - 1;
-    const timeoutId = setTimeout(() => {
-      dispatch(hideNotification(index));
-    }, 6000);
+    (dispatch) => {
+      const notificationId = Date.now();
 
-    dispatch(setNotificationTimer({ index, timer: timeoutId }));
-  };
+      dispatch(showNotification({ id: notificationId, message }));
+
+      setTimeout(() => {
+        dispatch(hideNotification(notificationId));
+      }, 6000);
+    };

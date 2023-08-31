@@ -64,7 +64,6 @@ impl MessageType {
             "move" => Ok(MessageType::Move(message)),
             "ping" => Ok(MessageType::Ping),
             "request" => Ok(MessageType::Request(message)),
-            // "new" => Ok(MessageType::New),
             _ => Err(Error::GameError(format!(
                 "Unrecognized message type: {}",
                 message.r#type

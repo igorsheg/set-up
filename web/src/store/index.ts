@@ -28,7 +28,6 @@ export const {
   setSelectedCards,
   showNotification,
   hideNotification,
-  setNotificationTimer,
 } = gameManagerSlice.actions;
 
 export type RootState = ReturnType<typeof store.getState>;

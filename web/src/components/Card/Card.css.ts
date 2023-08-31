@@ -60,10 +60,6 @@ export const cardStyles = {
       backgroundColor: vars.colors.foregorund,
       borderRadius: "12px",
     },
-
-    ":hover": {
-      // boxShadow: vars.shadows.lg,
-    },
   }),
   selected: style({
     backgroundColor: "transparent",

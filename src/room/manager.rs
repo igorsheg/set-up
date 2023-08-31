@@ -54,12 +54,14 @@ impl RoomManager {
         let room_code = message.get_room_code()?;
         let game_state = self.get_game_state(&room_code)?;
         let client = client_manager.find_client(client_id)?;
-        let player_username = message.get_player_username()?;
-        let player = Player::new(client.id, player_username);
+
+        if game_state.restore_player(client_id).is_err() {
+            let player_username = message.get_player_username()?;
+            let player = Player::new(client.id, player_username);
+            game_state.add_player(player);
+        }
 
         client.set_room_code(room_code);
-        game_state.add_player(player);
-
         client_manager.broadcast_game_state(&message, self).await?;
 
         Ok(())
