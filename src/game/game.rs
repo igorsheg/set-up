@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use crate::game::deck::Deck;
 use crate::game::player::Player;
@@ -53,6 +55,7 @@ pub struct Game {
     pub remaining: i64,              // The number of remaining cards in the deck
     pub state: GameState,
     pub mode: GameMode,
+    pub disconnected_players: HashMap<Uuid, (u64, Player)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -80,6 +83,7 @@ impl Game {
             remaining: 0,
             state: GameState::WaitingForPlayers,
             mode,
+            disconnected_players: HashMap::new(),
         };
         game.deck.shuffle();
         game.deal();
@@ -91,9 +95,38 @@ impl Game {
     }
 
     pub fn remove_player(&mut self, client_id: Uuid) -> bool {
-        let initial_length = self.players.len();
-        self.players.retain(|player| player.client_id != client_id);
-        initial_length > self.players.len()
+        let start = SystemTime::now();
+        let since_the_epoch = start
+            .duration_since(UNIX_EPOCH)
+            .expect("Since epoch error, Time went backwards");
+        let timestamp = since_the_epoch.as_secs();
+
+        if let Some(index) = self.players.iter().position(|p| p.client_id == client_id) {
+            let player = self.players.remove(index);
+            self.disconnected_players
+                .insert(client_id, (timestamp, player));
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn restore_player(&mut self, client_id: Uuid) -> Result<(), &'static str> {
+        if let Some((timestamp, player)) = self.disconnected_players.remove(&client_id) {
+            let current_time = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_secs();
+
+            if current_time - timestamp < 5 * 60 {
+                log::info!("Player {} found, restoring...", player.clone().name);
+                self.players.push(player);
+                return Ok(());
+            } else {
+                // TODO: Remove player from game
+            }
+        }
+        Err("Could not restore player")
     }
 
     pub fn deal(&mut self) {
@@ -219,7 +252,7 @@ impl Game {
 
     pub fn add_cards(&mut self) {
         let mut cards = self.deck.cards.drain(0..3).collect::<Vec<_>>();
-        self.in_play.append(&mut cards); // Append new cards to in_play
+        self.in_play.append(&mut cards);
         self.remaining = self.deck.cards.len() as i64;
     }
 

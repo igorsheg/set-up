@@ -13,7 +13,7 @@ impl Player {
     pub fn new(client_id: Uuid, name: String) -> Self {
         Player {
             client_id,
-            name, // Initialize player attributes
+            name,
             score: 0,
             request: false,
         }

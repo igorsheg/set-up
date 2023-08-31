@@ -11,9 +11,9 @@ export type GameManagerState = {
   gameData: Data;
   selectedCards: Card[];
   notifications: {
+    id: number;
     active: boolean;
     message: NotificationMessage;
-    timer?: number | undefined;
   }[];
 };
 
@@ -45,29 +45,23 @@ export const gameManagerSlice = createSlice({
       };
       state.selectedCards = [];
     },
-    showNotification: (state, action: PayloadAction<NotificationMessage>) => {
+    showNotification: (
+      state,
+      action: PayloadAction<{ id: number; message: NotificationMessage }>,
+    ) => {
       const newNotification = {
+        id: action.payload.id,
         active: true,
-        message: action.payload,
-        timer: undefined,
+        message: action.payload.message,
       };
       state.notifications.push(newNotification);
     },
     hideNotification: (state, action: PayloadAction<number>) => {
-      if (state.notifications[action.payload]?.timer) {
-        clearTimeout(state.notifications[action.payload].timer);
-      }
-      state.notifications.splice(action.payload, 1);
-    },
-    setNotificationTimer: (
-      state,
-      action: PayloadAction<{
-        index: number;
-        timer: ReturnType<typeof setTimeout>;
-      }>,
-    ) => {
-      if (state.notifications[action.payload.index]) {
-        state.notifications[action.payload.index].timer = action.payload.timer;
+      const index = state.notifications.findIndex(
+        (n) => n.id === action.payload,
+      );
+      if (index > -1) {
+        state.notifications.splice(index, 1);
       }
     },
   },

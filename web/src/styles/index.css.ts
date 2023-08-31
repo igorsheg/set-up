@@ -60,7 +60,7 @@ export const lightTheme = createTheme(colors, {
   code: sand.sand12,
   sucess: green.green9,
   danger: red.red9,
-  glass: "rgba(253, 253, 253, 0.3)", // Adjust opacity as needed
+  glass: "rgba(253, 253, 253, 0.3)",
   d1: sand.sand1,
   d2: sand.sand2,
   d3: sand.sand3,
@@ -89,7 +89,7 @@ const root = createGlobalTheme(":root", {
     code: sand.sand12,
     sucess: green.green9,
     danger: red.red9,
-    glass: "rgba(253, 253, 253, 0.3)", // Adjust opacity as needed
+    glass: "rgba(253, 253, 253, 0.3)",
     d1: sand.sand1,
     d2: sand.sand2,
     d3: sand.sand3,

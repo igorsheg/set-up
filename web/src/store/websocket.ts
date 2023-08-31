@@ -74,7 +74,7 @@ const connectWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
     storeAPI.dispatch(setWebsocketStatus("OPEN"));
     retryCount = 0;
     if (retryInterval) {
-      clearInterval(retryInterval); // Clear retry interval
+      clearInterval(retryInterval);
     }
   };
   ws.onmessage = (event) => {
@@ -94,7 +94,6 @@ const connectWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
         retryInterval = setInterval(() => {
           if (retryCount < maxRetry) {
             retryCount++;
-            console.log(`Retry attempt ${retryCount}`);
             initializeWebSocket(storeAPI);
           } else {
             clearInterval(retryInterval);
