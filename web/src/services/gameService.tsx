@@ -3,28 +3,18 @@ import { NotificationMessage } from "@store/gameManager";
 import {
   AppThunk,
   RootState,
+  clearSelectedCards,
   hideNotification,
   setGameData,
-  setSelectedCards,
+  // setSelectedCards,
   showNotification,
 } from "@store/index";
 import { MessageType, ws } from "@store/websocket";
 import { Card, Data, Player } from "@types";
 import { Hand, Sparkles, User } from "lucide-react";
+import { deepEqual } from "../util/deepEqual";
 
 type Dispatch = ThunkDispatch<RootState, unknown, Action<string>>;
-
-type JsonSerializable =
-  | null
-  | boolean
-  | number
-  | string
-  | JsonSerializable[]
-  | { [key: string]: JsonSerializable };
-
-const deepEqual = <T extends JsonSerializable>(obj1: T, obj2: T): boolean => {
-  return JSON.stringify(obj1) === JSON.stringify(obj2);
-};
 
 const checkAndDispatchPlayersRequested = (
   newData: Data,
@@ -103,49 +93,49 @@ const checkPayerRequested = (newData: Data, currentState: Data): Player[] => {
 
 export const setGameState =
   (newData: Data): AppThunk =>
-    (dispatch, getState) => {
-      const currentState = getState().gameManager.gameData;
+  (dispatch, getState) => {
+    const currentState = getState().gameManager.gameData;
 
-      checkAndDispatchPlayersRequested(newData, currentState, dispatch);
-      checkAndDispatchLastSet(newData, currentState, dispatch);
-      checkAndDispatchNewPlayer(newData, currentState, dispatch);
+    checkAndDispatchPlayersRequested(newData, currentState, dispatch);
+    checkAndDispatchLastSet(newData, currentState, dispatch);
+    checkAndDispatchNewPlayer(newData, currentState, dispatch);
 
-      dispatch(setGameData(newData));
-    };
+    dispatch(setGameData(newData));
+  };
 
 export const moveCards =
   (cards: Card[]): AppThunk =>
-    (dispatch, getState) => {
-      dispatch(setSelectedCards(cards));
+  (dispatch, getState) => {
+    const {
+      roomManager: { activeRoom },
+    } = getState() as RootState;
 
-      const {
-        roomManager: { activeRoom },
-      } = getState() as RootState;
-
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: MessageType.MOVE,
-            payload: { room_code: activeRoom?.code, cards },
-          }),
-        );
-      }
-    };
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: MessageType.MOVE,
+          payload: { room_code: activeRoom?.code, cards },
+        }),
+      );
+      dispatch(clearSelectedCards());
+    }
+  };
 
 export const requestCards = (): AppThunk => (dispatch) => {
   dispatch({
     type: MessageType.REQUEST,
   });
+  dispatch(clearSelectedCards());
 };
 
 export const displayNotificationWithTimer =
   (message: NotificationMessage): AppThunk =>
-    (dispatch) => {
-      const notificationId = Date.now();
+  (dispatch) => {
+    const notificationId = Date.now();
 
-      dispatch(showNotification({ id: notificationId, message }));
+    dispatch(showNotification({ id: notificationId, message }));
 
-      setTimeout(() => {
-        dispatch(hideNotification(notificationId));
-      }, 6000);
-    };
+    setTimeout(() => {
+      dispatch(hideNotification(notificationId));
+    }, 6000);
+  };
