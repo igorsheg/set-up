@@ -1,5 +1,5 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { Card, Data, GameMode } from "@types";
+import { Data, GameMode } from "@types";
 import { LucideIcon } from "lucide-react";
 
 export type NotificationMessage = {
@@ -9,7 +9,7 @@ export type NotificationMessage = {
 
 export type GameManagerState = {
   gameData: Data;
-  selectedCards: Card[];
+  selectedCardIndexes: number[];
   notifications: {
     id: number;
     active: boolean;
@@ -26,15 +26,27 @@ export const gameManagerSlice = createSlice({
       players: [],
       mode: GameMode.Classic,
     } as Data,
-    selectedCards: [],
+    selectedCardIndexes: [],
     notifications: [],
   } as GameManagerState,
   reducers: {
     setGameData: (state, action: PayloadAction<Data>) => {
       state.gameData = action.payload;
     },
-    setSelectedCards: (state, action: PayloadAction<Card[]>) => {
-      state.selectedCards = action.payload;
+    // setSelectedCards: (state, action: PayloadAction<Card[]>) => {
+    //   state.selectedCards = action.payload;
+    // },
+    addSelectedCard: (state, action: PayloadAction<number>) => {
+      state.selectedCardIndexes.push(action.payload);
+    },
+    removeSelectedCard: (state, action: PayloadAction<number>) => {
+      const index = state.selectedCardIndexes.indexOf(action.payload);
+      if (index > -1) {
+        state.selectedCardIndexes.splice(index, 1);
+      }
+    },
+    clearSelectedCards: (state) => {
+      state.selectedCardIndexes = [];
     },
     resetGameData: (state) => {
       state.gameData = {
@@ -43,7 +55,7 @@ export const gameManagerSlice = createSlice({
         players: [],
         mode: GameMode.Classic,
       };
-      state.selectedCards = [];
+      state.selectedCardIndexes = [];
     },
     showNotification: (
       state,

@@ -31,9 +31,9 @@ export const lobbyButtonStyles = {
     borderRadius: vars.radius,
     boxShadow: `${vars.shadows.sm}, 0 0 0 1px ${vars.colorVars.d4}, inset 0px 0.6px 0px rgba(255,255,255, 0.1),inset 0px 1.2px 0px rgba(255, 255, 255, 0.1),inset -1.2px 0px 0px rgba(255, 255, 255, 0.04),inset 1.2px 0px 0px rgba(255, 255, 255, 0.04)`,
     background: vars.colors.background,
-    transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+    // transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
     cursor: "pointer",
-    willChange: "transform",
+    // willChange: "transform",
 
     ":hover": {
       transform: "translateY(-2px)",

@@ -14,6 +14,7 @@ import { setActiveRoom } from "@store/roomManager";
 import { MessageType } from "@store/websocket";
 import { AnimatePresence } from "framer-motion";
 import { GameEnded } from "@views/GameEnded/GameEnded";
+import LoadingDots from "@components/LoadingDots/LoadingDots";
 
 export default function Game() {
   const gameData = useSelector(
@@ -87,7 +88,7 @@ export default function Game() {
     return gameData.game_over ? (
       <GameEnded />
     ) : !gameData.in_play?.length ? (
-      <span>Loading...</span>
+      <LoadingDots content={"Loading"} />
     ) : (
       <>
         <Board />

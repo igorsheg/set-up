@@ -121,7 +121,7 @@ export const webSocketMiddleware: Middleware = (storeAPI: MiddlewareAPI) => {
 
     if (action.type === MessageType.CLOSE) {
       if (ws && ws.readyState === WebSocket.OPEN) {
-        userRequestedClose = true; // Set the flag before closing
+        userRequestedClose = true;
         ws.close();
       }
       ws = null;

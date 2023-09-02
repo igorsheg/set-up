@@ -131,7 +131,7 @@ impl Game {
 
     pub fn deal(&mut self) {
         let mut in_play = Vec::with_capacity(6);
-        for _ in 0..9 {
+        for _ in 0..12 {
             if let Some(card) = self.deck.draw() {
                 in_play.push(card);
             }

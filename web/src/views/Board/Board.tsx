@@ -5,53 +5,43 @@ import { boardVars, boardStyles as styles } from "./Board.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState, setSelectedCards } from "../../store";
+import {
+  AppDispatch,
+  RootState,
+  addSelectedCard,
+  removeSelectedCard,
+} from "../../store";
 import { useIsMobile } from "@hooks/useIsMobile";
 import { moveCards } from "@services/gameService";
-
-const selectSound = new Audio("/sfx/navigation_forward-selection-minimal.wav");
-const unSelectSound = new Audio(
-  "/sfx/navigation_backward-selection-minimal.wav",
-);
-selectSound.preload = "auto";
-unSelectSound.preload = "auto";
-
-const playSound = (sound: HTMLAudioElement) => {
-  sound.currentTime = 0;
-  sound.play();
-};
 
 export default function Board(): React.ReactElement {
   const in_play = useSelector(
     (state: RootState) => state.gameManager.gameData.in_play,
   );
 
+  const selectedIndexes = useSelector(
+    (state: RootState) => state.gameManager.selectedCardIndexes,
+  );
+
   const game_over = useSelector(
     (state: RootState) => state.gameManager.gameData.game_over,
   );
   const dispatch = useDispatch<AppDispatch>();
-  const selected = useSelector(
-    (state: RootState) => state.gameManager.selectedCards,
-  );
 
   const [numberOfColumns, setNumberOfColumns] = React.useState(3);
   const isMobile = useIsMobile();
 
-  const handleClick = (card: CardType): void => {
-    const i = selected.indexOf(card);
-    if (i === -1) {
-      playSound(selectSound);
-      const slctd = [...selected, card];
-      if (slctd.length === 3) {
-        dispatch(setSelectedCards(slctd));
-        dispatch(moveCards(slctd));
-        dispatch(setSelectedCards([]));
+  const handleClick = (index: number): void => {
+    if (!selectedIndexes.includes(index)) {
+      const newSelectedIndexes = [...selectedIndexes, index];
+      if (newSelectedIndexes.length === 3 && in_play) {
+        const selectedCards = newSelectedIndexes.map((i) => in_play[i]);
+        dispatch(moveCards(selectedCards));
       } else {
-        dispatch(setSelectedCards(slctd));
+        dispatch(addSelectedCard(index));
       }
     } else {
-      playSound(unSelectSound);
-      dispatch(setSelectedCards(selected.filter((c) => c !== card)));
+      dispatch(removeSelectedCard(index));
     }
   };
 
@@ -61,9 +51,9 @@ export default function Board(): React.ReactElement {
     } else {
       if (in_play && in_play.length > 12) {
         const additionalColumns = Math.floor(in_play.length / 12);
-        setNumberOfColumns(3 + additionalColumns);
+        setNumberOfColumns(4 + additionalColumns);
       } else {
-        setNumberOfColumns(3);
+        setNumberOfColumns(4);
       }
     }
   }, [in_play, isMobile]);
@@ -110,8 +100,8 @@ export default function Board(): React.ReactElement {
                 }}
               >
                 <Card
-                  selected={selected.indexOf(card) !== -1}
-                  onClick={(): void => handleClick(card)}
+                  selected={selectedIndexes.includes(i)}
+                  onClick={(): void => handleClick(i)}
                   card={card}
                   hidden={card.color === null}
                 />

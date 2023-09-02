@@ -1,3 +1,4 @@
+import { vars } from "@styles/index.css";
 import { style } from "@vanilla-extract/css";
 
 export const rootStyles = style({
@@ -8,8 +9,9 @@ export const rootStyles = style({
   alignItems: "center",
   flexDirection: "column",
   position: "relative",
-  backgroundImage:
-    "radial-gradient(ellipse 80% 80% at 50% -20%, rgba(202, 153, 213, 0.4), rgba(255, 255, 255, 0))",
+  background: vars.colors.d3,
+  // backgroundImage:
+  //   "radial-gradient(ellipse 80% 80% at 50% -20%, rgba(202, 153, 213, 0.4), rgba(255, 255, 255, 0))",
   "::after": {
     content: "",
     zIndex: 0,
@@ -31,7 +33,6 @@ export const rootStyles = style({
     right: 0,
     bottom: 0,
     left: 0,
-    zIndex: -10,
     height: "100%",
     width: "100%",
     backgroundImage: `radial-gradient(rgba(120, 119, 198, 0.2) 1px, transparent 1px)`,

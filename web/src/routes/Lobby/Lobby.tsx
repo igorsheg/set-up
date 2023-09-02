@@ -11,6 +11,7 @@ import { ChevronRight } from "lucide-react";
 import { vars } from "@styles/index.css";
 import { JoinGameDialog } from "@dialogs/JoinGameDialog";
 import { GameMode } from "@types";
+import { motion } from "framer-motion";
 
 export default function Lobby() {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ export default function Lobby() {
             username: playerUsername,
           }),
         );
-        new Audio("/sfx/navigation_forward-selection.wav").play();
+        // new Audio("/sfx/navigation_forward-selection.wav").play();
         setReqGame({ req: "new", roomCode: actionResult.payload, mode });
         navigate("/game/" + actionResult.payload);
       }
@@ -57,7 +58,6 @@ export default function Lobby() {
         username: playerUsername,
       }),
     );
-    new Audio("/sfx/navigation_forward-selection.wav").play();
     setReqGame({ ...reqGame, req: "join", roomCode });
     navigate("/game/" + roomCode);
   };
@@ -90,7 +90,7 @@ export default function Lobby() {
         onSubmit={joinGameHandler}
         open={reqGame.req === "join"}
       />
-      <button
+      <motion.button
         className={lobbyButtonStyles.container}
         onClick={() =>
           setReqGame((draft) => ({
@@ -106,8 +106,8 @@ export default function Lobby() {
         </Box>
 
         <ChevronRight />
-      </button>
-      <button
+      </motion.button>
+      <motion.button
         className={lobbyButtonStyles.container}
         onClick={() =>
           setReqGame((draft) => ({
@@ -123,7 +123,7 @@ export default function Lobby() {
         </Box>
 
         <ChevronRight />
-      </button>
+      </motion.button>
       <button
         className={lobbyButtonStyles.container}
         onClick={() => setReqGame((draft) => ({ ...draft, req: "join" }))}
