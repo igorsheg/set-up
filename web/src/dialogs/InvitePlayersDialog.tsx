@@ -24,7 +24,7 @@ export const InvitePlayersDialog: FC<PropsWithChildren<InvitePlayersProps>> = (
 
   const shareData = {
     title: "Set Up - join room",
-    text: "Join a game of Set!",
+    text: "Spot it, match it, win it — Set's the name, speed's the game!",
     url: gameUrl,
   };
 

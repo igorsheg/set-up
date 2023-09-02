@@ -52,6 +52,7 @@ pub async fn handle_client_proxy(
         let resp = Response::builder()
             .header("Content-Type", mime_type.as_ref())
             .header("Content-Length", buf.len().to_string())
+            .header("Cache-Control", "public, max-age=3600") // 1 hour caching
             .body(Body::from(buf))
             .unwrap();
 
