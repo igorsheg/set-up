@@ -14,6 +14,9 @@ export const pillWrap = style({
   position: "fixed",
   padding: `${vars.sizes.s3} ${vars.sizes.s3}`,
   zIndex: 2,
+  boxShadow: `
+rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 20px 25px -5px, rgba(0, 0, 0, 0.1) 0px 8px 10px -6px
+`,
 });
 
 export const avatarSpanRequest = style({

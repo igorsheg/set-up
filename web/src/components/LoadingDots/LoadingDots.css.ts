@@ -30,8 +30,6 @@ const dotAnimation = keyframes({
 });
 
 export const dot = style({
-  width: 4,
-  height: 4,
   borderRadius: "50%",
   selectors: {
     [`${large} &`]: {

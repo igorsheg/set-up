@@ -2,16 +2,13 @@ import { vars } from "@styles/index.css";
 import { style } from "@vanilla-extract/css";
 
 export const rootStyles = style({
-  height: "100vh",
   display: "flex",
   overflow: "hidden",
   justifyContent: "center",
   alignItems: "center",
   flexDirection: "column",
   position: "relative",
-  background: vars.colors.d3,
-  // backgroundImage:
-  //   "radial-gradient(ellipse 80% 80% at 50% -20%, rgba(202, 153, 213, 0.4), rgba(255, 255, 255, 0))",
+  background: vars.colors.d2,
   "::after": {
     content: "",
     zIndex: 0,
@@ -29,13 +26,24 @@ export const rootStyles = style({
   "::before": {
     content: "",
     position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
+    inset: "0",
     height: "100%",
     width: "100%",
-    backgroundImage: `radial-gradient(rgba(120, 119, 198, 0.2) 1px, transparent 1px)`,
-    backgroundSize: "16px 16px",
+    backgroundImage: `linear-gradient(to right, ${vars.colors.d4} 1px, transparent 1px),\n    linear-gradient(to bottom, ${vars.colors.d4} 1px, transparent 1px)`,
+    backgroundSize: `${vars.sizes.s12} ${vars.sizes.s12}`,
+    WebkitMaskImage:
+      "radial-gradient(\n    ellipse 50% 50% at 50% 50%,\n    #000 60%,\n    transparent 100%\n  )",
+    maskImage:
+      "radial-gradient(\n    ellipse 50% 50% at 50% 50%,\n    #000 60%,\n    transparent 100%\n  )",
   },
+});
+
+export const rootStylesMain = style({
+  width: "100%",
+  overflow: "auto",
+  justifyContent: "center",
+  alignItems: "center",
+  display: "flex",
+  flexDirection: "column",
+  height: "100%",
 });

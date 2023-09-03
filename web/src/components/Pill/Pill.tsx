@@ -12,6 +12,7 @@ import Button from "@components/Button/Button";
 import { Hand, Sparkle } from "lucide-react";
 import { AvatarGroup } from "@components/Avatar/AvatarGroup";
 import { Avatar } from "@components/Avatar/Avatar";
+import LoadingDots from "@components/LoadingDots/LoadingDots";
 
 interface PillProps {
   game: Data;
@@ -23,8 +24,8 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
   handleRequest,
   onMenuItemSelect,
 }) => {
-  const notifications = useSelector(
-    (state: RootState) => state.gameManager.notifications,
+  const activeNotifications = useSelector(
+    (state: RootState) => state.gameManager.activeNotifications,
   );
 
   const websocketState = useSelector(
@@ -47,7 +48,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
       variants={variants}
       initial="collapsed"
-      animate={notifications.length ? "expanded" : "collapsed"}
+      animate={activeNotifications.length ? "expanded" : "collapsed"}
       className={cx(styles.pillWrap)}
     >
       {websocketState === "OPEN" ? (
@@ -84,41 +85,50 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
             </Box>
           </Box>
           <AnimatePresence>
-            {notifications.map((notification, index) => {
-              const Icon = notification.message.icon;
+            {activeNotifications.map((notification, index) => {
+              const Icon = notification.icon;
               return (
-                notification.active && (
-                  <motion.div
-                    layout="position"
-                    key={index}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                <motion.div
+                  layout="position"
+                  key={index}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{ height: "100%" }}
+                >
+                  <Box
+                    orientation="row"
                     style={{ height: "100%" }}
+                    xAlign="center"
+                    yAlign="center"
+                    gap={vars.sizes.s2}
                   >
-                    <Box
-                      orientation="row"
-                      style={{ height: "100%" }}
-                      xAlign="center"
-                      yAlign="center"
-                      gap={vars.sizes.s2}
-                    >
-                      <Icon
-                        strokeWidth={1.5}
-                        className={styles.notificationStyles.icon}
-                      />
-                      <span style={{ ...vars.typography.m }}>
-                        {notification.message.content}
-                      </span>
-                    </Box>
-                  </motion.div>
-                )
+                    <Icon
+                      strokeWidth={1.5}
+                      className={styles.notificationStyles.icon}
+                    />
+                    <span style={{ ...vars.typography.m }}>
+                      {notification.content}
+                    </span>
+                  </Box>
+                </motion.div>
               );
             })}
           </AnimatePresence>
         </>
       ) : (
-        <span>Connecting...</span>
+        <Box
+          style={{
+            height: "100%",
+            padding: `0 ${vars.sizes.s4}`,
+            color: vars.colorVars.d11,
+            ...vars.typography.m,
+          }}
+          orientation="row"
+          yAlign="center"
+        >
+          <LoadingDots size={3} color="white" content="Reconnecting" />
+        </Box>
       )}
     </motion.div>
   );

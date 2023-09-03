@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     client::ClientManager,
     game::{
-        game::{Game, GameMode, Move},
+        game::{Event, EventType, Game, GameMode, Move},
         player::Player,
     },
     infra::error::Error,
@@ -112,6 +112,10 @@ impl RoomManager {
         for player in game_state.players.iter_mut() {
             if player.client_id == client_id {
                 player.request = true;
+                game_state.events.push(Event::new(
+                    EventType::PlayerRequestedCards,
+                    player.name.clone(),
+                ));
             }
         }
         let request = game_state.players.iter().all(|player| player.request);

@@ -34,9 +34,9 @@ export const container = style({
   justifyContent: "center",
   flexDirection: "row",
   alignItems: "center",
-  height: "66px",
-  width: "66px",
-  borderRadius: "20px",
+  height: vars.sizes.s12,
+  width: vars.sizes.s12,
+  borderRadius: "25px",
   padding: vars.sizes.s3,
 
   cursor: "pointer",
@@ -55,7 +55,7 @@ export const container = style({
     width: "calc(100% - 10px)",
     height: "calc(100% - 10px)",
     backgroundColor: vars.colors.foregorund,
-    borderRadius: "15px",
+    borderRadius: "20px",
   },
   backgroundColor: "transparent",
   "::before": {
@@ -87,18 +87,18 @@ globalStyle(`${shape} > svg`, {
 
 export const rect = style({
   transform: "rotate(-15deg)",
-  width: "21px",
-  marginBottom: "10px",
+  width: vars.sizes.s7,
+  marginBottom: vars.sizes.s2,
   zIndex: 3,
 });
 export const triangle = style({
   transform: "rotate(5deg)",
-  marginLeft: "20px",
-  width: "18px",
+  marginLeft: vars.sizes.s7,
+  width: vars.sizes.s6,
 });
 export const circle = style({
   transform: "rotate(9.47919 72.0019 65.7797)",
-  width: "15px",
-  marginLeft: "-20px",
-  marginTop: "10px",
+  width: vars.sizes.s5,
+  marginRight: vars.sizes.s7,
+  marginTop: vars.sizes.s5,
 });

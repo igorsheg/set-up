@@ -9,7 +9,7 @@ export const boardStyles = {
   board: style({
     display: "grid",
     zIndex: 1,
-    gridTemplateColumns: `repeat(${boardVars.columns}, 104px)`,
+    gridTemplateColumns: `repeat(${boardVars.columns}, ${vars.sizes.s12})`,
     columnGap: vars.sizes.s3,
     flexDirection: "column-reverse",
     rowGap: vars.sizes.s3,

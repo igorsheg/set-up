@@ -7,26 +7,26 @@ interface LoadingDotsProps {
   large?: boolean;
   color?: "dark" | "white" | "accent";
   content?: string;
+  size?: number;
 }
 
 export const LoadingDots = ({
   color = "dark",
-  large = false,
   single = false,
+  size = 4,
   content,
 }: LoadingDotsProps) => {
   return (
     <Box gap="4px" orientation="row" yAlign="flex-end">
-      {content && <div style={{ lineHeight: "17px" }}>{content}</div>}
+      {content && <div style={{ lineHeight: `${17 - size}px` }}>{content}</div>}
       <div
         className={cx(styles.container, styles.colors[color], {
           [styles.single]: single,
-          [styles.large]: large,
         })}
       >
-        <div className={styles.dot} />
-        <div className={styles.dot} />
-        <div className={styles.dot} />
+        <div className={styles.dot} style={{ width: size, height: size }} />
+        <div className={styles.dot} style={{ width: size, height: size }} />
+        <div className={styles.dot} style={{ width: size, height: size }} />
       </div>
     </Box>
   );

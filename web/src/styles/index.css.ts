@@ -121,6 +121,19 @@ const root = createGlobalTheme(":root", {
     s15: "12rem", // 192px
     s16: "14rem", // 224px
     s17: "16rem", // 256px
+    s18: "18rem", // 288px
+    s19: "20rem", // 320px
+    s20: "22rem", // 352px
+    s21: "24rem", // 384px
+    s22: "26rem", // 416px
+    s23: "28rem", // 448px
+    s24: "30rem", // 480px
+    s25: "32rem", // 512px
+    s26: "34rem", // 544px
+    s27: "36rem", // 576px
+    s28: "38rem", // 608px
+    s29: "40rem", // 640px
+    s30: "42rem", // 672px
   },
   typography: typography,
   fonts: fontFamily,
