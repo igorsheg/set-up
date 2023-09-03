@@ -1,20 +1,18 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { Data, GameMode } from "@types";
+import { Data, GameMode, Event } from "@types";
 import { LucideIcon } from "lucide-react";
 
 export type NotificationMessage = {
   content: string;
   icon: LucideIcon;
+  timestamp: string;
 };
 
 export type GameManagerState = {
   gameData: Data;
   selectedCardIndexes: number[];
-  notifications: {
-    id: number;
-    active: boolean;
-    message: NotificationMessage;
-  }[];
+  eventLog: Event[];
+  activeNotifications: NotificationMessage[];
 };
 
 export const gameManagerSlice = createSlice({
@@ -25,17 +23,16 @@ export const gameManagerSlice = createSlice({
       last_set: null,
       players: [],
       mode: GameMode.Classic,
+      events: [],
     } as Data,
     selectedCardIndexes: [],
-    notifications: [],
+    eventLog: [],
+    activeNotifications: [],
   } as GameManagerState,
   reducers: {
     setGameData: (state, action: PayloadAction<Data>) => {
       state.gameData = action.payload;
     },
-    // setSelectedCards: (state, action: PayloadAction<Card[]>) => {
-    //   state.selectedCards = action.payload;
-    // },
     addSelectedCard: (state, action: PayloadAction<number>) => {
       state.selectedCardIndexes.push(action.payload);
     },
@@ -45,6 +42,10 @@ export const gameManagerSlice = createSlice({
         state.selectedCardIndexes.splice(index, 1);
       }
     },
+    setEventLog: (state, action: PayloadAction<Event[]>) => {
+      state.eventLog = action.payload;
+    },
+
     clearSelectedCards: (state) => {
       state.selectedCardIndexes = [];
     },
@@ -54,27 +55,18 @@ export const gameManagerSlice = createSlice({
         last_set: null,
         players: [],
         mode: GameMode.Classic,
+        events: [],
       };
       state.selectedCardIndexes = [];
     },
-    showNotification: (
-      state,
-      action: PayloadAction<{ id: number; message: NotificationMessage }>,
-    ) => {
-      const newNotification = {
-        id: action.payload.id,
-        active: true,
-        message: action.payload.message,
-      };
-      state.notifications.push(newNotification);
-    },
-    hideNotification: (state, action: PayloadAction<number>) => {
-      const index = state.notifications.findIndex(
-        (n) => n.id === action.payload,
-      );
-      if (index > -1) {
-        state.notifications.splice(index, 1);
+    addNotification: (state, action: PayloadAction<NotificationMessage>) => {
+      state.activeNotifications.push(action.payload);
+      if (state.activeNotifications.length > 2) {
+        state.activeNotifications.shift(); // Remove the oldest one
       }
+    },
+    clearNotification: (state) => {
+      state.activeNotifications.shift(); // Remove the oldest one
     },
   },
 });

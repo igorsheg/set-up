@@ -7,6 +7,7 @@ use std::time::UNIX_EPOCH;
 use crate::game::deck::Deck;
 use crate::game::player::Player;
 use crate::infra::error::Error;
+use chrono::Utc;
 use serde::Deserialize;
 use serde::Serialize;
 use uuid::Uuid;
@@ -20,6 +21,30 @@ const BEST_OF_3_SCORE: i64 = 3;
 pub enum GameMode {
     Classic,
     BestOf3,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub enum EventType {
+    PlayerJoined,
+    PlayerFoundSet,
+    PlayerRequestedCards,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Event {
+    event_type: EventType,
+    data: String,
+    timestamp: chrono::DateTime<Utc>,
+}
+
+impl Event {
+    pub fn new(event_type: EventType, data: String) -> Self {
+        Self {
+            event_type,
+            data,
+            timestamp: Utc::now(),
+        }
+    }
 }
 
 impl FromStr for GameMode {
@@ -56,6 +81,7 @@ pub struct Game {
     pub state: GameState,
     pub mode: GameMode,
     pub disconnected_players: HashMap<Uuid, (u64, Player)>,
+    pub events: Vec<Event>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -84,6 +110,7 @@ impl Game {
             state: GameState::WaitingForPlayers,
             mode,
             disconnected_players: HashMap::new(),
+            events: vec![],
         };
         game.deck.shuffle();
         game.deal();
@@ -91,6 +118,8 @@ impl Game {
     }
 
     pub fn add_player(&mut self, player: Player) {
+        self.events
+            .push(Event::new(EventType::PlayerJoined, player.name.clone()));
         self.players.push(player);
     }
 
@@ -178,6 +207,13 @@ impl Game {
             .find(|p| p.client_id == player_id)
             .map(|p| p.name.clone());
         self.last_set = Some(selected_cards);
+
+        if let Some(last_player) = &self.last_player {
+            self.events.push(Event::new(
+                EventType::PlayerFoundSet,
+                last_player.to_owned(),
+            ));
+        }
 
         self.remaining = self.deck.cards.len() as i64;
 

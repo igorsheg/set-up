@@ -34,9 +34,9 @@ export const {
   setGameData,
   addSelectedCard,
   removeSelectedCard,
-  // setSelectedCards,
-  showNotification,
-  hideNotification,
+  setEventLog,
+  addNotification,
+  clearNotification,
   clearSelectedCards,
 } = gameManagerSlice.actions;
 

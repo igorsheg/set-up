@@ -10,10 +10,13 @@ const overlayShow = keyframes({
 
 const contentShow = keyframes({
   "0%": {
-    transform: "translate(-50%, -50%) rotate(-15deg) scale(0.8)",
+    transform: "translate3d(-50%, -50%, 0) rotate(-15deg) scale(0.8)",
     opacity: 0,
   },
-  to: { transform: "translate(-50%, -50%) rotate(0deg) scale(1)", opacity: 1 },
+  to: {
+    transform: "translate3d(-50%, -50%, 0) rotate(0deg) scale(1)",
+    opacity: 1,
+  },
 });
 
 export const dialogStyles = {
@@ -42,7 +45,7 @@ export const dialogStyles = {
     maxWidth: "450px",
     maxHeight: "85vh",
     padding: `${vars.sizes.s6} ${vars.sizes.s6}`,
-    animation: `${contentShow} 320ms cubic-bezier(0.16, 1, 0.3, 1)`,
+    animation: `${contentShow} 600ms cubic-bezier(0.16, 1, 0.3, 1)`,
     willChange: "transform",
   }),
   title: style({

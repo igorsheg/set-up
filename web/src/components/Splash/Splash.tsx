@@ -105,9 +105,9 @@ const Triangle: FC<PropsWithChildren<SVGAttributes<SVGSVGElement>>> = (
   );
 };
 const cardMotionVars = {
-  initial: { opacity: 0, y: 50 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
+  initial: { opacity: 0, y: 50, scale: 1 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: 0, scale: 0.9 },
 };
 
 const shapes = [
@@ -125,7 +125,7 @@ export const Splash: FC<{ show: boolean }> = ({ show }) => {
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={{ type: "spring", damping: 20, stiffness: 400 }}
+          transition={{ type: "spring", damping: 20, stiffness: 300 }}
         >
           <div className={styles.container}>
             {shapes.map((item, i) => {

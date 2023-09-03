@@ -27,11 +27,25 @@ export type Data = {
   players: Player[];
   remaining?: number;
   mode: GameMode;
+  events: Event[];
 };
 
 export type Move = {
   cards: Card[];
   room_code: string;
+};
+
+export enum EventType {
+  PlayerJoined = "PlayerJoined",
+  PlayerLeft = "PlayerLeft",
+  PlayerFoundSet = "PlayerFoundSet",
+  PlayerRequestedCards = "PlayerRequestedCards",
+}
+
+export type Event = {
+  event_type: EventType;
+  data: string;
+  timestamp: string;
 };
 
 export type ColorMapping = typeof COLORS;

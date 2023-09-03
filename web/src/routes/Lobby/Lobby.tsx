@@ -122,14 +122,14 @@ export default function Lobby() {
   };
 
   return (
-    <Box xAlign="center" className={lobbyStyles.container}>
+    <Box xAlign="center" gap={vars.sizes.s4} className={lobbyStyles.container}>
       <div
         style={{
           position: "absolute",
           left: "50%",
           top: "50%",
-          width: "66px",
-          height: "66px",
+          width: vars.sizes.s12,
+          height: vars.sizes.s12,
           transform: "translate(-50%, -50%)",
         }}
       >
@@ -137,8 +137,22 @@ export default function Lobby() {
       </div>
       {!showSplash && (
         <>
-          <Box gap={vars.sizes.s4} yAlign="center" orientation="row">
+          <Box
+            gap={vars.sizes.s4}
+            yAlign="center"
+            xAlign="cetner"
+            orientation="column"
+          >
             <h1>Set Up!</h1>
+            <p
+              style={{
+                textAlign: "center",
+                ...vars.typography.base,
+                color: vars.colors.d10,
+              }}
+            >
+              Spot it, match it, win it — Set's the name, speed's the game!
+            </p>
           </Box>
           <NewGameDialog
             onClose={() =>
@@ -156,42 +170,46 @@ export default function Lobby() {
             open={reqGame.req === "join"}
           />
 
-          <AnimatePresence>
-            {lobbyActions.map((action, i) =>
-              action.type === "divider" ? (
-                <motion.hr
-                  variants={cardMotionVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  transition={{
-                    ...cardMotionVariants.transition,
-                    delay: i * 0.05,
-                  }}
-                />
-              ) : (
-                <motion.button
-                  variants={cardMotionVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                  transition={{
-                    ...cardMotionVariants.transition,
-                    delay: i * 0.05,
-                  }}
-                  key={action.title}
-                  className={lobbyButtonStyles.container}
-                  onClick={action.action}
-                >
-                  <Box gap={vars.sizes.s1}>
-                    <p>{action.title}</p>
-                    <span>{action.description}</span>
-                  </Box>
-                  <ChevronRight />
-                </motion.button>
-              ),
-            )}
-          </AnimatePresence>
+          <Box gap={vars.sizes.s3}>
+            <AnimatePresence>
+              {lobbyActions.map((action, i) =>
+                action.type === "divider" ? (
+                  <motion.hr
+                    className={lobbyButtonStyles.hr}
+                    variants={cardMotionVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    transition={{
+                      ...cardMotionVariants.transition,
+                      delay: i * 0.05,
+                    }}
+                  />
+                ) : (
+                  <motion.button
+                    variants={cardMotionVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    whileHover={{ y: -3 }}
+                    transition={{
+                      ...cardMotionVariants.transition,
+                      delay: i * 0.05,
+                    }}
+                    key={action.title}
+                    className={lobbyButtonStyles.container}
+                    onClick={action.action}
+                  >
+                    <Box gap={vars.sizes.s2}>
+                      <p>{action.title}</p>
+                      <span>{action.description}</span>
+                    </Box>
+                    <ChevronRight />
+                  </motion.button>
+                ),
+              )}
+            </AnimatePresence>
+          </Box>
           {pastRooms.map((roomCode) => (
             <Button
               variant="outline"
