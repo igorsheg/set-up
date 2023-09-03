@@ -26,8 +26,8 @@ export const lobbyButtonStyles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    height: vars.sizes.s12,
-    padding: `${vars.sizes.s2} ${vars.sizes.s6}`,
+    // height: vars.sizes.s12,
+    padding: `${vars.sizes.s6} ${vars.sizes.s6}`,
     borderRadius: vars.radius,
     boxShadow: `${vars.shadows.sm}, 0 0 0 1px ${vars.colorVars.d4}, inset 0px 0.6px 0px rgba(255,255,255, 0.1),inset 0px 1.2px 0px rgba(255, 255, 255, 0.1),inset -1.2px 0px 0px rgba(255, 255, 255, 0.04),inset 1.2px 0px 0px rgba(255, 255, 255, 0.04)`,
     background: vars.colors.background,
@@ -52,14 +52,24 @@ globalStyle(`${lobbyButtonStyles.container} > div > p`, {
   ...vars.typography.xl,
   fontWeight: 550,
 });
+globalStyle(`${lobbyStyles.container} > hr`, {
+  width: "100%",
+  border: "none",
+  height: "1px",
+  background: vars.colors.d8,
+  margin: `${vars.sizes.s2} 0`,
+});
 globalStyle(`${lobbyButtonStyles.container}:hover > div > p`, {
   color: vars.colors.accent,
+});
+globalStyle(`${lobbyButtonStyles.container} >  svg`, {
+  width: vars.sizes.s8,
 });
 globalStyle(`${lobbyButtonStyles.container}:hover >  svg`, {
   color: vars.colors.accent,
 });
 globalStyle(`${lobbyButtonStyles.container} > div > span`, {
   ...vars.typography.m,
-  color: vars.colors.d10,
+  color: vars.colors.d11,
   fontWeight: 450,
 });

@@ -131,9 +131,11 @@ impl Game {
 
     pub fn deal(&mut self) {
         let mut in_play = Vec::with_capacity(6);
-        for _ in 0..12 {
-            if let Some(card) = self.deck.draw() {
-                in_play.push(card);
+        if !self.deck.cards.is_empty() {
+            for _ in 0..12 {
+                if let Some(card) = self.deck.draw() {
+                    in_play.push(card);
+                }
             }
         }
 
@@ -156,17 +158,15 @@ impl Game {
             .filter_map(|v| self.find_index(v))
             .collect();
 
-        let in_play_count = self
-            .in_play
-            .iter()
-            .filter(|c| Some(c.color).is_some())
-            .count();
+        let mut indices = indices;
+        indices.sort();
+        indices.reverse();
 
         for index in indices {
-            if !self.deck.cards.is_empty() && in_play_count < 15 {
-                self.in_play[index] = self.deck.draw().unwrap();
+            if let Some(card) = self.deck.draw() {
+                self.in_play.splice(index..index + 1, std::iter::once(card));
             } else {
-                self.in_play[index] = Card::new(); // Placeholder card
+                self.in_play.remove(index);
             }
         }
 

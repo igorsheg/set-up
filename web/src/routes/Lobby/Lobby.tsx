@@ -2,7 +2,7 @@ import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
 import { createNewRoom, getPastRooms } from "@services/roomService";
 import { AppDispatch, RootState, setActiveRoom } from "@store/index";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { NewGameDialog } from "../../dialogs/NewGameDialog";
@@ -11,11 +11,14 @@ import { ChevronRight } from "lucide-react";
 import { vars } from "@styles/index.css";
 import { JoinGameDialog } from "@dialogs/JoinGameDialog";
 import { GameMode } from "@types";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Splash } from "@components/Splash/Splash";
 
 export default function Lobby() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const hasSeenSplash = sessionStorage.getItem("hasSeenSplash") === "true";
+  const [showSplash, setShowSplash] = useState(!hasSeenSplash);
 
   const [reqGame, setReqGame] = React.useState<{
     req: undefined | "new" | "join";
@@ -26,6 +29,39 @@ export default function Lobby() {
     roomCode: null,
     mode: GameMode.Classic,
   });
+
+  const lobbyActions = [
+    {
+      type: "action",
+      title: "Classic game",
+      description: "The original Set game you love, now more fun with friends!",
+      action: () =>
+        setReqGame((draft) => ({
+          ...draft,
+          req: "new",
+          mode: GameMode.Classic,
+        })),
+    },
+    {
+      type: "action",
+      title: "Best of 3",
+      description:
+        "Can't agree on where to go for lunch? Settle it with a quick 'Best of 3' round of Set. Winner decides!",
+      action: () =>
+        setReqGame((draft) => ({
+          ...draft,
+          req: "new",
+          mode: GameMode.Bestof3,
+        })),
+    },
+    { type: "divider" },
+    {
+      type: "action",
+      title: "Join a game",
+      description: "Join an ongoing game and make your mark!",
+      action: () => setReqGame((draft) => ({ ...draft, req: "join" })),
+    },
+  ];
 
   const pastRooms = useSelector(
     (state: RootState) => state.roomManager.pastRooms,
@@ -42,7 +78,6 @@ export default function Lobby() {
             username: playerUsername,
           }),
         );
-        // new Audio("/sfx/navigation_forward-selection.wav").play();
         setReqGame({ req: "new", roomCode: actionResult.payload, mode });
         navigate("/game/" + actionResult.payload);
       }
@@ -68,81 +103,106 @@ export default function Lobby() {
 
   useEffect(() => {
     getPlayerPastRooms();
+
+    if (sessionStorage.getItem("hasSeenSplash") !== "true") {
+      setShowSplash(true);
+
+      setTimeout(() => {
+        setShowSplash(false);
+        sessionStorage.setItem("hasSeenSplash", "true");
+      }, 1000);
+    }
   }, []);
+
+  const cardMotionVariants = {
+    initial: { opacity: 0, y: 50 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -50 },
+    transition: { type: "spring", damping: 30, stiffness: 500 },
+  };
 
   return (
     <Box xAlign="center" className={lobbyStyles.container}>
-      <Box gap={vars.sizes.s4} yAlign="center" orientation="row">
-        <h1>Set Up!</h1>
-      </Box>
-      <NewGameDialog
-        onClose={() =>
-          setReqGame({ ...reqGame, req: undefined, roomCode: null })
-        }
-        onSubmit={createGameHandler}
-        open={reqGame.req === "new"}
-        mode={reqGame.mode}
-      />
-      <JoinGameDialog
-        onClose={() =>
-          setReqGame({ ...reqGame, req: undefined, roomCode: null })
-        }
-        onSubmit={joinGameHandler}
-        open={reqGame.req === "join"}
-      />
-      <motion.button
-        className={lobbyButtonStyles.container}
-        onClick={() =>
-          setReqGame((draft) => ({
-            ...draft,
-            req: "new",
-            mode: GameMode.Classic,
-          }))
-        }
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: "66px",
+          height: "66px",
+          transform: "translate(-50%, -50%)",
+        }}
       >
-        <Box gap={vars.sizes.s1}>
-          <p>Start a classic game</p>
-          <span>Play with friends in the classic mode</span>
-        </Box>
+        <Splash show={showSplash} />
+      </div>
+      {!showSplash && (
+        <>
+          <Box gap={vars.sizes.s4} yAlign="center" orientation="row">
+            <h1>Set Up!</h1>
+          </Box>
+          <NewGameDialog
+            onClose={() =>
+              setReqGame({ ...reqGame, req: undefined, roomCode: null })
+            }
+            onSubmit={createGameHandler}
+            open={reqGame.req === "new"}
+            mode={reqGame.mode}
+          />
+          <JoinGameDialog
+            onClose={() =>
+              setReqGame({ ...reqGame, req: undefined, roomCode: null })
+            }
+            onSubmit={joinGameHandler}
+            open={reqGame.req === "join"}
+          />
 
-        <ChevronRight />
-      </motion.button>
-      <motion.button
-        className={lobbyButtonStyles.container}
-        onClick={() =>
-          setReqGame((draft) => ({
-            ...draft,
-            req: "new",
-            mode: GameMode.Bestof3,
-          }))
-        }
-      >
-        <Box gap={vars.sizes.s1}>
-          <p>Start a quick standoff</p>
-          <span>Compete at a best of 3 round</span>
-        </Box>
-
-        <ChevronRight />
-      </motion.button>
-      <button
-        className={lobbyButtonStyles.container}
-        onClick={() => setReqGame((draft) => ({ ...draft, req: "join" }))}
-      >
-        <Box gap={vars.sizes.s1}>
-          <p>Join a game</p>
-          <span>Join an existing room</span>
-        </Box>
-        <ChevronRight />
-      </button>
-      {pastRooms.map((roomCode) => (
-        <Button
-          variant="outline"
-          key={roomCode}
-          onClick={() => setReqGame({ ...reqGame, req: "join", roomCode })}
-        >
-          {roomCode}
-        </Button>
-      ))}
+          <AnimatePresence>
+            {lobbyActions.map((action, i) =>
+              action.type === "divider" ? (
+                <motion.hr
+                  variants={cardMotionVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{
+                    ...cardMotionVariants.transition,
+                    delay: i * 0.05,
+                  }}
+                />
+              ) : (
+                <motion.button
+                  variants={cardMotionVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{
+                    ...cardMotionVariants.transition,
+                    delay: i * 0.05,
+                  }}
+                  key={action.title}
+                  className={lobbyButtonStyles.container}
+                  onClick={action.action}
+                >
+                  <Box gap={vars.sizes.s1}>
+                    <p>{action.title}</p>
+                    <span>{action.description}</span>
+                  </Box>
+                  <ChevronRight />
+                </motion.button>
+              ),
+            )}
+          </AnimatePresence>
+          {pastRooms.map((roomCode) => (
+            <Button
+              variant="outline"
+              key={roomCode}
+              onClick={() => setReqGame({ ...reqGame, req: "join", roomCode })}
+            >
+              {roomCode}
+            </Button>
+          ))}
+        </>
+      )}
     </Box>
   );
 }

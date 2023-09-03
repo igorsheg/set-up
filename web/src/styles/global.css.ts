@@ -83,6 +83,7 @@ globalStyle("button", {
 
 globalStyle("button, fieldset, input", {
   all: "unset",
+  boxSizing: "border-box",
 });
 
 globalStyle("button:focus-visible", {

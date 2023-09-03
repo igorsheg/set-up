@@ -38,8 +38,8 @@ interface BoxProps<Direction = "row"> extends HTMLAttributes<HTMLElement> {
    * Same as CSS' `justify-content` property when `orientation='column'`.
    */
   xAlign?: Direction extends "row"
-  ? CSSProperties["justifyContent"]
-  : CSSProperties["alignItems"];
+    ? CSSProperties["justifyContent"]
+    : CSSProperties["alignItems"];
   /**
    * Vertical alignment.
    *
@@ -47,8 +47,8 @@ interface BoxProps<Direction = "row"> extends HTMLAttributes<HTMLElement> {
    * Same as CSS' `align-items` property when `orientation='column'`.
    */
   yAlign?: Direction extends "row"
-  ? CSSProperties["alignItems"]
-  : CSSProperties["justifyContent"];
+    ? CSSProperties["alignItems"]
+    : CSSProperties["justifyContent"];
 }
 
 type Ref = HTMLDivElement;
