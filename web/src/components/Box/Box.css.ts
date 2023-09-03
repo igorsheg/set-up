@@ -25,6 +25,7 @@ export const box = style({
     [boxVars.bleedBottom]: "0px",
     [boxVars.bleedLeft]: "0px",
   },
+  boxSizing: "border-box",
   gap: boxVars.gap,
   alignItems: boxVars.alignItems,
   justifyContent: boxVars.justifyContent,

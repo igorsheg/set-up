@@ -14,7 +14,7 @@ import { setActiveRoom } from "@store/roomManager";
 import { MessageType } from "@store/websocket";
 import { AnimatePresence } from "framer-motion";
 import { GameEnded } from "@views/GameEnded/GameEnded";
-import LoadingDots from "@components/LoadingDots/LoadingDots";
+import { Splash } from "@components/Splash/Splash";
 
 export default function Game() {
   const gameData = useSelector(
@@ -88,7 +88,19 @@ export default function Game() {
     return gameData.game_over ? (
       <GameEnded />
     ) : !gameData.in_play?.length ? (
-      <LoadingDots content={"Loading"} />
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: "66px",
+          height: "66px",
+          zIndex: 2,
+          transform: "translate(-50%, -50%)",
+        }}
+      >
+        <Splash show={!gameData.in_play?.length} />
+      </div>
     ) : (
       <>
         <Board />
