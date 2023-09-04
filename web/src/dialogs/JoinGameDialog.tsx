@@ -65,7 +65,7 @@ export const JoinGameDialog: FC<PropsWithChildren<JoinGameDialogProps>> = (
         <Box orientation="row" xAlign="flex-end">
           <RadixDialog.Close asChild>
             <Button
-              variant="outline"
+              variant="ghost"
               type="button"
               className={buttonStyles.green}
               onClick={props.onClose}

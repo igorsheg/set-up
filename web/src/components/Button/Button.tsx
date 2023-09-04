@@ -7,6 +7,7 @@ type VariantProps = RecipeVariants<typeof button>;
 
 type ExtendedButtonProps = {
   btnPrefix?: React.ReactElement;
+  pulse?: boolean;
 };
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
@@ -15,13 +16,28 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { children, dimentions, variant, buttonType, skin, btnPrefix, ...rest },
+    {
+      children,
+      dimentions,
+      variant,
+      buttonType,
+      skin,
+      btnPrefix,
+      pulse,
+      ...rest
+    },
     ref,
   ) => {
     return (
       <button
         {...rest}
-        className={button({ dimentions, variant, buttonType, skin })}
+        className={button({
+          dimentions,
+          variant,
+          buttonType,
+          skin,
+          pulse,
+        })}
         ref={ref}
       >
         <Box orientation="row" xAlign="center" yAlign="center">

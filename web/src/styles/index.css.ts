@@ -102,6 +102,20 @@ const root = createGlobalTheme(":root", {
     d10: sand.sand10,
     d11: sand.sand11,
     d12: sand.sand12,
+    dark: {
+      d1: sandDark.sand1,
+      d2: sandDark.sand2,
+      d3: sandDark.sand3,
+      d4: sandDark.sand4,
+      d5: sandDark.sand5,
+      d6: sandDark.sand6,
+      d7: sandDark.sand7,
+      d8: sandDark.sand8,
+      d9: sandDark.sand9,
+      d10: sandDark.sand10,
+      d11: sandDark.sand11,
+      d12: sandDark.sand12,
+    },
   },
   sizes: {
     s1: "0.25rem", // 4px
@@ -174,7 +188,10 @@ const root = createGlobalTheme(":root", {
     a11: orange.orange11,
     a12: orange.orange12,
   },
-  radius: "0.6rem",
+  radius: {
+    base: "16px",
+    sm: "12px",
+  },
 });
 
 export const darkTheme = createTheme(colors, {

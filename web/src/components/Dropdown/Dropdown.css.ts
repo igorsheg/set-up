@@ -15,9 +15,9 @@ const slideUpAndFade = keyframes({
 export const dropdownMenuContent = style({
   minWidth: "220px",
   backgroundColor: vars.colors.background,
-  borderRadius: vars.radius,
+  borderRadius: vars.radius.base,
   padding: vars.sizes.s2,
-  boxShadow: `0 0 0 1px ${vars.colorVars.d5}, ${vars.shadows.xl}`,
+  boxShadow: `0 0 0 1px ${vars.colorVars.d5}, ${vars.shadows.lg}`,
   animationDuration: "230ms",
   animationTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
   willChange: "transform, opacity",
@@ -31,7 +31,7 @@ export const dropdownMenuContent = style({
 
 export const dropdownMenuItem = style({
   ...vars.typography.base,
-  borderRadius: `calc(${vars.radius} - 2px)`,
+  borderRadius: vars.radius.sm,
   display: "flex",
   alignItems: "center",
   height: vars.sizes.s8,
