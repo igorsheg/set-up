@@ -43,6 +43,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
     },
   };
 
+  const hasRequests = game.players.some((p) => p.request);
   return (
     <motion.div
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
@@ -74,9 +75,10 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
             >
               <Button
                 dimentions="medium"
-                variant="outline"
+                variant="ghost"
                 buttonType="pill"
                 skin="dark"
+                pulse={hasRequests}
                 onClick={handleRequest}
               >
                 Request

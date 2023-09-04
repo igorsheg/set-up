@@ -34,7 +34,7 @@ export const dialogStyles = {
     // TODO - Add gradient
     // backgroundImage:
     //   "radial-gradient(ellipse 90% 90% at 80% -20%, rgba(202, 153, 213, 0.4), rgba(255, 255, 255, 0))",
-    borderRadius: vars.radius,
+    borderRadius: vars.radius.base,
     boxShadow: vars.shadows.xl,
     border: `1px solid ${vars.colorVars.d5}`,
     position: "fixed",
@@ -45,7 +45,7 @@ export const dialogStyles = {
     maxWidth: "450px",
     maxHeight: "85vh",
     padding: `${vars.sizes.s6} ${vars.sizes.s6}`,
-    animation: `${contentShow} 600ms cubic-bezier(0.16, 1, 0.3, 1)`,
+    animation: `${contentShow} 420ms cubic-bezier(0.16, 1, 0.3, 1)`,
     willChange: "transform",
   }),
   title: style({
@@ -75,16 +75,32 @@ export const dialogStyles = {
 
   input: style({
     ...vars.typography.l,
+    background: vars.colorVars.d4,
     width: "100%",
     flex: 1,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: `calc(${vars.radius} - 2px)`,
+    borderRadius: vars.radius.sm,
     padding: `0 ${vars.sizes.s5}`,
     color: vars.colorVars.d12,
-    boxShadow: `0 0 0 1px ${vars.colorVars.d7}`,
     height: vars.sizes.s10,
+    transition: "all 420ms cubic-bezier(0.16, 1, 0.3, 1)",
+    boxShadow: `0 0 0 1px transparent`,
+
+    "::placeholder": {
+      color: vars.colorVars.d10,
+    },
+
+    ":hover": {
+      transition: "all 420ms cubic-bezier(0.16, 1, 0.3, 1)",
+      boxShadow: `0 0 0 1px ${vars.colorVars.d8}`,
+    },
+    ":focus": {
+      transition: "all 420ms cubic-bezier(0.16, 1, 0.3, 1)",
+      background: vars.colorVars.d1,
+      boxShadow: `0 0 0 1px ${vars.colorVars.d9}`,
+    },
 
     ":read-only": {
       boxShadow: "none",
@@ -161,8 +177,8 @@ export const drawerStyles = {
     backgroundColor: vars.colors.background,
     display: "flex",
     flexDirection: "column",
-    borderTopLeftRadius: vars.radius,
-    borderTopRightRadius: vars.radius,
+    borderTopLeftRadius: vars.radius.base,
+    borderTopRightRadius: vars.radius.base,
     marginTop: vars.sizes.s5,
     position: "fixed",
     bottom: 0,

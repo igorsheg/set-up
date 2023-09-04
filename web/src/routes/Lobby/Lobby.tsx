@@ -6,13 +6,13 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { NewGameDialog } from "../../dialogs/NewGameDialog";
-import { lobbyStyles, lobbyButtonStyles } from "./Lobby.css";
-import { ChevronRight } from "lucide-react";
+import { lobbyStyles } from "./Lobby.css";
 import { vars } from "@styles/index.css";
 import { JoinGameDialog } from "@dialogs/JoinGameDialog";
 import { GameMode } from "@types";
 import { AnimatePresence, motion } from "framer-motion";
 import { Splash } from "@components/Splash/Splash";
+import { ThumbButton } from "@components/ThumbButton/ThumbButton";
 
 export default function Lobby() {
   const navigate = useNavigate();
@@ -35,7 +35,9 @@ export default function Lobby() {
       type: "action",
       title: "Classic game",
       description: "The original Set game you love, now more fun with friends!",
-      action: () =>
+      image:
+        "https://pub-6f25fefc9b794037bc4c392ddd560812.r2.dev/classic_thumb.png",
+      onClick: () =>
         setReqGame((draft) => ({
           ...draft,
           req: "new",
@@ -45,21 +47,23 @@ export default function Lobby() {
     {
       type: "action",
       title: "Best of 3",
-      description:
-        "Can't agree on where to go for lunch? Settle it with a quick 'Best of 3' round of Set. Winner decides!",
-      action: () =>
+      description: "Can't agree on lunch? First to get to 3 sets decides!",
+      image:
+        "https://pub-6f25fefc9b794037bc4c392ddd560812.r2.dev/bestofthree_thumb.png",
+      onClick: () =>
         setReqGame((draft) => ({
           ...draft,
           req: "new",
           mode: GameMode.Bestof3,
         })),
     },
-    { type: "divider" },
     {
       type: "action",
       title: "Join a game",
       description: "Join an ongoing game and make your mark!",
-      action: () => setReqGame((draft) => ({ ...draft, req: "join" })),
+      image:
+        "https://pub-6f25fefc9b794037bc4c392ddd560812.r2.dev/join_room.jpg",
+      onClick: () => setReqGame((draft) => ({ ...draft, req: "join" })),
     },
   ];
 
@@ -142,11 +146,11 @@ export default function Lobby() {
             yAlign="center"
             xAlign="cetner"
             orientation="column"
+            className={lobbyStyles.header}
           >
             <h1>Set Up!</h1>
             <p
               style={{
-                textAlign: "center",
                 ...vars.typography.base,
                 color: vars.colors.d10,
               }}
@@ -170,49 +174,37 @@ export default function Lobby() {
             open={reqGame.req === "join"}
           />
 
-          <Box gap={vars.sizes.s3}>
+          <Box
+            className={lobbyStyles.cardsContainer}
+            orientation="row"
+            gap={vars.sizes.s3}
+          >
             <AnimatePresence>
-              {lobbyActions.map((action, i) =>
-                action.type === "divider" ? (
-                  <motion.hr
-                    className={lobbyButtonStyles.hr}
-                    variants={cardMotionVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    transition={{
-                      ...cardMotionVariants.transition,
-                      delay: i * 0.05,
-                    }}
+              {lobbyActions.map((action, i) => (
+                <motion.div
+                  variants={cardMotionVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{
+                    ...cardMotionVariants.transition,
+                    delay: i * 0.05,
+                  }}
+                  key={action.title}
+                >
+                  <ThumbButton
+                    image={action.image}
+                    title={action.title}
+                    content={action.description}
+                    onClick={action.onClick}
                   />
-                ) : (
-                  <motion.button
-                    variants={cardMotionVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    whileHover={{ y: -3 }}
-                    transition={{
-                      ...cardMotionVariants.transition,
-                      delay: i * 0.05,
-                    }}
-                    key={action.title}
-                    className={lobbyButtonStyles.container}
-                    onClick={action.action}
-                  >
-                    <Box gap={vars.sizes.s2}>
-                      <p>{action.title}</p>
-                      <span>{action.description}</span>
-                    </Box>
-                    <ChevronRight />
-                  </motion.button>
-                ),
-              )}
+                </motion.div>
+              ))}
             </AnimatePresence>
           </Box>
           {pastRooms.map((roomCode) => (
             <Button
-              variant="outline"
+              variant="ghost"
               key={roomCode}
               onClick={() => setReqGame({ ...reqGame, req: "join", roomCode })}
             >

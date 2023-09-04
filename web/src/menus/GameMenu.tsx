@@ -21,7 +21,7 @@ export const GameMenu: FC<PropsWithChildren<GameMenuProps>> = ({
         <Button
           skin="dark"
           dimentions="medium"
-          variant="outline"
+          variant="ghost"
           buttonType="icon"
         >
           <MoreHorizontal />

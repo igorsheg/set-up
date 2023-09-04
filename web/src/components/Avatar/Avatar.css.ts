@@ -105,7 +105,7 @@ const slideUpAndFade = keyframes({
 
 export const tooltip = {
   content: style({
-    borderRadius: vars.radius,
+    borderRadius: vars.radius.base,
     padding: vars.sizes.s2,
     background: vars.colorVars.a1,
     boxShadow: vars.shadows.sm,

@@ -6,7 +6,7 @@ export const container = style({
   position: "relative",
   background: vars.colors.background,
   border: `1px solid ${vars.colors.border}`,
-  borderRadius: vars.radius,
+  borderRadius: vars.radius.base,
   width: "90vw",
   maxWidth: "450px",
   maxHeight: "85vh",

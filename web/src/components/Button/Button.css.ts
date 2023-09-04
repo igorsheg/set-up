@@ -1,11 +1,50 @@
 import { RecipeVariants, recipe } from "@vanilla-extract/recipes";
 import { vars } from "../../styles/index.css";
+import { keyframes } from "@vanilla-extract/css";
+
+const pulseLight = keyframes({
+  "0%": {
+    boxShadow: `0 0 0 0 rgba(255,255,255, 0.7)`,
+    opacity: 0,
+  },
+  "50%": {
+    boxShadow: `0 0 0 0 rgba(255,255,255, 0.7)`,
+    opacity: 0,
+  },
+  "75%": {
+    boxShadow: `0 0 0 8px rgba(255,255,255, 0)`,
+    opacity: 1,
+  },
+  "100%": {
+    boxShadow: "0 0 0 16px rgba(255,255,255, 0)",
+    opacity: 0,
+  },
+});
+
+const pulseDark = keyframes({
+  "0%": {
+    boxShadow: `0 0 0 0 rgba(0,0,0, 0.7)`,
+    opacity: 0,
+  },
+  "50%": {
+    boxShadow: `0 0 0 0 rgba(0,0,0, 0.7)`,
+    opacity: 0,
+  },
+  "75%": {
+    boxShadow: `0 0 0 6px rgba(0,0,0, 0)`,
+    opacity: 1,
+  },
+  "100%": {
+    boxShadow: "0 0 0 8px rgba(0,0,0, 0)",
+    opacity: 0,
+  },
+});
 
 export const button = recipe({
   base: {
     appearance: "none",
     border: "none",
-    borderRadius: vars.radius,
+    borderRadius: vars.radius.sm,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -23,6 +62,18 @@ export const button = recipe({
     },
   },
   variants: {
+    pulse: {
+      true: {
+        "::before": {
+          content: '""',
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+          borderRadius: vars.radius.sm,
+          animation: `${pulseDark} 3.2s infinite cubic-bezier(0.66, 0, 0, 1)`,
+        },
+      },
+    },
     skin: {
       light: {},
       dark: {},
@@ -64,7 +115,14 @@ export const button = recipe({
           boxShadow: `inset 0 0 0 1px ${vars.colors.d8}, ${vars.shadows.xs}`,
         },
       },
-      ghost: { color: vars.colors.text, backgroundColor: "transparent" },
+      ghost: {
+        color: vars.colorVars.d12,
+        backgroundColor: vars.colorVars.d4,
+
+        ":hover": {
+          backgroundColor: vars.colorVars.d7,
+        },
+      },
     },
     dimentions: {
       small: {
@@ -89,6 +147,23 @@ export const button = recipe({
   },
 
   compoundVariants: [
+    {
+      variants: {
+        buttonType: "pill",
+        pulse: true,
+        skin: "dark",
+      },
+      style: {
+        "::before": {
+          content: '""',
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+          borderRadius: vars.sizes.s13,
+          animation: `${pulseLight} 3.2s infinite cubic-bezier(0.66, 0, 0, 1)`,
+        },
+      },
+    },
     {
       variants: {
         buttonType: "icon",
@@ -146,6 +221,36 @@ export const button = recipe({
     {
       variants: {
         skin: "dark",
+        variant: "ghost",
+      },
+      style: {
+        color: vars.colors.background,
+        backgroundColor: vars.colors.dark.d5,
+        ":hover": {
+          background: "transparent",
+          backgroundColor: vars.colors.dark.d7,
+        },
+      },
+    },
+    {
+      variants: {
+        skin: "dark",
+        variant: "ghost",
+        buttonType: "icon",
+      },
+      style: {
+        color: vars.colors.background,
+        backgroundColor: vars.colors.dark.d5,
+        ":hover": {
+          background: "transparent",
+          backgroundColor: vars.colors.dark.d7,
+        },
+      },
+    },
+    {
+      variants: {
+        skin: "dark",
+        variant: "outline",
         buttonType: "icon",
       },
       style: {

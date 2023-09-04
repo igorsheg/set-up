@@ -15,6 +15,7 @@ import { MessageType } from "@store/websocket";
 import { AnimatePresence } from "framer-motion";
 import { GameEnded } from "@views/GameEnded/GameEnded";
 import { Splash } from "@components/Splash/Splash";
+import { vars } from "@styles/index.css";
 
 export default function Game() {
   const gameData = useSelector(
@@ -93,8 +94,8 @@ export default function Game() {
           position: "absolute",
           left: "50%",
           top: "50%",
-          width: "66px",
-          height: "66px",
+          width: vars.sizes.s12,
+          height: vars.sizes.s12,
           zIndex: 2,
           transform: "translate(-50%, -50%)",
         }}

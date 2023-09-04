@@ -84,7 +84,7 @@ export const InvitePlayersDialog: FC<PropsWithChildren<InvitePlayersProps>> = (
         <Tooltip side="top" open={gameUrlCopied} content="Copied to clipboard">
           <Button
             dimentions="large"
-            variant="outline"
+            variant="ghost"
             onClick={() =>
               isMobile ? handleSharing() : handleCopyToClipboard("url")
             }
