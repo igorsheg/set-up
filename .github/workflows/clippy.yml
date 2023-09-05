@@ -16,7 +16,7 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
-
+          
       - name: Run cargo clippy
         uses: actions-rs/cargo@v1
         continue-on-error: false
