@@ -1,59 +1,38 @@
-import { vars } from "@styles/index.css";
+import { shapeStyles } from "@components/Card/Card.css";
+import Diamond from "@components/Card/Diamond";
+import Oval from "@components/Card/Oval";
+import Squiggle from "@components/Card/Squiggle";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import {
+  splashScreenContentShapes,
+  splashScreenContentWrap,
+  splashScreenWrap,
+} from "./Splash.css";
+import { cx } from "../../util/cx";
 
 const SPLASH_DURATION = 3000;
 export const SplashScreen = ({ children }: { children: React.ReactNode }) => {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), SPLASH_DURATION); // Hide splash after 8 seconds
+    const timer = setTimeout(() => setShowSplash(false), SPLASH_DURATION + 75);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <>
-      <AnimatePresence>
-        {!showSplash && (
-          <motion.div
-            style={{
-              width: "100%",
-              height: "100%",
-            }}
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -100 }}
-            transition={{
-              duration: 0.6,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {!showSplash && children}
       <AnimatePresence>
         {showSplash && (
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.1 }}
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              zIndex: 9999,
-              backgroundColor: vars.colorVars.a7,
-            }}
+            className={splashScreenWrap}
           >
             <motion.div
-              initial={{
-                width: "300px",
-                height: "300px",
-                borderRadius: "40px",
-              }}
+              className={splashScreenContentWrap}
               animate={{
                 width: "110vw",
                 height: "120vh",
@@ -71,6 +50,7 @@ export const SplashScreen = ({ children }: { children: React.ReactNode }) => {
                 transform: "translate(-50%, -50%)",
                 backgroundColor: "white",
                 overflow: "hidden",
+                zIndex: 2,
               }}
             >
               <div
@@ -79,10 +59,11 @@ export const SplashScreen = ({ children }: { children: React.ReactNode }) => {
                   justifyContent: "center",
                   alignItems: "center",
                   width: "100%",
+                  position: "relative",
                   height: "100%",
                 }}
               >
-                hey
+                <RunningShapes />
               </div>
             </motion.div>
           </motion.div>
@@ -90,6 +71,61 @@ export const SplashScreen = ({ children }: { children: React.ReactNode }) => {
       </AnimatePresence>
     </>
   );
+};
+type ShapeStyle = {
+  color: "green" | "purple" | "red";
+  shading: "outlined" | "striped" | "solid";
+};
+
+const getRandomElement = (arr: string[]) =>
+  arr[Math.floor(Math.random() * arr.length)];
+
+const RunningShapes = () => {
+  const [activeShapeIndex, setActiveShapeIndex] = useState(0);
+
+  const [currentStyle, setCurrentStyle] = useState<ShapeStyle>({
+    color: "red",
+    shading: "solid",
+  });
+
+  const colors: ShapeStyle["color"][] = ["red", "purple", "green"];
+  const shadings: ShapeStyle["shading"][] = ["outlined", "striped", "solid"];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const newStyle = {
+        color: getRandomElement(colors) as ShapeStyle["color"],
+        shading: getRandomElement(shadings) as ShapeStyle["shading"],
+      };
+
+      setCurrentStyle(newStyle);
+    }, 500);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const appliedStyles = shapeStyles({
+    color: currentStyle.color,
+    shading: currentStyle.shading,
+  });
+
+  const shapes = [
+    <Diamond className={cx(splashScreenContentShapes, appliedStyles)} />,
+    <Oval className={cx(splashScreenContentShapes, appliedStyles)} />,
+    <Squiggle className={cx(splashScreenContentShapes, appliedStyles)} />,
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveShapeIndex((prevIndex) => (prevIndex + 1) % shapes.length);
+    }, 500);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  return <div>{shapes[activeShapeIndex]}</div>;
 };
 
 export const SplashScreenWrapper = ({
@@ -107,7 +143,7 @@ export const SplashScreenWrapper = ({
       setTimeout(() => {
         setShowSplash(false);
         sessionStorage.setItem("hasSeenSplash", "true");
-      }, SPLASH_DURATION + 300);
+      }, SPLASH_DURATION + 600);
     }
   }, []);
 

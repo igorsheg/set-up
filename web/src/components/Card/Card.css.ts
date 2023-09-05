@@ -171,4 +171,9 @@ export const shapeStyles = recipe({
       solid: {},
     },
   },
+  defaultVariants: {
+    color: "red",
+    size: 1,
+    shading: "solid",
+  },
 });
