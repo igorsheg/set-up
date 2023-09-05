@@ -8,13 +8,21 @@ import "@styles/index.css.ts";
 import RootLayout from "@routes/Root.tsx";
 import Lobby from "@routes/Lobby/Lobby.tsx";
 import { store } from "@store/index";
+import { SplashScreenWrapper } from "@components/Splash/SplashScreen";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <RootLayout />,
     children: [
-      { path: "/", element: <Lobby /> },
+      {
+        path: "/",
+        element: (
+          <SplashScreenWrapper>
+            <Lobby />
+          </SplashScreenWrapper>
+        ),
+      },
       { path: "/game/:room_code", element: <Game /> },
     ],
   },

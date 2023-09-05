@@ -1,44 +1,25 @@
-name: rust-clippy analyze
+name: CI
 
-on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
-  schedule:
-    - cron: "27 21 * * 5"
+on: [push]
 
 jobs:
-  rust-clippy-analyze:
-    name: Run rust-clippy analyzing
+  lints:
+    name: Lints
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
     steps:
-      - name: Checkout code
+      - name: Checkout sources
         uses: actions/checkout@v2
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
         with:
-          profile: minimal
-          toolchain: nightly
-          components: clippy
-          override: true
+          command: fmt
+          args: --all -- --check
 
-      - name: Install required cargo
-        run: cargo install clippy-sarif sarif-fmt
-
-      - name: Run rust-clippy
-        run: cargo clippy \
-          --all-features \
-          --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
-        continue-on-error: true
-
-      - name: Upload analysis results to GitHub
-        uses: github/codeql-action/upload-sarif@v1
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        continue-on-error: false
         with:
-          sarif_file: rust-clippy-results.sarif
-          wait-for-processing: true
+          command: clippy
+          args: -- -D warnings
