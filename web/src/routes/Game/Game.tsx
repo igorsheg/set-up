@@ -16,6 +16,7 @@ import { AnimatePresence } from "framer-motion";
 import { GameEnded } from "@views/GameEnded/GameEnded";
 import { Splash } from "@components/Splash/Splash";
 import { vars } from "@styles/index.css";
+import { toggleSound } from "@store/app";
 
 export default function Game() {
   const gameData = useSelector(
@@ -46,13 +47,15 @@ export default function Game() {
       case GameMenuAction.leave:
         navigate("/");
         break;
+      case GameMenuAction.mute:
+        dispatch(toggleSound());
+        break;
       default:
         console.log("Unknown action");
     }
   };
 
   const joinGameHandler = (room_code: string, playerUsername: string) => {
-    new Audio("/sfx/navigation_forward-selection.wav").play();
     dispatch(setActiveRoom({ code: room_code, username: playerUsername }));
     setRoomJoinDialogOpen(false);
   };

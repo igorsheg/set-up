@@ -12,7 +12,7 @@ import Button from "@components/Button/Button";
 import { Hand, Sparkle } from "lucide-react";
 import { AvatarGroup } from "@components/Avatar/AvatarGroup";
 import { Avatar } from "@components/Avatar/Avatar";
-import LoadingDots from "@components/LoadingDots/LoadingDots";
+import Loader from "@components/Loader/Loader";
 
 interface PillProps {
   game: Data;
@@ -31,6 +31,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
   const websocketState = useSelector(
     (state: RootState) => state.roomManager.webSocketStatus,
   );
+  const appSettings = useSelector((state: RootState) => state.appSettings);
 
   const variants = {
     collapsed: {
@@ -87,7 +88,10 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
               >
                 Request
               </Button>
-              <GameMenu onItemSelect={onMenuItemSelect} />
+              <GameMenu
+                appSettings={appSettings}
+                onItemSelect={onMenuItemSelect}
+              />
             </Box>
           </Box>
           <AnimatePresence>
@@ -133,7 +137,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
           orientation="row"
           yAlign="center"
         >
-          <LoadingDots size={3} color="white" content="Reconnecting" />
+          <Loader /> Reconneting...
         </Box>
       )}
     </motion.div>

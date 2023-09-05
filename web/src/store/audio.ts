@@ -29,11 +29,9 @@ export const audioMiddleware: Middleware =
       playSound(unSelectSound);
     }
     if (action.type === "gameManager/setEventLog") {
-      console.log("EventLog action", action.payload[action.payload.length - 1]);
-      if (
-        action.payload[action.payload.length - 1].event_type ===
-        "PlayerFoundSet"
-      ) {
+      const last = action.payload[action.payload.length - 1];
+
+      if (last.event_type === "PlayerFoundSet") {
         playSound(notificationSound);
       }
     }

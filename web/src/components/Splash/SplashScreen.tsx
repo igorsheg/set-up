@@ -15,14 +15,31 @@ const SPLASH_DURATION = 3000;
 export const SplashScreen = ({ children }: { children: React.ReactNode }) => {
   const [showSplash, setShowSplash] = useState(true);
 
+  const cardMotionVariants = {
+    initial: { opacity: 0, y: 50 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -50 },
+  };
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), SPLASH_DURATION + 75);
+    const timer = setTimeout(() => setShowSplash(false), SPLASH_DURATION + 50);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <>
-      {!showSplash && children}
+      <AnimatePresence>
+        {!showSplash && (
+          <motion.div
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ type: "spring" }}
+            variants={cardMotionVariants}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {showSplash && (
           <motion.div
@@ -35,7 +52,7 @@ export const SplashScreen = ({ children }: { children: React.ReactNode }) => {
               className={splashScreenContentWrap}
               animate={{
                 width: "110vw",
-                height: "120vh",
+                height: "100vh",
                 borderRadius: "0",
               }}
               transition={{
@@ -143,7 +160,7 @@ export const SplashScreenWrapper = ({
       setTimeout(() => {
         setShowSplash(false);
         sessionStorage.setItem("hasSeenSplash", "true");
-      }, SPLASH_DURATION + 600);
+      }, SPLASH_DURATION + 150);
     }
   }, []);
 

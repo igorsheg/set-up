@@ -59,3 +59,8 @@ globalStyle(`${lobbyStyles.container} > div > h1`, {
     },
   },
 });
+
+globalStyle(`${lobbyStyles.container} > div > p`, {
+  ...vars.typography.l,
+  color: vars.colors.d10,
+});
