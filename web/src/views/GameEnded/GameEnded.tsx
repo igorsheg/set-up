@@ -6,6 +6,7 @@ import Box from "@components/Box/Box";
 import { useSelector } from "react-redux";
 import { RootState } from "@store/index";
 import { vars } from "@styles/index.css";
+import { StarScene } from "@components/Star/Star";
 
 const viewAnimationProps = {
   initial: { opacity: 0, y: 50 },
@@ -49,7 +50,7 @@ export const GameEnded = () => {
     return (
       <Box gap={vars.sizes.s6} xAlign="center">
         <Box gap={0} xAlign="center">
-          <img style={{ width: "180px" }} src="/images/score.png" />
+          <StarScene />
           <h1>We have a winner!</h1>
         </Box>
         <Box xAlign="center" yAlign="center">
