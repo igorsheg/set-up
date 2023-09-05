@@ -102,3 +102,56 @@ export const circle = style({
   marginRight: vars.sizes.s7,
   marginTop: vars.sizes.s5,
 });
+
+export const splashScreenWrap = style({
+  display: "flex",
+  overflow: "hidden",
+  justifyContent: "center",
+  alignItems: "center",
+  flexDirection: "column",
+  position: "absolute",
+  top: 0,
+  left: 0,
+  minHeight: "100vh",
+  minWidth: "100vw",
+  backgroundImage:
+    "radial-gradient(ellipse 90% 90% at 80% -20%, rgba(247, 104, 8, 0.4), rgba(255, 255, 255, 0))",
+  "::after": {
+    content: "",
+    zIndex: 0,
+    userSelect: "none",
+    pointerEvents: "none",
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    backgroundRepeat: "repeat",
+    opacity: 0.3,
+    backgroundSize: "250px 250px",
+    backgroundImage:
+      "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")",
+  },
+});
+
+export const splashScreenContentWrap = style({
+  width: vars.sizes.s17,
+  height: vars.sizes.s17,
+  borderRadius: "40px",
+  "@media": {
+    "(max-width: 768px)": {
+      width: vars.sizes.s13,
+      height: vars.sizes.s13,
+      borderRadius: "20px",
+    },
+  },
+});
+
+export const splashScreenContentShapes = style({
+  width: vars.sizes.s13,
+  height: vars.sizes.s13,
+  "@media": {
+    "(max-width: 768px)": {
+      width: vars.sizes.s8,
+      height: vars.sizes.s8,
+    },
+  },
+});

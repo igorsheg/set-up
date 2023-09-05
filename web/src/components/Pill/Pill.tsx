@@ -46,7 +46,11 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
   const hasRequests = game.players.some((p) => p.request);
   return (
     <motion.div
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      transition={{
+        type: "spring",
+        stiffness: 300,
+        damping: 27,
+      }}
       variants={variants}
       initial="collapsed"
       animate={activeNotifications.length ? "expanded" : "collapsed"}

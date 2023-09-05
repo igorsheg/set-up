@@ -62,13 +62,12 @@ export default function Board(): React.ReactElement {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, y: -20 },
-    transition: { type: "spring", damping: 30, stiffness: 500 },
   };
 
   const viewAnimationProps = {
-    initial: { opacity: 0, y: 50 },
+    initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -60 },
+    exit: { opacity: 0, y: -10 },
   };
 
   return (
@@ -83,7 +82,7 @@ export default function Board(): React.ReactElement {
           [boardVars.columns]: numberOfColumns.toString(),
         })}
       >
-        <AnimatePresence>
+        <AnimatePresence custom="popLayout">
           {in_play &&
             !game_over &&
             in_play.map((card: CardType, i: number) => (
@@ -95,7 +94,9 @@ export default function Board(): React.ReactElement {
                 animate="animate"
                 exit="exit"
                 transition={{
-                  ...cardMotionVariants.transition,
+                  type: "spring",
+                  stiffness: 500,
+                  damping: 30,
                   delay: i * 0.005,
                 }}
               >
