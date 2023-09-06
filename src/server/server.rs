@@ -21,11 +21,15 @@ pub struct Server {
 
 pub struct AppState {
     pub is_production: bool,
+    pub allowed_origins: Vec<String>,
 }
 
 impl AppState {
-    pub fn new(is_production: bool) -> Self {
-        Self { is_production }
+    pub fn new(is_production: bool, allowed_origins: Vec<String>) -> Self {
+        Self {
+            is_production,
+            allowed_origins,
+        }
     }
 }
 
@@ -67,7 +71,10 @@ impl Server {
             ]);
 
         let context = Arc::new(Context::new());
-        let app_state = Arc::new(AppState::new(self.is_production));
+        let app_state = Arc::new(AppState::new(
+            self.is_production,
+            self.allowed_origins.clone(),
+        ));
 
         let api_routes = axum::Router::new()
             .route("/new", get(new_room_handler))
