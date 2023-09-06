@@ -34,12 +34,7 @@ pub async fn auth(
 
         let origin_str = origin.to_string();
         if app_state.allowed_origins.contains(&origin_str.to_string()) {
-            let domain = origin_str
-                .clone()
-                .trim_start_matches("http://")
-                .trim_start_matches("https://")
-                .to_string();
-            cookie.set_domain(domain);
+            cookie.set_domain(origin.hostname());
         }
 
         let cookie_str = cookie.to_string();
