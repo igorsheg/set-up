@@ -19,9 +19,11 @@ jobs:
           node-version: "18.17.1"
 
       - name: Install dependencies
+        working-directory: web
         run: yarn install
 
       - name: Build Vite.js project
+        working-directory: web
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: yarn run build
