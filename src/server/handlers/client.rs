@@ -8,7 +8,7 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
     CookieJar,
 };
-use hyper::{Body, Client, Uri};
+use hyper::{header::SET_COOKIE, http::HeaderValue, Body, Client, Uri};
 use tokio::fs::read;
 use uuid::Uuid;
 
@@ -17,6 +17,7 @@ use crate::server::server::AppState;
 const ASSETS_DIR: &str = "dist";
 
 pub async fn auth(jar: CookieJar) -> Result<CookieJar, StatusCode> {
+    let mut response = Response::new(Body::from("OK"));
     let mut new_jar = jar.clone();
     if new_jar.get("client_id").is_none() {
         let new_id = Uuid::new_v4().to_string();
@@ -25,6 +26,10 @@ pub async fn auth(jar: CookieJar) -> Result<CookieJar, StatusCode> {
         cookie.set_secure(true);
         cookie.set_same_site(SameSite::None);
         cookie.set_path("/");
+        response.headers_mut().insert(
+            SET_COOKIE,
+            HeaderValue::from_str(cookie.value()).expect("Invalid header value"),
+        );
         new_jar = new_jar.add(cookie);
     }
 
