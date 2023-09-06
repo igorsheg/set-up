@@ -22,6 +22,7 @@ pub struct ServerConfiguration {
 pub struct Configuration {
     pub server: ServerConfiguration,
     pub is_production: bool,
+    pub allowed_origins: Vec<String>,
 }
 
 impl Default for ServerConfiguration {
@@ -40,14 +41,8 @@ impl ServerConfiguration {
 }
 
 impl Default for Configuration {
-    fn default() -> Configuration {
-        Configuration {
-            server: ServerConfiguration::new(),
-            is_production: match env::var("APP_ENV") {
-                Ok(value) => value == "production",
-                Err(_) => panic!("APP_ENV must be set"),
-            },
-        }
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -60,9 +55,16 @@ impl Configuration {
             Err(_) => panic!("APP_ENV must be set"),
         };
 
+        let allowed_origins_str = env::var("ALLOWED_ORIGINS").expect("ALLOWED_ORIGINS must be set");
+        let allowed_origins: Vec<String> = allowed_origins_str
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect();
+
         let conf = Configuration {
             server: ServerConfiguration::new(),
             is_production,
+            allowed_origins,
         };
 
         if !is_production && dotenv().is_err() {

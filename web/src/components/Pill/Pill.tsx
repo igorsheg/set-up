@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from "react";
+import { FC, PropsWithChildren, Suspense, lazy } from "react";
 import { Data, Player } from "src/types";
 import * as styles from "./Pill.css";
 import Box from "@components/Box/Box";
@@ -9,10 +9,27 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { GameMenu, GameMenuAction } from "../../menus/GameMenu";
 import Button from "@components/Button/Button";
-import { Hand, Sparkle } from "lucide-react";
+import { Hand, LucideProps, Sparkle } from "lucide-react";
 import { AvatarGroup } from "@components/Avatar/AvatarGroup";
 import { Avatar } from "@components/Avatar/Avatar";
 import Loader from "@components/Loader/Loader";
+import dynamicIconImports from "lucide-react/dynamicIconImports";
+
+interface IconProps extends LucideProps {
+  name: keyof typeof dynamicIconImports;
+}
+
+const fallback = <div style={{ background: "#ddd", width: 24, height: 24 }} />;
+
+const Icon = ({ name, ...props }: IconProps) => {
+  const LucideIcon = lazy(dynamicIconImports[name]);
+
+  return (
+    <Suspense fallback={fallback}>
+      <LucideIcon {...props} />
+    </Suspense>
+  );
+};
 
 interface PillProps {
   game: Data;
@@ -96,7 +113,6 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
           </Box>
           <AnimatePresence>
             {activeNotifications.map((notification, index) => {
-              const Icon = notification.icon;
               return (
                 <motion.div
                   layout="position"
@@ -114,6 +130,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
                     gap={vars.sizes.s2}
                   >
                     <Icon
+                      name={notification.icon}
                       strokeWidth={1.5}
                       className={styles.notificationStyles.icon}
                     />

@@ -22,6 +22,7 @@ async fn main() -> std::io::Result<()> {
         config.server.host,
         config.server.port.parse().unwrap(),
         config.is_production,
+        config.allowed_origins,
     );
 
     server.run().await;
