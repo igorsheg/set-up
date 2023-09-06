@@ -1,14 +1,35 @@
+name: Build and Deploy to Cloudflare Pages
+
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-    name: Publish to Cloudflare Pages
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.17.1"
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build Vite.js project
+        env:
+        VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        run: yarn run build
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -20,5 +41,12 @@ jobs:
           accountId: 4a50610799c0ec3e2aa4253b7aa65f22
           projectName: set-up-client
           directory: dist
+          # Optional: Enable this if you want to have GitHub Deployments triggered
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: Switch what branch you are publishing to.
+          # By default this will be the branch which triggered this workflow
+          branch: main
+          # Optional: Change the working directory
           workingDirectory: web
+          # Optional: Change the Wrangler version, allows you to point to a specific version or a tag such as `beta`
           wranglerVersion: "3"
