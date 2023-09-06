@@ -4,7 +4,10 @@ use axum::{
     http::{Request, Response, StatusCode},
     Extension,
 };
-use axum_extra::extract::{cookie::Cookie, CookieJar};
+use axum_extra::extract::{
+    cookie::{Cookie, SameSite},
+    CookieJar,
+};
 use hyper::{Body, Client, Uri};
 use tokio::fs::read;
 use uuid::Uuid;
@@ -18,6 +21,9 @@ pub async fn auth(jar: CookieJar) -> Result<CookieJar, StatusCode> {
     if new_jar.get("client_id").is_none() {
         let new_id = Uuid::new_v4().to_string();
         let mut cookie = Cookie::new("client_id", new_id);
+        cookie.http_only();
+        cookie.set_secure(true);
+        cookie.set_same_site(SameSite::None);
         cookie.set_path("/");
         new_jar = new_jar.add(cookie);
     }
