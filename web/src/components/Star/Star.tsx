@@ -51,8 +51,6 @@ function Model(_props: GroupProps) {
   );
 }
 
-useGLTF.preload("/star.gltf");
-
 export const StarScene = () => {
   return (
     <Canvas

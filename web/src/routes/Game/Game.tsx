@@ -17,6 +17,9 @@ import { GameEnded } from "@views/GameEnded/GameEnded";
 import { Splash } from "@components/Splash/Splash";
 import { vars } from "@styles/index.css";
 import { toggleSound } from "@store/app";
+import { useGLTF } from "@react-three/drei";
+
+useGLTF.preload("/star.gltf");
 
 export default function Game() {
   const gameData = useSelector(
