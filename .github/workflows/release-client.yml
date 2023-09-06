@@ -23,7 +23,7 @@ jobs:
 
       - name: Build Vite.js project
         env:
-        VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: yarn run build
 
   deploy:
