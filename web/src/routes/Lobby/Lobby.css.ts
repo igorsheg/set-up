@@ -50,7 +50,7 @@ globalStyle(`${lobbyStyles.container} > div > h1`, {
   fontWeight: 600,
   color: "transparent",
   backgroundColor: vars.colors.text,
-  backgroundImage: `linear-gradient(to right, ${vars.colors.d11}, ${vars.colors.d12})`,
+  backgroundImage: `linear-gradient(to top, ${vars.colors.d11}, ${vars.colors.d12})`,
   backgroundClip: "text",
 
   "@media": {
@@ -58,4 +58,9 @@ globalStyle(`${lobbyStyles.container} > div > h1`, {
       ...vars.typography["5xl"],
     },
   },
+});
+
+globalStyle(`${lobbyStyles.container} > div > p`, {
+  ...vars.typography.l,
+  color: vars.colors.d10,
 });

@@ -8,7 +8,7 @@ import { FC, PropsWithChildren, useRef, useState } from "react";
 interface NewGameDialogProps
   extends Pick<DialogProps, "open" | "onClose" | "onOpenChange"> {
   onSubmit: (playerUserName: string, mode: GameMode) => void;
-  mode: GameMode;
+  mode?: GameMode;
 }
 export const NewGameDialog: FC<PropsWithChildren<NewGameDialogProps>> = (
   props,
@@ -23,7 +23,7 @@ export const NewGameDialog: FC<PropsWithChildren<NewGameDialogProps>> = (
       const formData = new FormData(formRef.current as HTMLFormElement);
       const username = formData.get("username") as string;
 
-      if (username) {
+      if (username && props.mode) {
         props.onSubmit(username, props.mode);
       }
     }

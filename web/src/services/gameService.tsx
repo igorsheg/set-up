@@ -10,7 +10,6 @@ import {
 } from "@store/index";
 import { MessageType, ws } from "@store/websocket";
 import { Card, Data, Event } from "@types";
-import { Hand, Sparkles, User } from "lucide-react";
 
 function difference(arrayA: Event[], arrayB: Event[]): Event[] {
   const setB = new Set(
@@ -23,66 +22,66 @@ function difference(arrayA: Event[], arrayB: Event[]): Event[] {
 
 export const setGameState =
   (newData: Data): AppThunk =>
-  (dispatch, getState) => {
-    const currentEventLog = getState().gameManager.eventLog;
+    (dispatch, getState) => {
+      const currentEventLog = getState().gameManager.eventLog;
 
-    const newEvents = difference(newData.events, currentEventLog);
+      const newEvents = difference(newData.events, currentEventLog);
 
-    newEvents.forEach((event) => {
-      switch (event.event_type) {
-        case "PlayerJoined":
-          dispatch(
-            displayNotificationWithTimer({
-              timestamp: event.timestamp,
-              content: `Player ${event.data} joined the game`,
-              icon: User,
-            }),
-          );
-          break;
-        case "PlayerFoundSet":
-          dispatch(
-            displayNotificationWithTimer({
-              timestamp: event.timestamp,
-              content: `${event.data} found a set!`,
-              icon: Sparkles,
-            }),
-          );
-          break;
-        case "PlayerRequestedCards":
-          dispatch(
-            displayNotificationWithTimer({
-              timestamp: event.timestamp,
-              content: `${event.data} requested cards`,
-              icon: Hand,
-            }),
-          );
-          break;
-        default:
-          break;
-      }
-    });
+      newEvents.forEach((event) => {
+        switch (event.event_type) {
+          case "PlayerJoined":
+            dispatch(
+              displayNotificationWithTimer({
+                timestamp: event.timestamp,
+                content: `Player ${event.data} joined the game`,
+                icon: "user",
+              }),
+            );
+            break;
+          case "PlayerFoundSet":
+            dispatch(
+              displayNotificationWithTimer({
+                timestamp: event.timestamp,
+                content: `${event.data} found a set!`,
+                icon: "sparkles",
+              }),
+            );
+            break;
+          case "PlayerRequestedCards":
+            dispatch(
+              displayNotificationWithTimer({
+                timestamp: event.timestamp,
+                content: `${event.data} requested cards`,
+                icon: "hand",
+              }),
+            );
+            break;
+          default:
+            break;
+        }
+      });
 
-    dispatch(setGameData(newData));
-    dispatch(setEventLog(newData.events || []));
-  };
+      dispatch(setGameData(newData));
+      dispatch(setEventLog(newData.events || []));
+    };
 
 export const moveCards =
   (cards: Card[]): AppThunk =>
-  (dispatch, getState) => {
-    const {
-      roomManager: { activeRoom },
-    } = getState() as RootState;
+    (dispatch, getState) => {
+      const {
+        roomManager: { activeRoom },
+      } = getState() as RootState;
 
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          type: MessageType.MOVE,
-          payload: { room_code: activeRoom?.code, cards },
-        }),
-      );
-      dispatch(clearSelectedCards());
-    }
-  };
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: MessageType.MOVE,
+            payload: { room_code: activeRoom?.code, cards },
+          }),
+        );
+        dispatch(clearSelectedCards());
+      }
+    };
 
 export const requestCards = (): AppThunk => (dispatch) => {
   dispatch({
@@ -93,15 +92,15 @@ export const requestCards = (): AppThunk => (dispatch) => {
 
 export const displayNotificationWithTimer =
   (message: NotificationMessage): AppThunk =>
-  (dispatch) => {
-    const notification = {
-      ...message,
-      id: Date.now(),
+    (dispatch) => {
+      const notification = {
+        ...message,
+        id: Date.now(),
+      };
+
+      dispatch(addNotification(notification));
+
+      setTimeout(() => {
+        dispatch(clearNotification());
+      }, 6000);
     };
-
-    dispatch(addNotification(notification));
-
-    setTimeout(() => {
-      dispatch(clearNotification());
-    }, 6000);
-  };

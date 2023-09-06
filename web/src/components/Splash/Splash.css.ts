@@ -155,3 +155,44 @@ export const splashScreenContentShapes = style({
     },
   },
 });
+
+export const splashMask = style({
+  position: "absolute",
+  // top: "50%",
+  // left: "50%",
+  width: "100vw",
+  height: "100vh",
+  // transform: "translate(-50%, -50%)",
+  backgroundColor: "white",
+  overflow: "hidden",
+  zIndex: 2,
+  clipPath: "circle(150px at 50% 50%)",
+
+  "@media": {
+    "(max-width: 768px)": {
+      clipPath: "circle(75px at 50% 50%)",
+    },
+  },
+});
+
+export const splashContent = style({
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  width: "200px",
+  height: "200px",
+  transform: "translate(-50%, -50%)",
+  backgroundColor: "white",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+});
+
+export const revealContent = style({
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  width: "100vw",
+  position: "relative",
+  height: "100vh",
+});

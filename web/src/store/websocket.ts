@@ -66,7 +66,7 @@ export const simulateUnintentionalDisconnect = () => {
 };
 
 const connectWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
-  const url = new URL("/api/ws", window.location.href);
+  const url = new URL("/api/ws", import.meta.env.VITE_API_URL);
   url.protocol = url.protocol.replace("http", "ws");
   ws = new WebSocket(url);
 

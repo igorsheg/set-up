@@ -10,59 +10,23 @@ import { lobbyStyles } from "./Lobby.css";
 import { vars } from "@styles/index.css";
 import { JoinGameDialog } from "@dialogs/JoinGameDialog";
 import { GameMode } from "@types";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ThumbButton } from "@components/ThumbButton/ThumbButton";
+import { ACTIONS, LobbyActions } from "./lobby-actions";
+
+const cardMotionVariants = {
+  initial: { opacity: 0, y: 50 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -50 },
+};
 
 export default function Lobby() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
-  const [reqGame, setReqGame] = React.useState<{
-    req: undefined | "new" | "join";
-    roomCode: string | null;
-    mode: GameMode;
-  }>({
-    req: undefined,
-    roomCode: null,
-    mode: GameMode.Classic,
-  });
-
-  const lobbyActions = [
-    {
-      type: "action",
-      title: "Classic game",
-      description: "The original Set game you love, now more fun with friends!",
-      image:
-        "https://pub-6f25fefc9b794037bc4c392ddd560812.r2.dev/classic_thumb.png",
-      onClick: () =>
-        setReqGame((draft) => ({
-          ...draft,
-          req: "new",
-          mode: GameMode.Classic,
-        })),
-    },
-    {
-      type: "action",
-      title: "Best of 3",
-      description: "Can't agree on lunch? First to get to 3 sets decides!",
-      image:
-        "https://pub-6f25fefc9b794037bc4c392ddd560812.r2.dev/bestofthree_thumb.png",
-      onClick: () =>
-        setReqGame((draft) => ({
-          ...draft,
-          req: "new",
-          mode: GameMode.Bestof3,
-        })),
-    },
-    {
-      type: "action",
-      title: "Join a game",
-      description: "Join an ongoing game and make your mark!",
-      image:
-        "https://pub-6f25fefc9b794037bc4c392ddd560812.r2.dev/join_room.jpg",
-      onClick: () => setReqGame((draft) => ({ ...draft, req: "join" })),
-    },
-  ];
+  const [reqGame, setReqGame] = React.useState<
+    Pick<LobbyActions, "type" | "mode"> & { roomCode?: string }
+  >();
 
   const pastRooms = useSelector(
     (state: RootState) => state.roomManager.pastRooms,
@@ -79,7 +43,7 @@ export default function Lobby() {
             username: playerUsername,
           }),
         );
-        setReqGame({ req: "new", roomCode: actionResult.payload, mode });
+        setReqGame({ type: "new", roomCode: actionResult.payload, mode });
         navigate("/game/" + actionResult.payload);
       }
     } catch (error) {
@@ -94,7 +58,7 @@ export default function Lobby() {
         username: playerUsername,
       }),
     );
-    setReqGame({ ...reqGame, req: "join", roomCode });
+    setReqGame({ ...reqGame, type: "join", roomCode });
     navigate("/game/" + roomCode);
   };
 
@@ -106,11 +70,8 @@ export default function Lobby() {
     getPlayerPastRooms();
   }, []);
 
-  const cardMotionVariants = {
-    initial: { opacity: 0, y: 50 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -50 },
-    transition: { type: "spring", damping: 30, stiffness: 500 },
+  const handleActionClick = ({ type, mode }: LobbyActions) => {
+    setReqGame({ ...reqGame, type, mode: mode });
   };
 
   return (
@@ -124,29 +85,19 @@ export default function Lobby() {
           className={lobbyStyles.header}
         >
           <h1>Set Up!</h1>
-          <p
-            style={{
-              ...vars.typography.base,
-              color: vars.colors.d10,
-            }}
-          >
-            Spot it, match it, win it — Set's the name, speed's the game!
-          </p>
+
+          <p>Spot it, match it, win it — Set's the name, speed's the game!</p>
         </Box>
         <NewGameDialog
-          onClose={() =>
-            setReqGame({ ...reqGame, req: undefined, roomCode: null })
-          }
+          onClose={() => setReqGame(undefined)}
           onSubmit={createGameHandler}
-          open={reqGame.req === "new"}
-          mode={reqGame.mode}
+          open={reqGame?.type === "new"}
+          mode={reqGame?.mode}
         />
         <JoinGameDialog
-          onClose={() =>
-            setReqGame({ ...reqGame, req: undefined, roomCode: null })
-          }
+          onClose={() => setReqGame(undefined)}
           onSubmit={joinGameHandler}
-          open={reqGame.req === "join"}
+          open={reqGame?.type === "join"}
         />
 
         <Box
@@ -154,32 +105,36 @@ export default function Lobby() {
           orientation="row"
           gap={vars.sizes.s3}
         >
-          {lobbyActions.map((action, i) => (
-            <motion.div
-              variants={cardMotionVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{
-                ...cardMotionVariants.transition,
-                delay: i * 0.05,
-              }}
-              key={action.title}
-            >
-              <ThumbButton
-                image={action.image}
-                title={action.title}
-                content={action.description}
-                onClick={action.onClick}
-              />
-            </motion.div>
-          ))}
+          <AnimatePresence>
+            {ACTIONS.map((action, i) => (
+              <motion.div
+                variants={cardMotionVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{
+                  type: "spring",
+                  damping: 30,
+                  stiffness: 500,
+                  delay: i * 0.05,
+                }}
+                key={action.title}
+              >
+                <ThumbButton
+                  image={action.image}
+                  title={action.title}
+                  content={action.description}
+                  onClick={() => handleActionClick(action)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </Box>
         {pastRooms.map((roomCode) => (
           <Button
             variant="ghost"
             key={roomCode}
-            onClick={() => setReqGame({ ...reqGame, req: "join", roomCode })}
+            onClick={() => setReqGame({ ...reqGame, type: "join", roomCode })}
           >
             {roomCode}
           </Button>

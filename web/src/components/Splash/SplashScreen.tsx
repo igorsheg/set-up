@@ -1,153 +1,67 @@
-import { shapeStyles } from "@components/Card/Card.css";
-import Diamond from "@components/Card/Diamond";
-import Oval from "@components/Card/Oval";
-import Squiggle from "@components/Card/Squiggle";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { FC, PropsWithChildren, useState } from "react";
 import {
-  splashScreenContentShapes,
-  splashScreenContentWrap,
+  revealContent,
+  splashContent,
+  splashMask,
   splashScreenWrap,
 } from "./Splash.css";
-import { cx } from "../../util/cx";
+import { RunningShapes } from "./RunningShapes";
 
-const SPLASH_DURATION = 3000;
-export const SplashScreen = ({ children }: { children: React.ReactNode }) => {
-  const [showSplash, setShowSplash] = useState(true);
+const SPLASH_DURATION = 2300;
 
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), SPLASH_DURATION + 75);
-    return () => clearTimeout(timer);
-  }, []);
+interface SplashScreenProps {}
 
-  return (
-    <>
-      {!showSplash && children}
-      <AnimatePresence>
-        {showSplash && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.1 }}
-            className={splashScreenWrap}
-          >
-            <motion.div
-              className={splashScreenContentWrap}
-              animate={{
-                width: "110vw",
-                height: "120vh",
-                borderRadius: "0",
-              }}
-              transition={{
-                delay: 3,
-                duration: 0.6,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                backgroundColor: "white",
-                overflow: "hidden",
-                zIndex: 2,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  width: "100%",
-                  position: "relative",
-                  height: "100%",
-                }}
-              >
-                <RunningShapes />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-};
-type ShapeStyle = {
-  color: "green" | "purple" | "red";
-  shading: "outlined" | "striped" | "solid";
-};
-
-const getRandomElement = (arr: string[]) =>
-  arr[Math.floor(Math.random() * arr.length)];
-
-const RunningShapes = () => {
-  const [activeShapeIndex, setActiveShapeIndex] = useState(0);
-
-  const [currentStyle, setCurrentStyle] = useState<ShapeStyle>({
-    color: "red",
-    shading: "solid",
-  });
-
-  const colors: ShapeStyle["color"][] = ["red", "purple", "green"];
-  const shadings: ShapeStyle["shading"][] = ["outlined", "striped", "solid"];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const newStyle = {
-        color: getRandomElement(colors) as ShapeStyle["color"],
-        shading: getRandomElement(shadings) as ShapeStyle["shading"],
-      };
-
-      setCurrentStyle(newStyle);
-    }, 500);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const appliedStyles = shapeStyles({
-    color: currentStyle.color,
-    shading: currentStyle.shading,
-  });
-
-  const shapes = [
-    <Diamond className={cx(splashScreenContentShapes, appliedStyles)} />,
-    <Oval className={cx(splashScreenContentShapes, appliedStyles)} />,
-    <Squiggle className={cx(splashScreenContentShapes, appliedStyles)} />,
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveShapeIndex((prevIndex) => (prevIndex + 1) % shapes.length);
-    }, 500);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, []);
-
-  return <div>{shapes[activeShapeIndex]}</div>;
-};
-
-export const SplashScreenWrapper = ({
+export const SplashScreenWrapper: FC<PropsWithChildren<SplashScreenProps>> = ({
   children,
-}: {
-  children: React.ReactNode;
 }) => {
   const hasSeenSplash = sessionStorage.getItem("hasSeenSplash") === "true";
-  const [_showSplash, setShowSplash] = useState(!hasSeenSplash);
+  const [showSplash, setShowSplash] = useState(!hasSeenSplash);
 
-  useEffect(() => {
-    if (!hasSeenSplash) {
-      setShowSplash(true);
-
-      setTimeout(() => {
-        setShowSplash(false);
-        sessionStorage.setItem("hasSeenSplash", "true");
-      }, SPLASH_DURATION + 600);
-    }
-  }, []);
+  const handleAnimatonComplete = () => {
+    setTimeout(() => {
+      setShowSplash(false);
+      sessionStorage.setItem("hasSeenSplash", "true");
+    }, SPLASH_DURATION);
+  };
 
   return (
-    <>{hasSeenSplash ? children : <SplashScreen>{children}</SplashScreen>}</>
+    <div className={splashScreenWrap}>
+      <motion.div
+        initial={showSplash}
+        animate={{ clipPath: "circle(100% at 50% 50%)" }}
+        onAnimationStart={handleAnimatonComplete}
+        transition={{
+          delay: 2,
+          duration: 0.8,
+          ease: [0.87, 0, 0.13, 1],
+        }}
+        className={splashMask}
+      >
+        <AnimatePresence>
+          {showSplash && (
+            <motion.div
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
+              className={splashContent}
+            >
+              <RunningShapes />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {!showSplash && (
+            <motion.div
+              exit={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              initial={{ opacity: 0 }}
+              className={revealContent}
+            >
+              {children}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
   );
 };

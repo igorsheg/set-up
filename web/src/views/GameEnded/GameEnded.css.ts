@@ -5,7 +5,6 @@ export const container = style({
   zIndex: 5,
   position: "relative",
   background: vars.colors.background,
-  border: `1px solid ${vars.colors.border}`,
   borderRadius: vars.radius.base,
   width: "90vw",
   maxWidth: "450px",
@@ -24,8 +23,9 @@ export const confetti = style({
   pointerEvents: "none",
 });
 
-globalStyle(`${container} > div > h1`, {
+globalStyle(`${container}  h1`, {
   ...vars.typography["3xl"],
+  fontWeight: 550,
 });
 
 globalStyle(`${container} > div > h1`, {
