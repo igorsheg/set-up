@@ -1,9 +1,8 @@
 use std::{convert::Infallible, path::Path, sync::Arc};
 
 use axum::{
-    headers::Origin,
     http::{Request, Response, StatusCode},
-    Extension, TypedHeader,
+    Extension,
 };
 use axum_extra::extract::{
     cookie::{Cookie, SameSite},
@@ -21,22 +20,19 @@ const ASSETS_DIR: &str = "dist";
 pub async fn auth(
     jar: CookieJar,
     Extension(app_state): Extension<Arc<AppState>>,
-    TypedHeader(origin): TypedHeader<Origin>,
 ) -> Result<Response<Body>, StatusCode> {
     let mut response = Response::new(Body::from("OK"));
     if jar.get("client_id").is_none() {
         let new_id = Uuid::new_v4().to_string();
         let mut cookie = Cookie::new("client_id", new_id);
-        cookie.http_only();
-        cookie.set_secure(true);
-        cookie.set_same_site(SameSite::None);
-        cookie.set_path("/");
 
-        let origin_str = origin.to_string();
-        if app_state.allowed_origins.contains(&origin_str.to_string()) {
-            cookie.set_domain(origin.hostname());
+        if app_state.is_production {
+            cookie.http_only();
+            cookie.set_secure(true);
+            cookie.set_same_site(SameSite::None);
+            cookie.set_path("/");
+            cookie.set_domain("set.yago.sh");
         }
-
         let cookie_str = cookie.to_string();
         response.headers_mut().insert(
             SET_COOKIE,

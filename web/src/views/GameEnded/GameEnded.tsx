@@ -7,6 +7,11 @@ import { useSelector } from "react-redux";
 import { RootState } from "@store/index";
 import { vars } from "@styles/index.css";
 import { StarScene } from "@components/Star/Star";
+import { useGLTF } from "@react-three/drei";
+
+useGLTF.preload(
+  "/https://pub-6f25fefc9b794037bc4c392ddd560812.r2.dev/star.gltf",
+);
 
 const viewAnimationProps = {
   initial: { opacity: 0, y: 50 },

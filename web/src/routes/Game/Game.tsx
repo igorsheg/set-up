@@ -17,9 +17,6 @@ import { GameEnded } from "@views/GameEnded/GameEnded";
 import { Splash } from "@components/Splash/Splash";
 import { vars } from "@styles/index.css";
 import { toggleSound } from "@store/app";
-import { useGLTF } from "@react-three/drei";
-
-useGLTF.preload("/star.gltf");
 
 export default function Game() {
   const gameData = useSelector(
@@ -64,6 +61,11 @@ export default function Game() {
   };
 
   useEffect(() => {
+    if (websockerStatus === "OPEN" && gameData.in_play?.length)
+      setRoomJoinDialogOpen(false);
+  }, [websockerStatus, gameData]);
+
+  useEffect(() => {
     if (
       websockerStatus !== "OPEN" &&
       activeRoom?.code &&
@@ -76,7 +78,7 @@ export default function Game() {
       activeRoom?.username
     ) {
       dispatch(joinRoom(activeRoom.code, activeRoom.username));
-    } else if (room_code) {
+    } else if (room_code && !gameData.in_play?.length) {
       setRoomJoinDialogOpen(true);
     }
   }, [websockerStatus, activeRoom, room_code]);
