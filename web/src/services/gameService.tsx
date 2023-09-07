@@ -90,6 +90,15 @@ export const requestCards = (): AppThunk => (dispatch) => {
   dispatch(clearSelectedCards());
 };
 
+export const resetGame = (): AppThunk => (dispatch) => {
+  console.log("resetting game");
+  // dispatch(restartGame());
+
+  dispatch({
+    type: MessageType.RESET,
+  });
+};
+
 export const displayNotificationWithTimer =
   (message: NotificationMessage): AppThunk =>
   (dispatch) => {

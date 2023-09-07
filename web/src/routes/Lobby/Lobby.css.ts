@@ -6,7 +6,6 @@ export const lobbyStyles = {
   container: style({
     zIndex: 1,
     width: "100%",
-    height: "100%",
     display: "flex",
     justifyContent: "center",
     overflow: "hidden",
@@ -29,6 +28,7 @@ export const lobbyStyles = {
     "@media": {
       "(max-width: 768px)": {
         overflowX: "scroll",
+        overflowY: "hidden",
         scrollSnapType: "x mandatory",
         overscrollBehaviorX: "contain",
         width: "100%",

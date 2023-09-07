@@ -3,13 +3,14 @@ import { GameMode, Player } from "@types";
 import { motion } from "framer-motion";
 import * as styles from "./GameEnded.css";
 import Box from "@components/Box/Box";
-import { useSelector } from "react-redux";
-import { RootState } from "@store/index";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@store/index";
 import { vars } from "@styles/index.css";
 import { StarScene } from "@components/Star/Star";
 import { useGLTF } from "@react-three/drei";
 import Button from "@components/Button/Button";
 import { useNavigate } from "react-router-dom";
+import { resetGame } from "@services/gameService";
 
 useGLTF.preload("/star.gltf");
 
@@ -39,6 +40,7 @@ const confettiProps: confetti.Options = {
 
 export const GameEnded = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
   const gameData = useSelector(
     (state: RootState) => state.gameManager.gameData,
   );
@@ -149,7 +151,7 @@ export const GameEnded = () => {
           <Button onClick={() => navigate("/")} variant="ghost">
             Back to Main Menu
           </Button>
-          <Button>Play Again</Button>
+          <Button onClick={() => dispatch(resetGame())}>Play Again</Button>
         </Box>
       </motion.div>
     </>

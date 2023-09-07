@@ -17,6 +17,7 @@ export enum MessageType {
   NEW = "new",
   INIT = "init",
   CLOSE = "close",
+  RESET = "reset",
 }
 
 export interface JoinGameAction {
@@ -26,7 +27,6 @@ export interface JoinGameAction {
     player_username: string;
   };
 }
-
 export interface MoveGameAction {
   type: MessageType.MOVE;
   payload: {
@@ -34,9 +34,14 @@ export interface MoveGameAction {
     cards: Card[];
   };
 }
-
 export interface RequestCardsAction {
   type: MessageType.REQUEST;
+  payload: {
+    room_code: string;
+  };
+}
+export interface ResetGameAction {
+  type: MessageType.RESET;
   payload: {
     room_code: string;
   };
@@ -53,7 +58,8 @@ export type GameAction =
   | MoveGameAction
   | RequestCardsAction
   | InitWebSocketAction
-  | CloseWebSocketAction;
+  | CloseWebSocketAction
+  | ResetGameAction;
 
 export let ws: WebSocket | null = null;
 
@@ -155,6 +161,14 @@ export const webSocketMiddleware: Middleware = (storeAPI: MiddlewareAPI) => {
           ws.send(
             JSON.stringify({
               type: MessageType.REQUEST,
+              payload: { room_code: activeRoom?.code },
+            }),
+          );
+          break;
+        case MessageType.RESET:
+          ws.send(
+            JSON.stringify({
+              type: MessageType.RESET,
               payload: { room_code: activeRoom?.code },
             }),
           );

@@ -31,7 +31,7 @@ export const audioMiddleware: Middleware =
     if (action.type === "gameManager/setEventLog") {
       const last = action.payload[action.payload.length - 1];
 
-      if (last.event_type === "PlayerFoundSet") {
+      if (last && last.event_type === "PlayerFoundSet") {
         playSound(notificationSound);
       }
     }

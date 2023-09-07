@@ -55,6 +55,7 @@ pub enum MessageType {
     Request(WsMessage),
     Ping,
     Leave,
+    Reset(WsMessage),
 }
 
 impl MessageType {
@@ -64,6 +65,8 @@ impl MessageType {
             "move" => Ok(MessageType::Move(message)),
             "ping" => Ok(MessageType::Ping),
             "request" => Ok(MessageType::Request(message)),
+            "reset" => Ok(MessageType::Reset(message)),
+
             _ => Err(Error::GameError(format!(
                 "Unrecognized message type: {}",
                 message.r#type

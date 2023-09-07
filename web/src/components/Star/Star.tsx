@@ -21,7 +21,7 @@ function Model(_props: GroupProps) {
   const springProps = useSpring({
     from: { opacity: 0, position: [0, -0.2, 0] },
     to: { opacity: 1, position: [0, 0, 0] },
-    config: { mass: 1, tension: 200, friction: 20 },
+    config: { mass: 1, tension: 100, friction: 20 },
   });
 
   useLayoutEffect(() => {

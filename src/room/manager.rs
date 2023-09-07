@@ -146,4 +146,16 @@ impl RoomManager {
 
         Ok(room_code)
     }
+    pub async fn reset_game(
+        &mut self,
+        message: WsMessage,
+        client_manager: &mut ClientManager,
+    ) -> Result<(), Error> {
+        let room_code = message.get_room_code()?;
+        let game_sate = self.get_game_state(&room_code)?;
+        game_sate.reset();
+        let message = WsMessage::new_update_message(&room_code);
+        client_manager.broadcast_game_state(&message, self).await?;
+        Ok(())
+    }
 }

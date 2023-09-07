@@ -19,7 +19,7 @@ export const ThumbButton: FC<ThumbButtonProps> = ({
 }) => {
   return (
     <a onClick={onClick} className={thumbButton.container}>
-      <Box gap={vars.sizes.s2}>
+      <Box style={{ height: "100%" }} gap={vars.sizes.s2}>
         <div className={thumbButton.image}>
           <img src={image} />
         </div>

@@ -130,15 +130,33 @@ export default function Lobby() {
             ))}
           </AnimatePresence>
         </Box>
-        {pastRooms.map((roomCode) => (
-          <Button
-            variant="ghost"
-            key={roomCode}
-            onClick={() => setReqGame({ ...reqGame, type: "join", roomCode })}
+        {!!pastRooms.length && (
+          <Box
+            xAlign="flex-start"
+            style={{
+              width: "100%",
+              padding: `0 ${vars.sizes.s6}`,
+            }}
+            orientation="column"
           >
-            {roomCode}
-          </Button>
-        ))}
+            <p
+              style={{ ...vars.typography.m, color: vars.colors.textSecondary }}
+            >
+              Hop back into previous games:
+            </p>
+            {pastRooms.map((roomCode) => (
+              <Button
+                variant="ghost"
+                key={roomCode}
+                onClick={() =>
+                  setReqGame({ ...reqGame, type: "join", roomCode })
+                }
+              >
+                {roomCode}
+              </Button>
+            ))}
+          </Box>
+        )}
       </>
     </Box>
   );
