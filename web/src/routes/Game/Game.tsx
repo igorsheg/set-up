@@ -61,11 +61,6 @@ export default function Game() {
   };
 
   useEffect(() => {
-    if (websockerStatus === "OPEN" && gameData.in_play?.length)
-      setRoomJoinDialogOpen(false);
-  }, [websockerStatus, gameData]);
-
-  useEffect(() => {
     if (
       websockerStatus !== "OPEN" &&
       activeRoom?.code &&

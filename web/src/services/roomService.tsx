@@ -3,13 +3,11 @@ import { AppThunk, resetGameData, setActiveRoom } from "@store/index";
 import { JoinGameAction, MessageType } from "@store/websocket";
 import { GameMode } from "@types";
 
-const API_URL = new URL("/api", import.meta.env.VITE_API_URL);
-
 export const createNewRoom = createAsyncThunk<string, GameMode>(
   "game/createNewRoom",
   async (mode, _thunkAPI) => {
     try {
-      const response = await fetch(`${API_URL}/new?mode=${mode}`);
+      const response = await fetch(`/api/new?mode=${mode}`);
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -27,7 +25,7 @@ export const checkRoomExists = createAsyncThunk<
   string,
   { rejectValue: boolean }
 >("game/checkRoomExists", async (roomCode, _thunkAPI) => {
-  const res = await fetch(`${API_URL}/game/${roomCode}`, {
+  const res = await fetch(`/api/game/${roomCode}`, {
     credentials: "include",
   });
 
@@ -40,16 +38,16 @@ export const checkRoomExists = createAsyncThunk<
 
 export const joinRoom =
   (roomCode: string, playerUsername: string): AppThunk =>
-    (dispatch) => {
-      const joinAction: JoinGameAction = {
-        type: MessageType.JOIN,
-        payload: {
-          room_code: roomCode,
-          player_username: playerUsername,
-        },
-      };
-      dispatch(joinAction);
+  (dispatch) => {
+    const joinAction: JoinGameAction = {
+      type: MessageType.JOIN,
+      payload: {
+        room_code: roomCode,
+        player_username: playerUsername,
+      },
     };
+    dispatch(joinAction);
+  };
 
 export const leaveRoom = (): AppThunk => (dispatch) => {
   dispatch({ type: MessageType.CLOSE });
@@ -62,7 +60,7 @@ export const getPastRooms = createAsyncThunk<
   void,
   { rejectValue: boolean }
 >("game/getPastRooms", async (_, _thunkAPI) => {
-  const res = await fetch(`${API_URL}/games`, {
+  const res = await fetch(`/api/games`, {
     credentials: "include",
   });
   const rooms: string[] = await res.json();

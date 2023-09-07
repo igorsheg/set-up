@@ -4,11 +4,8 @@ use axum::{
     http::{Request, Response, StatusCode},
     Extension,
 };
-use axum_extra::extract::{
-    cookie::{Cookie, SameSite},
-    CookieJar,
-};
-use hyper::{header::SET_COOKIE, http::HeaderValue, Body, Client, Uri};
+use axum_extra::extract::{cookie::Cookie, CookieJar};
+use hyper::{Body, Client, Uri};
 use tokio::fs::read;
 use uuid::Uuid;
 
@@ -16,33 +13,16 @@ use crate::server::server::AppState;
 
 const ASSETS_DIR: &str = "dist";
 
-#[axum::debug_handler]
-pub async fn auth(
-    jar: CookieJar,
-    Extension(app_state): Extension<Arc<AppState>>,
-) -> Result<Response<Body>, StatusCode> {
-    let mut response = Response::new(Body::from("OK"));
-    if jar.get("client_id").is_none() {
+pub async fn auth(jar: CookieJar) -> Result<CookieJar, StatusCode> {
+    let mut new_jar = jar.clone();
+    if new_jar.get("client_id").is_none() {
         let new_id = Uuid::new_v4().to_string();
         let mut cookie = Cookie::new("client_id", new_id);
-
-        if app_state.is_production {
-            cookie.http_only();
-            cookie.set_secure(true);
-            cookie.set_same_site(SameSite::None);
-            cookie.set_path("/");
-            cookie.set_domain("set.yago.sh");
-        }
-        let cookie_str = cookie.to_string();
-        response.headers_mut().insert(
-            SET_COOKIE,
-            HeaderValue::from_str(&cookie_str).expect("Invalid header value"),
-        );
-
-        return Ok(response);
+        cookie.set_path("/");
+        new_jar = new_jar.add(cookie);
     }
 
-    Ok(response)
+    Ok(new_jar)
 }
 
 pub async fn handle_client_proxy(
