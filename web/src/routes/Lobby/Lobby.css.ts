@@ -36,6 +36,26 @@ export const lobbyStyles = {
       },
     },
   }),
+  pastRoomsContainer: style({
+    zIndex: 1,
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    overflow: "hidden",
+    alignItems: "center",
+    padding: `${vars.sizes.s3} 0`,
+    "@media": {
+      "(max-width: 768px)": {
+        alignItems: "flex-start",
+        overflowX: "scroll",
+        overflowY: "hidden",
+        scrollSnapType: "x mandatory",
+        overscrollBehaviorX: "contain",
+        width: "100%",
+        padding: `${vars.sizes.s6} ${vars.sizes.s6}`,
+      },
+    },
+  }),
 };
 
 globalStyle(`${lobbyStyles.container}  ${thumbButton.container}`, {

@@ -31,3 +31,16 @@ hyper = { version = "0.14.27", features = ["full"] }
 tower = "0.4.13"
 mime_guess = "2.0.4"
 chrono = { version = "0.4.28", features = ["serde"] }
+async-compression = { version = "0.4.2", features = [
+  "tokio",
+  "brotli",
+  "gzip",
+] }
+minicdn = { version = "0.1.20", features = [
+  "etag",
+  "gzip",
+  "brotli",
+  "mime",
+  "webp",
+  "config",
+] }
