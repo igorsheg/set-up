@@ -8,10 +8,10 @@ import { RootState } from "@store/index";
 import { vars } from "@styles/index.css";
 import { StarScene } from "@components/Star/Star";
 import { useGLTF } from "@react-three/drei";
+import Button from "@components/Button/Button";
+import { useNavigate } from "react-router-dom";
 
-useGLTF.preload(
-  "/https://pub-6f25fefc9b794037bc4c392ddd560812.r2.dev/star.gltf",
-);
+useGLTF.preload("/star.gltf");
 
 const viewAnimationProps = {
   initial: { opacity: 0, y: 50 },
@@ -38,19 +38,29 @@ const confettiProps: confetti.Options = {
 };
 
 export const GameEnded = () => {
+  const navigate = useNavigate();
   const gameData = useSelector(
     (state: RootState) => state.gameManager.gameData,
   );
 
-  const highScore = Math.max(...gameData.players.map((p: Player) => p.score));
-  const winners = gameData.players
-    .filter((p: Player) => p.score === highScore)
-    .map((p: Player) => p.name);
+  const highestScore = Math.max(
+    ...gameData.players.map((p: Player) => p.score),
+  );
+
+  const firstPlace = gameData.players.find(
+    (p: Player) => p.score === highestScore,
+  );
+
+  const top3 = gameData.players
+    .slice()
+    .sort((a: Player, b: Player) => b.score - a.score)
+    .slice(0, 3);
 
   const BestOf3ModeMessage = () => {
-    const winner = gameData.players.find(
-      (p: Player) => p.score === highScore,
-    ) as Player;
+    // const winner = gameData.players.find(
+    //   (p: Player) => p.score === highScore,
+    // ) as Player;
+    const winner = firstPlace;
 
     return (
       <Box gap={vars.sizes.s6} xAlign="center">
@@ -58,12 +68,12 @@ export const GameEnded = () => {
           <StarScene />
           <h1>We have a winner!</h1>
         </Box>
-        <Box xAlign="center" yAlign="center">
+        <Box gap={vars.sizes.s1} xAlign="center" yAlign="center">
           <img
-            src={`https://source.boringavatars.com/beam/36/${winner.name}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
+            src={`https://source.boringavatars.com/beam/36/${winner?.client_id}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
             alt="avatar"
           />
-          <p style={{ ...vars.typography.l }}>{winner.name}</p>
+          <p>{winner?.name}</p>
         </Box>
       </Box>
     );
@@ -71,10 +81,45 @@ export const GameEnded = () => {
 
   const ClassicModeMessage = () => {
     return (
-      <Box xAlign="center">
-        <h1>Game Over</h1>
+      <Box gap={vars.sizes.s6} xAlign="center">
+        <Box gap={vars.sizes.s2} xAlign="center">
+          <StarScene />
+          <h1>All Set!</h1>
+        </Box>
 
-        <p>{winners}</p>
+        <Box xAlign="center" gap={vars.sizes.s6}>
+          <p style={{ ...vars.typography.m, color: vars.colors.textSecondary }}>
+            Top players
+          </p>
+          <Box xAlign="center" gap={vars.sizes.s6} orientation="row">
+            {top3.map((p: Player) => (
+              <Box
+                key={p?.client_id}
+                gap={vars.sizes.s1}
+                xAlign="center"
+                yAlign="center"
+              >
+                <img
+                  src={`https://source.boringavatars.com/beam/36/${p?.client_id}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
+                  alt="avatar"
+                />
+                <Box yAlign="center" xAlign="center" gap={0}>
+                  <p>{p?.name}</p>
+                  <span
+                    style={{
+                      ...vars.typography.s,
+                      color: vars.colors.textSecondary,
+                    }}
+                  >
+                    Score: {p?.score}
+                  </span>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+
+          <p>{}</p>
+        </Box>
       </Box>
     );
   };
@@ -100,6 +145,12 @@ export const GameEnded = () => {
         transition={viewAnimationTransition}
       >
         {message[gameData.mode]}
+        <Box style={{ paddingTop: vars.sizes.s6 }} orientation="row">
+          <Button onClick={() => navigate("/")} variant="ghost">
+            Back to Main Menu
+          </Button>
+          <Button>Play Again</Button>
+        </Box>
       </motion.div>
     </>
   );

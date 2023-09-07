@@ -9,6 +9,7 @@ import {
   useGLTF,
 } from "@react-three/drei";
 import { Canvas, GroupProps } from "@react-three/fiber";
+import { vars } from "@styles/index.css";
 import { useLayoutEffect } from "react";
 import { CanvasTexture, RepeatWrapping, UVMapping } from "three";
 import { FlakesTexture } from "three-stdlib";
@@ -25,24 +26,24 @@ function Model(_props: GroupProps) {
 
   useLayoutEffect(() => {
     console.log("materials", materials);
-    materials["Color - Red"].color.set("orange");
-    materials["Color - Red"].roughness = 0;
-    materials["Color - Red"].normalMap = new CanvasTexture(
+    materials["default"].color.set("orange");
+    materials["default"].roughness = 0;
+    materials["default"].normalMap = new CanvasTexture(
       // @ts-ignore - missing types
       new FlakesTexture(),
       UVMapping,
       RepeatWrapping,
       RepeatWrapping,
     );
-    materials["Color - Red"].normalMap.repeat.set(40, 40);
-    materials["Color - Red"].normalScale.set(0.1, 0.1);
+    materials["default"].normalMap.repeat.set(40, 40);
+    materials["default"].normalScale.set(0.1, 0.1);
   });
 
   return (
     // @ts-ignore - missing types
     <animated.group {...springProps}>
       <primitive
-        material={materials["Color - Red"]}
+        material={materials["default"]}
         castShadow
         object={scene}
         receiveShadow
@@ -54,8 +55,7 @@ function Model(_props: GroupProps) {
 export const StarScene = () => {
   return (
     <Canvas
-      frameloop="demand"
-      style={{ width: "300px", height: "300px" }}
+      style={{ width: vars.sizes.s17, height: vars.sizes.s17 }}
       shadows
       camera={{ position: [0, 0, 5], fov: 40 }}
     >

@@ -2,14 +2,15 @@ import { vars } from "@styles/index.css";
 import { style, globalStyle } from "@vanilla-extract/css";
 
 export const container = style({
-  zIndex: 5,
-  position: "relative",
-  background: vars.colors.background,
-  borderRadius: vars.radius.base,
-  width: "90vw",
-  maxWidth: "450px",
-  maxHeight: "85vh",
-  padding: `${vars.sizes.s9} ${vars.sizes.s9}`,
+  zIndex: 1,
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  overflow: "hidden",
+  alignItems: "center",
+  padding: `${vars.sizes.s12} 0`,
 });
 
 export const confetti = style({
