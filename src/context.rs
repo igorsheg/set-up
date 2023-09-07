@@ -68,6 +68,9 @@ impl Context {
                     .handle_leave(client_id, &mut client_manager)
                     .await
             }
+            MessageType::Reset(message) => {
+                room_manager.reset_game(message, &mut client_manager).await
+            }
         }
     }
 }

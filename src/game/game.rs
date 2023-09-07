@@ -305,6 +305,23 @@ impl Game {
     pub fn find_index(&self, card: &Card) -> Option<usize> {
         self.in_play.iter().position(|c| c == card)
     }
+    pub fn reset(&mut self) {
+        self.in_play.clear(); // Clear in-play cards
+        self.deck = Deck::new(); // Reset the deck
+        self.deck.shuffle(); // Shuffle the new deck
+        self.deal(); // Deal cards
+
+        self.game_over = None; // Reset game over flag
+        self.last_player = None; // Reset last player
+        self.last_set = None; // Reset last set
+        self.state = GameState::WaitingForPlayers; // Reset game state
+
+        for player in &mut self.players {
+            player.score = 0; // Reset each player's score
+        }
+
+        self.events.clear(); // Clear the events
+    }
 }
 
 #[derive(Debug, Deserialize)]
