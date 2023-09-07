@@ -1,7 +1,5 @@
-use axum::{http::Method, routing::get, Extension};
-use hyper::http::HeaderValue;
+use axum::{routing::get, Extension};
 use std::{net::SocketAddr, sync::Arc};
-use tower_http::cors::CorsLayer;
 
 use crate::{
     context::Context,
@@ -16,30 +14,24 @@ pub struct Server {
     host: String,
     port: u16,
     is_production: bool,
-    allowed_origins: Vec<String>,
 }
 
 pub struct AppState {
     pub is_production: bool,
-    pub allowed_origins: Vec<String>,
 }
 
 impl AppState {
-    pub fn new(is_production: bool, allowed_origins: Vec<String>) -> Self {
-        Self {
-            is_production,
-            allowed_origins,
-        }
+    pub fn new(is_production: bool) -> Self {
+        Self { is_production }
     }
 }
 
 impl Server {
-    pub fn new(host: String, port: u16, is_production: bool, allowed_origins: Vec<String>) -> Self {
+    pub fn new(host: String, port: u16, is_production: bool) -> Self {
         Self {
             host,
             port,
             is_production,
-            allowed_origins,
         }
     }
 
@@ -48,33 +40,8 @@ impl Server {
             .parse()
             .expect("Unable to parse address");
 
-        let allowed_origins: Vec<HeaderValue> = self
-            .allowed_origins
-            .iter()
-            .map(|origin| HeaderValue::from_str(origin).expect("Invalid header value"))
-            .collect();
-
-        let cors = CorsLayer::new()
-            .allow_methods(vec![
-                Method::GET,
-                Method::POST,
-                Method::PATCH,
-                Method::PUT,
-                Method::OPTIONS,
-            ])
-            .allow_origin(allowed_origins)
-            .allow_credentials(true)
-            .allow_headers(vec![
-                axum::http::header::CONTENT_TYPE,
-                axum::http::header::CACHE_CONTROL,
-                axum::http::header::AUTHORIZATION,
-            ]);
-
         let context = Arc::new(Context::new());
-        let app_state = Arc::new(AppState::new(
-            self.is_production,
-            self.allowed_origins.clone(),
-        ));
+        let app_state = Arc::new(AppState::new(self.is_production));
 
         let api_routes = axum::Router::new()
             .route("/new", get(new_room_handler))
@@ -87,8 +54,7 @@ impl Server {
             .nest("/api", api_routes)
             .fallback(handle_client_proxy)
             .layer(Extension(app_state))
-            .layer(Extension(context))
-            .layer(cors);
+            .layer(Extension(context));
 
         println!("Listening on {}", &addr);
 
