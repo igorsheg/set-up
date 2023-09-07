@@ -1,10 +1,9 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Data, GameMode, Event } from "@types";
-import dynamicIconImports from "lucide-react/dynamicIconImports";
 
 export type NotificationMessage = {
   content: string;
-  icon: keyof typeof dynamicIconImports;
+  icon: string;
   timestamp: string;
 };
 

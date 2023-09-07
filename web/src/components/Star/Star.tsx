@@ -54,6 +54,7 @@ function Model(_props: GroupProps) {
 export const StarScene = () => {
   return (
     <Canvas
+      frameloop="demand"
       style={{ width: "300px", height: "300px" }}
       shadows
       camera={{ position: [0, 0, 5], fov: 40 }}
