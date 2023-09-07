@@ -1,11 +1,16 @@
 use axum::{routing::get, Extension};
-use std::{net::SocketAddr, sync::Arc};
+use minicdn::release_include_mini_cdn;
+use std::{
+    net::SocketAddr,
+    sync::{Arc, RwLock},
+};
 
 use crate::{
     context::Context,
     server::handlers::{
-        client::{auth, handle_client_proxy},
+        client::auth,
         room::{check_game_exists, get_past_rooms, new_room_handler},
+        static_files::StaticFilesHandler,
         websocket::ws_handler,
     },
 };
@@ -43,6 +48,8 @@ impl Server {
         let context = Arc::new(Context::new());
         let app_state = Arc::new(AppState::new(self.is_production));
 
+        let client = Arc::new(RwLock::new(release_include_mini_cdn!("../../web/dist")));
+
         let api_routes = axum::Router::new()
             .route("/new", get(new_room_handler))
             .route("/games", get(get_past_rooms))
@@ -52,7 +59,12 @@ impl Server {
 
         let app = axum::Router::new()
             .nest("/api", api_routes)
-            .fallback(handle_client_proxy)
+            .fallback(get(StaticFilesHandler {
+                cdn: client,
+                prefix: "",
+                browser_router: true,
+            }))
+            // .fallback(handle_client_proxy)
             .layer(Extension(app_state))
             .layer(Extension(context));
 

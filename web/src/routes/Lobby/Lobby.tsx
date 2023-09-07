@@ -132,17 +132,14 @@ export default function Lobby() {
         </Box>
         {!!pastRooms.length && (
           <Box
-            xAlign="flex-start"
-            style={{
-              width: "100%",
-              padding: `0 ${vars.sizes.s6}`,
-            }}
+            className={lobbyStyles.pastRoomsContainer}
+            // xAlign="flex-start"
             orientation="column"
           >
             <p
               style={{ ...vars.typography.m, color: vars.colors.textSecondary }}
             >
-              Hop back into previous games:
+              Get back into previous games:
             </p>
             {pastRooms.map((roomCode) => (
               <Button
