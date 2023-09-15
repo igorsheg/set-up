@@ -59,9 +59,6 @@ export const GameEnded = () => {
     .slice(0, 3);
 
   const BestOf3ModeMessage = () => {
-    // const winner = gameData.players.find(
-    //   (p: Player) => p.score === highScore,
-    // ) as Player;
     const winner = firstPlace;
 
     return (

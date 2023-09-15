@@ -4,7 +4,7 @@ import { COLORS, SHADINGS, SHAPES } from "../../consts";
 import Diamond from "./Diamond";
 import Oval from "./Oval";
 import Squiggle from "./Squiggle";
-import { cardStyles as styles, shapeWrap, shapeStyles } from "./Card.css"; // Adjust the path as needed
+import { cardStyles as styles, shapeWrap, shapeStyles } from "./Card.css";
 import { cx } from "../../util/cx";
 
 type Props = {
@@ -31,19 +31,19 @@ export default function Card(props: Props): React.ReactElement {
   const element = (
     <ShapeComponent
       className={shapeStyles({
-        shading: SHADINGS[shading] as any,
-        color: COLORS[color] as any,
-        size: (number + 1) as any,
+        shading: SHADINGS[shading] as "solid" | "striped" | "outlined", // TODO: fix typings
+        color: COLORS[color] as "green" | "purple" | "red",
+        size: (number + 1) as 1 | 2 | 3,
       })}
     />
   );
 
   const elements = [...Array(number + 1)].map((_, index) => {
-    const isMiddle = index === 1; // Assuming 3 elements and the middle one is at index 1
+    const isMiddle = index === 1; // 3 elements, middle one is at index 1
     return (
       <div
         key={`${color}-${shape}-${number}-${index}`}
-        className={`${shapeWrap({ size: (number + 1) as any })} ${!threeElements ? "" : isMiddle ? styles.middle : styles.leftRight
+        className={`${shapeWrap({ size: (number + 1) as 1 | 2 | 3 })} ${!threeElements ? "" : isMiddle ? styles.middle : styles.leftRight
           }`}
       >
         {element}

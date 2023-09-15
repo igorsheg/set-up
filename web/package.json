@@ -21,7 +21,6 @@
     "@react-three/drei": "^9.82.0",
     "@react-three/fiber": "^8.14.1",
     "@reduxjs/toolkit": "^1.9.5",
-    "@types/three": "^0.155.1",
     "@vanilla-extract/css-utils": "^0.1.3",
     "@vanilla-extract/dynamic": "^2.0.3",
     "@vanilla-extract/recipes": "^0.4.0",
@@ -33,12 +32,12 @@
     "react-dom": "^18.2.0",
     "react-redux": "^8.1.2",
     "react-router-dom": "^6.14.2",
-    "react-spring": "^9.7.2",
     "three": "^0.156.1",
     "three-stdlib": "^2.25.1",
     "vaul": "^0.3.7"
   },
   "devDependencies": {
+    "@types/three": "^0.155.1",
     "@types/canvas-confetti": "^1.6.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",

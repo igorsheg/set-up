@@ -13,7 +13,6 @@ import { GameMode } from "@types";
 import { AnimatePresence, motion } from "framer-motion";
 import { ThumbButton } from "@components/ThumbButton/ThumbButton";
 import { ACTIONS, LobbyActions } from "./lobby-actions";
-import { SetScene } from "@components/3DSet/3DSet";
 
 const cardMotionVariants = {
   initial: { opacity: 0, y: 50 },
@@ -85,9 +84,7 @@ export default function Lobby() {
           orientation="column"
           className={lobbyStyles.header}
         >
-          <SetScene />
           <h1>Set Up!</h1>
-
           <p>Spot it, match it, win it — Set's the name, speed's the game!</p>
         </Box>
         <NewGameDialog
@@ -133,11 +130,7 @@ export default function Lobby() {
           </AnimatePresence>
         </Box>
         {!!pastRooms.length && (
-          <Box
-            className={lobbyStyles.pastRoomsContainer}
-            // xAlign="flex-start"
-            orientation="column"
-          >
+          <Box className={lobbyStyles.pastRoomsContainer} orientation="column">
             <p
               style={{ ...vars.typography.m, color: vars.colors.textSecondary }}
             >

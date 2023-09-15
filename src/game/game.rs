@@ -27,14 +27,29 @@ pub enum GameMode {
 pub enum EventType {
     PlayerJoined,
     PlayerFoundSet,
+    PlayerMove,
     PlayerRequestedCards,
+    GameOver,
+}
+
+impl fmt::Display for EventType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let string_representation = match self {
+            EventType::PlayerJoined => "PlayerJoined",
+            EventType::PlayerFoundSet => "PlayerFoundSet",
+            EventType::PlayerRequestedCards => "PlayerRequestedCards",
+            EventType::PlayerMove => "PlayerMove",
+            EventType::GameOver => "GameOver",
+        };
+        write!(f, "{}", string_representation)
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Event {
     event_type: EventType,
     data: String,
-    timestamp: chrono::DateTime<Utc>,
+    timestamp: chrono::DateTime<Utc>, // TODO: consider switching to SystemTime
 }
 
 impl Event {
@@ -120,7 +135,8 @@ impl Game {
     pub fn add_player(&mut self, player: Player) {
         self.events
             .push(Event::new(EventType::PlayerJoined, player.name.clone()));
-        self.players.push(player);
+        self.players.push(player.clone());
+        tracing::info!(event_type = %EventType::PlayerJoined, player_name = %player.name, "Player joined the game.");
     }
 
     pub fn remove_player(&mut self, client_id: Uuid) -> bool {
@@ -148,7 +164,7 @@ impl Game {
                 .as_secs();
 
             if current_time - timestamp < 5 * 60 {
-                log::info!("Player {} found, restoring...", player.clone().name);
+                tracing::info!(player_id = %client_id, player_name = %player.name, "Player found, restoring...");
                 self.players.push(player);
                 return Ok(());
             } else {
@@ -174,11 +190,9 @@ impl Game {
 
     pub fn make_move(&mut self, player_id: Uuid, selected_cards: Vec<Card>) -> Result<bool, Error> {
         let (valid, err) = self.check_set(&selected_cards);
-
-        log::debug!("Valid: {:?}, Error: {:?}", valid, err);
+        tracing::info!(event_type = %EventType::PlayerMove, player_id = %player_id, is_valid = %valid, ?err, "Player made a move.");
 
         if !valid || err.is_some() {
-            self.update_score(player_id, -1);
             return Err(Error::GameRuleError("Invalid set".to_string()));
         }
 
@@ -211,7 +225,10 @@ impl Game {
         if let Some(last_player) = &self.last_player {
             self.events.push(Event::new(
                 EventType::PlayerFoundSet,
-                last_player.to_owned(),
+                format!(
+                    "Player {} found a set with validity: {}",
+                    last_player, valid
+                ),
             ));
         }
 
@@ -219,14 +236,14 @@ impl Game {
 
         if self.mode == GameMode::Classic {
             if self.deck.cards.is_empty() && self.check_remaining_sets() {
-                log::info!("Game over in Classic mode!");
+                tracing::info!(event_type = %EventType::GameOver, game_mode = %self.mode, "Game over in Classic mode!");
                 self.state = GameState::Ended;
                 self.game_over = Some(true);
             }
         } else if self.mode == GameMode::BestOf3
             && self.players.iter().any(|p| p.score >= BEST_OF_3_SCORE)
         {
-            log::info!("Game over in BestOf3 mode!");
+            tracing::info!(event_type = %EventType::GameOver, game_mode = %self.mode, "Game over in BestOf3 mode!");
             self.state = GameState::Ended;
             self.game_over = Some(true);
         }
@@ -306,21 +323,21 @@ impl Game {
         self.in_play.iter().position(|c| c == card)
     }
     pub fn reset(&mut self) {
-        self.in_play.clear(); // Clear in-play cards
-        self.deck = Deck::new(); // Reset the deck
-        self.deck.shuffle(); // Shuffle the new deck
-        self.deal(); // Deal cards
+        self.in_play.clear();
+        self.deck = Deck::new();
+        self.deck.shuffle(); // Shuffle again, maybe implement by default inside the ::new method?
+        self.deal();
 
-        self.game_over = None; // Reset game over flag
-        self.last_player = None; // Reset last player
-        self.last_set = None; // Reset last set
-        self.state = GameState::WaitingForPlayers; // Reset game state
+        self.game_over = None;
+        self.last_player = None;
+        self.last_set = None;
+        self.state = GameState::WaitingForPlayers;
 
         for player in &mut self.players {
-            player.score = 0; // Reset each player's score
+            player.score = 0;
         }
 
-        self.events.clear(); // Clear the events
+        self.events.clear();
     }
 }
 

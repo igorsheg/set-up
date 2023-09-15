@@ -42,7 +42,6 @@ impl IntoResponse for AppError {
     }
 }
 
-// Implement `From<AstroError>` for `AppError` to enable easy conversion:
 impl From<Error> for AppError {
     fn from(err: Error) -> Self {
         Self(err)

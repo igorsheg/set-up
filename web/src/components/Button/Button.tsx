@@ -1,9 +1,6 @@
-// import { RecipeVariants } from "@vanilla-extract/recipes";
 import * as React from "react";
 import { ButtonVariants, button, buttonPrefix } from "./Button.css";
 import Box from "@components/Box/Box";
-
-// type VariantButtonVariants = RecipeVariants<typeof button>;
 
 type ExtendedButtonProps = {
   btnPrefix?: React.ReactElement;

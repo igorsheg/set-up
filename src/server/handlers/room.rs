@@ -21,7 +21,10 @@ pub async fn check_game_exists(
 
     match room_manager.get_game_state(&room_code) {
         Ok(_) => StatusCode::OK,
-        Err(_) => StatusCode::NOT_FOUND,
+        Err(_) => {
+            tracing::error!(room_code = %room_code, "Game not found");
+            StatusCode::NOT_FOUND
+        }
     }
 }
 
@@ -36,10 +39,12 @@ pub async fn new_room_handler(
     Query(query): Query<NewGameQuery>,
 ) -> impl IntoResponse {
     let mode_str = query.mode.unwrap_or_else(|| "classic".to_string());
+    tracing::info!(mode = %mode_str, "Creating new room");
 
     match mode_str.parse::<GameMode>() {
         Ok(mode) => {
             if let Ok(room_code) = context.new_room(mode).await {
+                tracing::info!(room_code = %room_code, "Successfully created new room");
                 Json(room_code)
             } else {
                 Json("Error creating room".to_string())

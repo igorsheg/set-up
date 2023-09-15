@@ -30,7 +30,8 @@ impl RoomManager {
     }
 
     pub fn add_room(&mut self, name: String, game: Game) {
-        self.rooms.insert(name, game);
+        self.rooms.insert(name.clone(), game);
+        tracing::info!(room_name = %name, "New room added.");
     }
 
     pub fn remove_room(&mut self, name: &str) {
@@ -52,6 +53,7 @@ impl RoomManager {
         client_manager: &mut ClientManager,
     ) -> Result<(), Error> {
         let room_code = message.get_room_code()?;
+        tracing::info!(client_id = %client_id, room_code = %room_code, "Handling join request.");
         let game_state = self.get_game_state(&room_code)?;
         let client = client_manager.find_client(client_id)?;
 
@@ -116,6 +118,7 @@ impl RoomManager {
                     EventType::PlayerRequestedCards,
                     player.name.clone(),
                 ));
+                tracing::info!(player_id = %client_id, player_name = %player.name, "Player requested cards.");
             }
         }
         let request = game_state.players.iter().all(|player| player.request);
