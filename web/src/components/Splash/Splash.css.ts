@@ -70,7 +70,7 @@ export const container = style({
     backgroundRepeat: "no-repeat",
     backgroundSize: "100% 100%, 50% 50%",
     backgroundPosition: "0 0, 100% 0, 100% 100%, 0 100%",
-    // @ts-ignore: complain about gradient
+    // @ts-ignore: complains about gradient
     background: `conic-gradient(${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor});`,
     animation: `${bgRotate} 2s linear infinite`,
     willChange: "transform",
@@ -158,11 +158,8 @@ export const splashScreenContentShapes = style({
 
 export const splashMask = style({
   position: "absolute",
-  // top: "50%",
-  // left: "50%",
   width: "100vw",
   height: "100vh",
-  // transform: "translate(-50%, -50%)",
   backgroundColor: "white",
   overflow: "hidden",
   zIndex: 2,

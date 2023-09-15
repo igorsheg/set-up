@@ -1,6 +1,8 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { Data, GameMode, Event } from "@types";
 
+const MAX_ACTIVE_NOTIFICATIONS = 2;
+
 export type NotificationMessage = {
   content: string;
   icon: string;
@@ -60,12 +62,12 @@ export const gameManagerSlice = createSlice({
     },
     addNotification: (state, action: PayloadAction<NotificationMessage>) => {
       state.activeNotifications.push(action.payload);
-      if (state.activeNotifications.length > 2) {
-        state.activeNotifications.shift(); // Remove the oldest one
+      if (state.activeNotifications.length > MAX_ACTIVE_NOTIFICATIONS) {
+        state.activeNotifications.shift(); // Remove the oldest one, maybe keep it and manage it in the UI?
       }
     },
     clearNotification: (state) => {
-      state.activeNotifications.shift(); // Remove the oldest one
+      state.activeNotifications.shift();
     },
   },
 });

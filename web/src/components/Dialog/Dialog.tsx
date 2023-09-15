@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
-import { dialogStyles, drawerStyles, buttonStyles } from "./Dialog.css"; // Adjust the import path if necessary
+import { dialogStyles, drawerStyles, buttonStyles } from "./Dialog.css";
 import Box from "@components/Box/Box";
 import { vars } from "@styles/index.css";
 import { Drawer } from "vaul";

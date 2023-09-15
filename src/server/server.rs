@@ -64,11 +64,10 @@ impl Server {
                 prefix: "",
                 browser_router: true,
             }))
-            // .fallback(handle_client_proxy)
             .layer(Extension(app_state))
             .layer(Extension(context));
 
-        println!("Listening on {}", &addr);
+        tracing::info!("Listening on {}", &addr);
 
         axum::Server::bind(&addr)
             .serve(app.into_make_service())

@@ -25,15 +25,15 @@ pub async fn ws_handler(
     Extension(context): Extension<Arc<Context>>,
     jar: CookieJar,
 ) -> impl IntoResponse {
-    log::debug!("ws_handler");
+    tracing::info!("Incoming WebSocket connection");
 
     let cookie = jar.get("client_id");
     let client_id = Uuid::parse_str(cookie.unwrap().value()).unwrap_or_else(|_| Uuid::new_v4());
-    log::debug!("Client ID -------------> {:?}", client_id);
+    tracing::info!(client_id = %client_id, "Extracted client ID");
 
     ws.on_upgrade(move |socket| async move {
         if let Err(err) = handle_connection(socket, context, client_id).await {
-            log::error!("An error occurred in the websocket handler: {}", err);
+            tracing::error!("WebSocket handler encountered an error: {}", err);
         }
     })
 }
@@ -66,27 +66,15 @@ pub async fn handle_connection(
                         Ok(message_type) => {
                             if let Err(err) = context.handle_message(message_type, client_id).await
                             {
-                                log::error!(
-                                    "Error handling message: {}. Original message: {:?}",
-                                    err,
-                                    message
-                                );
+                                tracing::error!(error = %err, message = ?message, "Error handling WebSocket message");
                             }
                         }
                         Err(e) => {
-                            log::error!(
-                                "Failed to convert to MessageType: {}. Original message: {:?}",
-                                e,
-                                message
-                            );
+                            tracing::error!(error = %e, message = ?message, "Failed to convert to MessageType");
                         }
                     },
                     Err(e) => {
-                        log::error!(
-                            "Failed to parse WebSocket message: {}. Original text: {}",
-                            e,
-                            text
-                        );
+                        tracing::error!(error = %e, "Failed to parse WebSocket message");
                     }
                 }
             }
@@ -103,20 +91,17 @@ pub async fn handle_connection(
     let writer_task = tokio::spawn(async move {
         let mut rx = rx;
         while let Some(message) = rx.recv().await {
-            log::debug!("Preparing to send game message to WebSocket...");
+            tracing::debug!("Preparing to send game message to WebSocket");
             let json_message = serde_json::to_string(&message).unwrap();
             if let Err(err) = ws_tx.send(Message::Text(json_message)).await {
-                log::error!("Failed to send game message to WebSocket. Error: {:?}", err);
+                tracing::error!(error = ?err, "Failed to send game message to WebSocket");
             }
         }
     });
 
     let join_result = tokio::try_join!(reader_task, writer_task);
     if let Err(err) = join_result {
-        log::error!(
-            "An error occurred while processing the WebSocket tasks: {:?}",
-            err
-        );
+        tracing::error!("WebSocket tasks encountered an error: {:?}", err);
         return Err(Error::WebsocketError(
             "An error occurred while processing the WebSocket tasks".to_string(),
         ));

@@ -85,7 +85,6 @@ export default function Lobby() {
           className={lobbyStyles.header}
         >
           <h1>Set Up!</h1>
-
           <p>Spot it, match it, win it — Set's the name, speed's the game!</p>
         </Box>
         <NewGameDialog
@@ -131,11 +130,7 @@ export default function Lobby() {
           </AnimatePresence>
         </Box>
         {!!pastRooms.length && (
-          <Box
-            className={lobbyStyles.pastRoomsContainer}
-            // xAlign="flex-start"
-            orientation="column"
-          >
+          <Box className={lobbyStyles.pastRoomsContainer} orientation="column">
             <p
               style={{ ...vars.typography.m, color: vars.colors.textSecondary }}
             >

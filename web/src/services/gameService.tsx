@@ -22,66 +22,66 @@ function difference(arrayA: Event[], arrayB: Event[]): Event[] {
 
 export const setGameState =
   (newData: Data): AppThunk =>
-  (dispatch, getState) => {
-    const currentEventLog = getState().gameManager.eventLog;
+    (dispatch, getState) => {
+      const currentEventLog = getState().gameManager.eventLog;
 
-    const newEvents = difference(newData.events, currentEventLog);
+      const newEvents = difference(newData.events, currentEventLog);
 
-    newEvents.forEach((event) => {
-      switch (event.event_type) {
-        case "PlayerJoined":
-          dispatch(
-            displayNotificationWithTimer({
-              timestamp: event.timestamp,
-              content: `Player ${event.data} joined the game`,
-              icon: "",
-            }),
-          );
-          break;
-        case "PlayerFoundSet":
-          dispatch(
-            displayNotificationWithTimer({
-              timestamp: event.timestamp,
-              content: `${event.data} found a set!`,
-              icon: "",
-            }),
-          );
-          break;
-        case "PlayerRequestedCards":
-          dispatch(
-            displayNotificationWithTimer({
-              timestamp: event.timestamp,
-              content: `${event.data} requested cards`,
-              icon: "",
-            }),
-          );
-          break;
-        default:
-          break;
-      }
-    });
+      newEvents.forEach((event) => {
+        switch (event.event_type) {
+          case "PlayerJoined":
+            dispatch(
+              displayNotificationWithTimer({
+                timestamp: event.timestamp,
+                content: `Player ${event.data} joined the game`,
+                icon: "",
+              }),
+            );
+            break;
+          case "PlayerFoundSet":
+            dispatch(
+              displayNotificationWithTimer({
+                timestamp: event.timestamp,
+                content: `${event.data} found a set!`,
+                icon: "",
+              }),
+            );
+            break;
+          case "PlayerRequestedCards":
+            dispatch(
+              displayNotificationWithTimer({
+                timestamp: event.timestamp,
+                content: `${event.data} requested cards`,
+                icon: "",
+              }),
+            );
+            break;
+          default:
+            break;
+        }
+      });
 
-    dispatch(setGameData(newData));
-    dispatch(setEventLog(newData.events || []));
-  };
+      dispatch(setGameData(newData));
+      dispatch(setEventLog(newData.events || []));
+    };
 
 export const moveCards =
   (cards: Card[]): AppThunk =>
-  (dispatch, getState) => {
-    const {
-      roomManager: { activeRoom },
-    } = getState() as RootState;
+    (dispatch, getState) => {
+      const {
+        roomManager: { activeRoom },
+      } = getState() as RootState;
 
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          type: MessageType.MOVE,
-          payload: { room_code: activeRoom?.code, cards },
-        }),
-      );
-      dispatch(clearSelectedCards());
-    }
-  };
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(
+          JSON.stringify({
+            type: MessageType.MOVE,
+            payload: { room_code: activeRoom?.code, cards },
+          }),
+        );
+        dispatch(clearSelectedCards());
+      }
+    };
 
 export const requestCards = (): AppThunk => (dispatch) => {
   dispatch({
@@ -91,9 +91,6 @@ export const requestCards = (): AppThunk => (dispatch) => {
 };
 
 export const resetGame = (): AppThunk => (dispatch) => {
-  console.log("resetting game");
-  // dispatch(restartGame());
-
   dispatch({
     type: MessageType.RESET,
   });
@@ -101,15 +98,15 @@ export const resetGame = (): AppThunk => (dispatch) => {
 
 export const displayNotificationWithTimer =
   (message: NotificationMessage): AppThunk =>
-  (dispatch) => {
-    const notification = {
-      ...message,
-      id: Date.now(),
+    (dispatch) => {
+      const notification = {
+        ...message,
+        id: Date.now(),
+      };
+
+      dispatch(addNotification(notification));
+
+      setTimeout(() => {
+        dispatch(clearNotification());
+      }, 6000);
     };
-
-    dispatch(addNotification(notification));
-
-    setTimeout(() => {
-      dispatch(clearNotification());
-    }, 6000);
-  };

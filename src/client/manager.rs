@@ -29,10 +29,12 @@ impl ClientManager {
 
     pub fn add_client(&mut self, id: Uuid, client: Client) {
         self.clients.insert(id, client);
+        tracing::info!(client_id = %id, "New client added.");
     }
 
     pub fn remove_client(&mut self, id: Uuid) {
         self.clients.remove(&id);
+        tracing::info!(client_id = %id, "Client removed.");
     }
 
     pub fn get_clients_in_room(&mut self, room_code: &str) -> Vec<&mut Client> {
