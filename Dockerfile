@@ -1,15 +1,14 @@
-# Stage 0: Build the Node.js application
-FROM node:16-alpine AS node-builder
+FROM node:18-alpine AS node-builder
 WORKDIR /app/web
 COPY web/package.json web/yarn.lock ./
 RUN yarn install
 COPY web/ .
 RUN yarn build
 
+#########
 
-FROM rust:1.70.0-alpine as rust-builder
+FROM rustlang/rust:nightly-bookworm-slim as rust-builder
 WORKDIR /app
-RUN rustup default nightly
 
 COPY --from=node-builder /app/web/dist ./web/dist
 
@@ -17,17 +16,20 @@ COPY ./src ./src
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./Cargo.lock ./Cargo.lock
 
-RUN apk add --no-cache build-base openssl-dev pkgconfig
-RUN rustup target add x86_64-unknown-linux-musl
+RUN apt-get update && apt-get install -y build-essential pkg-config libssl-dev
+RUN rustup target add x86_64-unknown-linux-gnu
 
-RUN cargo build --release --target x86_64-unknown-linux-musl
-RUN mv target/x86_64-unknown-linux-musl/release/set-up /app/set-up
+RUN cargo build --release
 
-FROM alpine:latest
-RUN apk add --no-cache bind-tools iputils iproute2 curl ca-certificates htop
+RUN mv target/release/set-up /app/set-up
 
+
+#########
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y  iproute2 curl ca-certificates htop
 WORKDIR /app
-
 COPY --from=rust-builder /app/set-up .
-
 CMD ["/app/set-up"]
+
