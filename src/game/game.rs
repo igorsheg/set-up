@@ -225,10 +225,7 @@ impl Game {
         if let Some(last_player) = &self.last_player {
             self.events.push(Event::new(
                 EventType::PlayerFoundSet,
-                format!(
-                    "Player {} found a set with validity: {}",
-                    last_player, valid
-                ),
+                format!("Player {} found a set", last_player),
             ));
         }
 

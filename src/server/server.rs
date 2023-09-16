@@ -1,4 +1,4 @@
-use axum::{routing::get, Extension};
+use axum::{response::IntoResponse, routing::get, Extension};
 use minicdn::release_include_mini_cdn;
 use std::{
     net::SocketAddr,
@@ -51,6 +51,7 @@ impl Server {
         let client = Arc::new(RwLock::new(release_include_mini_cdn!("../../web/dist")));
 
         let api_routes = axum::Router::new()
+            .route("/health", get(health_check))
             .route("/new", get(new_room_handler))
             .route("/games", get(get_past_rooms))
             .route("/game/:room_code", get(check_game_exists))
@@ -74,4 +75,8 @@ impl Server {
             .await
             .unwrap();
     }
+}
+
+async fn health_check() -> impl IntoResponse {
+    axum::http::StatusCode::OK
 }
