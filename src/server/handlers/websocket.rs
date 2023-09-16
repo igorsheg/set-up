@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::{
     client::Client,
     context::Context,
+    game::game::Game,
     infra::error::Error,
     message::{MessageType, WsMessage},
 };
@@ -27,9 +28,7 @@ pub async fn ws_handler(
 ) -> impl IntoResponse {
     tracing::info!("Incoming WebSocket connection");
 
-    let cookie = jar.get("client_id");
-    let client_id = Uuid::parse_str(cookie.unwrap().value()).unwrap_or_else(|_| Uuid::new_v4());
-    tracing::info!(client_id = %client_id, "Extracted client ID");
+    let client_id = get_client_id_from_cookies(&jar);
 
     ws.on_upgrade(move |socket| async move {
         if let Err(err) = handle_connection(socket, context, client_id).await {
@@ -38,79 +37,101 @@ pub async fn ws_handler(
     })
 }
 
-pub async fn handle_connection(
+fn get_client_id_from_cookies(jar: &CookieJar) -> Uuid {
+    jar.get("client_id")
+        .and_then(|cookie| Uuid::parse_str(cookie.value()).ok())
+        .unwrap_or_else(Uuid::new_v4)
+}
+
+async fn handle_connection(
     ws: WebSocket,
     context: Arc<Context>,
     client_id: Uuid,
 ) -> Result<(), Error> {
-    let (tx, rx) = mpsc::channel(32);
+    let (ws_tx, ws_rx) = ws.split();
 
-    {
-        let mut client_manager = context.client_manager().lock().await;
-        if client_manager.find_client(client_id).is_ok() {
-            client_manager.remove_client(client_id);
+    let (_tx, rx) = setup_client(context.clone(), client_id).await?;
+    let reader_task = read_from_ws(ws_rx, context.clone(), client_id);
+    let writer_task = write_to_ws(rx, ws_tx);
+
+    match tokio::try_join!(reader_task, writer_task) {
+        Err(err) => {
+            tracing::error!("WebSocket tasks encountered an error: {:?}", err);
+            Err(Error::WebsocketError(
+                "An error occurred while processing the WebSocket tasks".to_string(),
+            ))
         }
-        client_manager.add_client(client_id, Client::new(tx.clone(), client_id));
+        _ => Ok(()),
     }
+}
 
-    let (mut ws_tx, ws_rx) = ws.split();
-    let context_clone = context.clone();
+async fn setup_client(
+    context: Arc<Context>,
+    client_id: Uuid,
+) -> Result<(mpsc::Sender<Game>, mpsc::Receiver<Game>), Error> {
+    let (tx, rx) = mpsc::channel(32);
+    let mut client_manager = context.client_manager().lock().await;
+    if client_manager.find_client(client_id).is_ok() {
+        client_manager.remove_client(client_id);
+    }
+    client_manager.add_client(client_id, Client::new(tx.clone(), client_id));
+    Ok((tx, rx))
+}
 
-    let reader_task = tokio::spawn(async move {
-        let mut ws_rx = ws_rx;
-        while let Some(Ok(msg)) = ws_rx.next().await {
-            if let Ok(text) = msg.to_text() {
-                let message: Result<WsMessage, _> = serde_json::from_str(text);
-                match message {
-                    Ok(message) => match MessageType::from_ws_message(message.clone()) {
-                        Ok(message_type) => {
-                            if let Err(err) = context.handle_message(message_type, client_id).await
-                            {
-                                tracing::error!(error = %err, message = ?message, "Error handling WebSocket message");
+async fn read_from_ws(
+    mut ws_rx: impl StreamExt<Item = Result<Message, axum::Error>> + Unpin,
+    context: Arc<Context>,
+    client_id: Uuid,
+) -> Result<(), Error> {
+    while let Some(result) = ws_rx.next().await {
+        match result {
+            Ok(msg) => {
+                if let Ok(text) = msg.to_text() {
+                    let message: Result<WsMessage, _> = serde_json::from_str(text);
+                    match message {
+                        Ok(message) => match MessageType::from_ws_message(message.clone()) {
+                            Ok(message_type) => {
+                                if let Err(err) =
+                                    context.handle_message(message_type, client_id).await
+                                {
+                                    tracing::error!(error = %err, message = ?message, "Error handling WebSocket message");
+                                }
                             }
-                        }
+                            Err(e) => {
+                                tracing::error!(error = %e, message = ?message, "Failed to convert to MessageType");
+                            }
+                        },
                         Err(e) => {
-                            tracing::error!(error = %e, message = ?message, "Failed to convert to MessageType");
+                            tracing::error!(error = %e, "Failed to parse WebSocket message");
                         }
-                    },
-                    Err(e) => {
-                        tracing::error!(error = %e, "Failed to parse WebSocket message");
                     }
                 }
             }
-        }
-
-        let mut room_manager = context.room_manager().lock().await;
-        let mut client_manager = context.client_manager().lock().await;
-        room_manager
-            .handle_leave(client_id, &mut client_manager)
-            .await
-            .expect("Failed to handle client leave");
-    });
-
-    let writer_task = tokio::spawn(async move {
-        let mut rx = rx;
-        while let Some(message) = rx.recv().await {
-            tracing::debug!("Preparing to send game message to WebSocket");
-            let json_message = serde_json::to_string(&message).unwrap();
-            if let Err(err) = ws_tx.send(Message::Text(json_message)).await {
-                tracing::error!(error = ?err, "Failed to send game message to WebSocket");
+            Err(e) => {
+                tracing::error!(error = %e, "Error receiving WebSocket message");
             }
         }
-    });
-
-    let join_result = tokio::try_join!(reader_task, writer_task);
-    if let Err(err) = join_result {
-        tracing::error!("WebSocket tasks encountered an error: {:?}", err);
-        return Err(Error::WebsocketError(
-            "An error occurred while processing the WebSocket tasks".to_string(),
-        ));
     }
 
-    {
-        let mut client_manager = context_clone.client_manager().lock().await;
-        client_manager.remove_client(client_id)
-    }
+    let mut room_manager = context.room_manager().lock().await;
+    let mut client_manager = context.client_manager().lock().await;
+    room_manager
+        .handle_leave(client_id, &mut client_manager)
+        .await?;
 
+    Ok(())
+}
+
+async fn write_to_ws(
+    mut rx: mpsc::Receiver<Game>,
+    mut ws_tx: impl futures::Sink<Message> + Unpin,
+) -> Result<(), Error> {
+    while let Some(message) = rx.recv().await {
+        let json_message = serde_json::to_string(&message).unwrap();
+        let ws_message = Message::Text(json_message);
+        if ws_tx.send(ws_message).await.is_err() {
+            tracing::error!("Failed to send game message to WebSocket");
+        }
+    }
     Ok(())
 }

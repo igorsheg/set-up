@@ -42,7 +42,7 @@ export const setGameState =
             dispatch(
               displayNotificationWithTimer({
                 timestamp: event.timestamp,
-                content: `${event.data} found a set!`,
+                content: `${event.data}`,
                 icon: "",
               }),
             );
