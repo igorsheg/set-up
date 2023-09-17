@@ -26,8 +26,6 @@ pub async fn ws_handler(
     Extension(context): Extension<Arc<Context>>,
     jar: CookieJar,
 ) -> impl IntoResponse {
-    tracing::info!("Incoming WebSocket connection");
-
     let client_id = get_client_id_from_cookies(&jar);
 
     ws.on_upgrade(move |socket| async move {
@@ -55,13 +53,11 @@ async fn handle_connection(
     let writer_task = write_to_ws(rx, ws_tx);
 
     match tokio::try_join!(reader_task, writer_task) {
-        Err(err) => {
-            tracing::error!("WebSocket tasks encountered an error: {:?}", err);
-            Err(Error::WebsocketError(
-                "An error occurred while processing the WebSocket tasks".to_string(),
-            ))
+        Ok(_) => {
+            tracing::info!("Client {} disconnected gracefully", client_id);
+            Ok(())
         }
-        _ => Ok(()),
+        Err(err) => Err(err),
     }
 }
 
@@ -85,53 +81,105 @@ async fn read_from_ws(
 ) -> Result<(), Error> {
     while let Some(result) = ws_rx.next().await {
         match result {
-            Ok(msg) => {
-                if let Ok(text) = msg.to_text() {
-                    let message: Result<WsMessage, _> = serde_json::from_str(text);
-                    match message {
-                        Ok(message) => match MessageType::from_ws_message(message.clone()) {
-                            Ok(message_type) => {
-                                if let Err(err) =
-                                    context.handle_message(message_type, client_id).await
-                                {
-                                    tracing::error!(error = %err, message = ?message, "Error handling WebSocket message");
-                                }
-                            }
-                            Err(e) => {
-                                tracing::error!(error = %e, message = ?message, "Failed to convert to MessageType");
-                            }
-                        },
-                        Err(e) => {
-                            tracing::error!(error = %e, "Failed to parse WebSocket message");
-                        }
-                    }
-                }
-            }
-            Err(e) => {
-                tracing::error!(error = %e, "Error receiving WebSocket message");
-            }
+            Ok(msg) => handle_incoming_message(msg, &context, client_id).await?,
+            Err(e) => handle_incoming_error(e)?,
         }
     }
 
-    let mut room_manager = context.room_manager().lock().await;
-    let mut client_manager = context.client_manager().lock().await;
-    room_manager
-        .handle_leave(client_id, &mut client_manager)
-        .await?;
+    tracing::info!("WebSocket connection closed for client: {}", client_id);
+    cleanup_client(context, client_id).await?;
 
     Ok(())
 }
 
+async fn handle_incoming_message(
+    msg: Message,
+    context: &Arc<Context>,
+    client_id: Uuid,
+) -> Result<(), Error> {
+    let text = msg.to_text().map_err(|e| {
+        tracing::error!(error = %e, "Failed to convert message to text");
+        Error::JsonError(e.to_string())
+    })?;
+
+    if text.trim().is_empty() {
+        tracing::info!("Received empty message, skipping.");
+        return Ok(());
+    }
+
+    let message: WsMessage = serde_json::from_str(text).map_err(|e| {
+        tracing::error!(error = %e, "Failed to parse WebSocket message");
+        Error::WebsocketError(e.to_string())
+    })?;
+
+    let message_type = MessageType::from_ws_message(message.clone()).map_err(|e| {
+        tracing::error!(error = %e, message = ?message, "Failed to convert to MessageType");
+        Error::WebsocketError(e.to_string())
+    })?;
+
+    context.handle_message(message_type, client_id).await?;
+
+    Ok(())
+}
+
+fn handle_incoming_error(err: axum::Error) -> Result<(), Error> {
+    tracing::error!(error = %err, "Error receiving WebSocket message");
+
+    if err
+        .to_string()
+        .contains("Connection reset without closing handshake")
+    {
+        tracing::warn!("Client disconnected abruptly.");
+        return Ok(());
+    }
+
+    Err(Error::WebsocketError(err.to_string()))
+}
+
 async fn write_to_ws(
     mut rx: mpsc::Receiver<Game>,
-    mut ws_tx: impl futures::Sink<Message> + Unpin,
+    mut ws_tx: impl futures::Sink<Message, Error = axum::Error> + Unpin,
 ) -> Result<(), Error> {
     while let Some(message) = rx.recv().await {
-        let json_message = serde_json::to_string(&message).unwrap();
+        let json_message = serde_json::to_string(&message).unwrap_or_else(|err| {
+            tracing::error!("Failed to serialize game message: {}", err);
+            String::new()
+        });
+
+        if json_message.is_empty() {
+            continue;
+        }
+
         let ws_message = Message::Text(json_message);
-        if ws_tx.send(ws_message).await.is_err() {
-            tracing::error!("Failed to send game message to WebSocket");
+
+        match ws_tx.send(ws_message).await {
+            Ok(_) => {}
+            Err(err) => {
+                tracing::error!("Failed to send game message to WebSocket: {}", err);
+
+                break;
+            }
         }
     }
+
     Ok(())
+}
+
+async fn cleanup_client(context: Arc<Context>, client_id: Uuid) -> Result<(), Error> {
+    let mut room_manager = context.room_manager().lock().await;
+    let mut client_manager = context.client_manager().lock().await;
+    match room_manager
+        .handle_leave(client_id, &mut client_manager)
+        .await
+    {
+        Ok(_) => Ok(()),
+        Err(e) if e.to_string().contains("Client not in a room") => {
+            tracing::info!("Client {} was not in any room.", client_id);
+            Ok(())
+        }
+        Err(e) => {
+            tracing::error!("Error handling leave for client {}: {:?}", client_id, e);
+            Err(e)
+        }
+    }
 }

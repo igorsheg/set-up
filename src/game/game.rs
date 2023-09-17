@@ -193,7 +193,7 @@ impl Game {
         tracing::info!(event_type = %EventType::PlayerMove, player_id = %player_id, is_valid = %valid, ?err, "Player made a move.");
 
         if !valid || err.is_some() {
-            return Err(Error::GameRuleError("Invalid set".to_string()));
+            return Ok(false);
         }
 
         let indices: Vec<usize> = selected_cards
@@ -245,7 +245,7 @@ impl Game {
             self.game_over = Some(true);
         }
 
-        Ok(false)
+        Ok(true)
     }
 
     pub fn check_set(&self, cards: &[Card]) -> (bool, Option<Error>) {

@@ -38,3 +38,9 @@ tracing-subscriber = { version = "0.3.17", features = [
   "ansi",
   "json",
 ] }
+sentry = { version = "0.31.7", default-features = false, features = [
+  "tracing",
+  "reqwest",
+  "rustls",
+] }
+sentry-tracing = "0.31.7"

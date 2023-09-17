@@ -16,13 +16,13 @@ pub enum Error {
     #[error("JSON serialization error. {0}")]
     JsonError(String),
 
-    #[error("JSON serialization error. {0}")]
+    #[error("Client error. {0}")]
     ClientNotFound(String),
 
-    #[error("JSON serialization error. {0}")]
+    #[error("Game move error. {0}")]
     UnknownMove(String),
 
-    #[error("JSON serialization error. {0}")]
+    #[error("GameError. {0}")]
     GameError(String),
 
     #[error("Game rules error. {0}")]
