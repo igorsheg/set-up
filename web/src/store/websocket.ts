@@ -5,8 +5,25 @@ import { setGameState } from "@services/gameService";
 
 let retryCount = 0;
 const maxRetry = 5;
-let retryInterval: number;
+const maxDelay = 30000;
 let userRequestedClose = false;
+
+const retryConnection = (storeAPI: MiddlewareAPI<AppDispatch>) => {
+  if (retryCount < maxRetry) {
+    const retryInterval = Math.min(
+      maxDelay,
+      (Math.pow(2, retryCount) - 1) * 1000,
+    );
+
+    setTimeout(() => {
+      initializeWebSocket(storeAPI);
+
+      retryCount++;
+    }, retryInterval);
+  } else {
+    console.error("Failed to connect to WebSocket server.");
+  }
+};
 
 export type WebSocketStatus = "IDLE" | "CONNECTING" | "OPEN" | "CLOSED";
 
@@ -76,36 +93,27 @@ const connectWebSocket = (storeAPI: MiddlewareAPI<AppDispatch>) => {
   url.protocol = url.protocol.replace("http", "ws");
   ws = new WebSocket(url);
 
+  globalThis.addEventListener("beforeunload", function() {
+    userRequestedClose = true;
+    ws?.close();
+  });
+
   ws.onopen = () => {
     storeAPI.dispatch(setWebsocketStatus("OPEN"));
     retryCount = 0;
-    if (retryInterval) {
-      clearInterval(retryInterval);
-    }
   };
+
   ws.onmessage = (event) => {
     const receivedData: Data = JSON.parse(event.data);
-
     storeAPI.dispatch(setGameState(receivedData));
   };
+
   ws.onclose = () => {
     storeAPI.dispatch(setWebsocketStatus("CLOSED"));
     ws = null;
-    if (retryInterval) {
-      clearInterval(retryInterval);
-    }
 
     if (!userRequestedClose) {
-      if (retryCount < maxRetry) {
-        retryInterval = setInterval(() => {
-          if (retryCount < maxRetry) {
-            retryCount++;
-            initializeWebSocket(storeAPI);
-          } else {
-            clearInterval(retryInterval);
-          }
-        }, 5000);
-      }
+      retryConnection(storeAPI);
     } else {
       userRequestedClose = false;
     }

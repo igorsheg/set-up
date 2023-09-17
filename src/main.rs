@@ -1,6 +1,8 @@
 use crate::config::Configuration;
+use sentry::ClientOptions;
+use sentry_tracing::EventFilter;
 use server::Server;
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::{prelude::*, EnvFilter};
 
 pub mod client;
 pub mod config;
@@ -15,15 +17,29 @@ pub mod server;
 async fn main() -> std::io::Result<()> {
     let config = Configuration::new();
 
+    let _guard = sentry::init(ClientOptions {
+        traces_sample_rate: 0.1,
+        release: sentry::release_name!(),
+        ..Default::default()
+    });
+
     let filter = EnvFilter::from_default_env();
-    tracing_subscriber::fmt()
+    let sentry_layer = sentry_tracing::layer().event_filter(|md| match md.level() {
+        &tracing::Level::ERROR => EventFilter::Event,
+        _ => EventFilter::Ignore,
+    });
+
+    let subscriber = tracing_subscriber::fmt()
         .with_env_filter(filter)
+        .pretty()
         .with_ansi(true)
         .with_thread_ids(true)
-        .compact()
         .with_target(true)
-        .json()
-        .init();
+        .compact()
+        .finish()
+        .with(sentry_layer);
+
+    tracing::subscriber::set_global_default(subscriber).expect("Setting global default failed");
 
     let server = Server::new(
         config.server.host,

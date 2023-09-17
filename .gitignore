@@ -21,3 +21,5 @@ Thumbs.db
 
 dist
 web/dist
+
+.direnv
