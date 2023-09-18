@@ -14,6 +14,49 @@ import {
 import { useIsMobile } from "@hooks/useIsMobile";
 import { moveCards } from "@services/gameService";
 
+const createCardKey = (card: CardType): string => {
+  return `${card.color}-${card.shape}-${card.number}-${card.shading}`;
+};
+
+interface AnimatedCardProps {
+  card: CardType;
+  index: number;
+  onClick: (index: number) => void;
+  isSelected: boolean;
+}
+
+const AnimatedCard: React.FC<React.PropsWithChildren<AnimatedCardProps>> = ({
+  card,
+  index,
+  onClick,
+  isSelected,
+}) => {
+  return (
+    <AnimatePresence>
+      <motion.div
+        key={createCardKey(card)}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{
+          type: "spring",
+          stiffness: 450,
+          damping: 26,
+          delay: index * 0.01,
+        }}
+        style={{ position: "absolute", top: 0, left: 0 }}
+      >
+        <Card
+          selected={isSelected}
+          onClick={() => onClick(index)}
+          card={card}
+          hidden={card.color === null}
+        />
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 export default function Board(): React.ReactElement {
   const in_play = useSelector(
     (state: RootState) => state.gameManager.gameData.in_play,
@@ -28,16 +71,8 @@ export default function Board(): React.ReactElement {
   );
   const dispatch = useDispatch<AppDispatch>();
 
-  const [numberOfColumns, setNumberOfColumns] = React.useState(3);
+  const [numberOfColumns, setNumberOfColumns] = React.useState(4);
   const isMobile = useIsMobile();
-
-  const [prevInPlay, setPrevInPlay] = React.useState<CardType[]>([]);
-
-  React.useEffect(() => {
-    if (in_play) {
-      setPrevInPlay(in_play);
-    }
-  }, [in_play]);
 
   const handleClick = (index: number): void => {
     if (!selectedIndexes.includes(index)) {
@@ -66,87 +101,38 @@ export default function Board(): React.ReactElement {
     }
   }, [in_play, isMobile]);
 
-  const viewAnimationProps = {
-    initial: { opacity: 0, y: 10 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -10 },
-  };
-  const createCardKey = (card: CardType): string => {
-    return `${card.color}-${card.shape}-${card.number}-${card.shading}`;
-  };
-
-  const getAnimationProps = (
-    card: CardType,
-    index: number,
-    prevInPlay: CardType[],
-    selectedIndexes: number[],
-  ) => {
-    const wasInPrevPlay = prevInPlay.some(
-      (prevCard) => createCardKey(prevCard) === createCardKey(card),
-    );
-
-    const initialProps = {
-      opacity: wasInPrevPlay ? 1 : 0,
-      y: wasInPrevPlay ? 0 : 50,
-    };
-
-    const animateProps = {
-      opacity: 1,
-      y: 0,
-    };
-
-    const exitProps = selectedIndexes.includes(index)
-      ? { opacity: 0, y: -50 }
-      : {};
-
-    return { initial: initialProps, animate: animateProps, exit: exitProps };
-  };
-
   return (
     <>
       <motion.div
-        animate="animate"
-        exit="exit"
-        initial={false}
-        variants={viewAnimationProps}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
         className={styles.board}
         style={assignInlineVars({
           [boardVars.columns]: numberOfColumns.toString(),
         })}
       >
-        <AnimatePresence custom="wait">
+        <AnimatePresence>
           {in_play &&
             !game_over &&
-            in_play.map((card: CardType, i: number) => {
-              const animationProps = getAnimationProps(
-                card,
-                i,
-                prevInPlay,
-                selectedIndexes,
-              );
-
-              return (
-                <motion.div
-                  key={createCardKey(card)}
-                  initial={animationProps.initial}
-                  animate={animationProps.animate}
-                  exit={animationProps.exit}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 27,
-                    delay: i * 0.01,
-                  }}
-                >
-                  <Card
-                    selected={selectedIndexes.includes(i)}
-                    onClick={() => handleClick(i)}
-                    card={card}
-                    hidden={card.color === null}
-                  />
-                </motion.div>
-              );
-            })}
+            in_play.map((card, index) => (
+              <motion.div
+                layout
+                key={index}
+                className={styles.cardWrap}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 27,
+                }}
+              >
+                <AnimatedCard
+                  card={card}
+                  index={index}
+                  onClick={handleClick}
+                  isSelected={selectedIndexes.includes(index)}
+                />
+              </motion.div>
+            ))}
         </AnimatePresence>
       </motion.div>
     </>

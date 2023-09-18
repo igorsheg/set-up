@@ -25,6 +25,7 @@ export const gameManagerSlice = createSlice({
       players: [],
       mode: GameMode.Classic,
       events: [],
+      in_play: [],
     } as Data,
     selectedCardIndexes: [],
     eventLog: [],
@@ -55,6 +56,7 @@ export const gameManagerSlice = createSlice({
         last_player: null,
         last_set: null,
         players: [],
+        in_play: [],
         mode: GameMode.Classic,
         events: [],
       };
