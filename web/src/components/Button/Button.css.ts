@@ -4,7 +4,7 @@ import { keyframes } from "@vanilla-extract/css";
 
 const pulseLight = keyframes({
   "0%": {
-    boxShadow: `0 0 0 0 rgba(255,255,255, 0.7)`,
+    boxShadow: `0 0 0 0 rgba(255,255,255, 1)`,
     opacity: 0,
   },
   "50%": {

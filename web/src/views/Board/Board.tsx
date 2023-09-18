@@ -31,6 +31,14 @@ export default function Board(): React.ReactElement {
   const [numberOfColumns, setNumberOfColumns] = React.useState(3);
   const isMobile = useIsMobile();
 
+  const [prevInPlay, setPrevInPlay] = React.useState<CardType[]>([]);
+
+  React.useEffect(() => {
+    if (in_play) {
+      setPrevInPlay(in_play);
+    }
+  }, [in_play]);
+
   const handleClick = (index: number): void => {
     if (!selectedIndexes.includes(index)) {
       const newSelectedIndexes = [...selectedIndexes, index];
@@ -58,16 +66,40 @@ export default function Board(): React.ReactElement {
     }
   }, [in_play, isMobile]);
 
-  const cardMotionVariants = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -20 },
-  };
-
   const viewAnimationProps = {
     initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0 },
     exit: { opacity: 0, y: -10 },
+  };
+  const createCardKey = (card: CardType): string => {
+    return `${card.color}-${card.shape}-${card.number}-${card.shading}`;
+  };
+
+  const getAnimationProps = (
+    card: CardType,
+    index: number,
+    prevInPlay: CardType[],
+    selectedIndexes: number[],
+  ) => {
+    const wasInPrevPlay = prevInPlay.some(
+      (prevCard) => createCardKey(prevCard) === createCardKey(card),
+    );
+
+    const initialProps = {
+      opacity: wasInPrevPlay ? 1 : 0,
+      y: wasInPrevPlay ? 0 : 50,
+    };
+
+    const animateProps = {
+      opacity: 1,
+      y: 0,
+    };
+
+    const exitProps = selectedIndexes.includes(index)
+      ? { opacity: 0, y: -50 }
+      : {};
+
+    return { initial: initialProps, animate: animateProps, exit: exitProps };
   };
 
   return (
@@ -82,32 +114,39 @@ export default function Board(): React.ReactElement {
           [boardVars.columns]: numberOfColumns.toString(),
         })}
       >
-        <AnimatePresence custom="popLayout">
+        <AnimatePresence custom="wait">
           {in_play &&
             !game_over &&
-            in_play.map((card: CardType, i: number) => (
-              <motion.div
-                key={`${card.color}-${card.number}-${card.shading}-${card.shape}-${i}`}
-                layout
-                variants={cardMotionVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={{
-                  type: "spring",
-                  stiffness: 500,
-                  damping: 30,
-                  delay: i * 0.005,
-                }}
-              >
-                <Card
-                  selected={selectedIndexes.includes(i)}
-                  onClick={(): void => handleClick(i)}
-                  card={card}
-                  hidden={card.color === null}
-                />
-              </motion.div>
-            ))}
+            in_play.map((card: CardType, i: number) => {
+              const animationProps = getAnimationProps(
+                card,
+                i,
+                prevInPlay,
+                selectedIndexes,
+              );
+
+              return (
+                <motion.div
+                  key={createCardKey(card)}
+                  initial={animationProps.initial}
+                  animate={animationProps.animate}
+                  exit={animationProps.exit}
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 27,
+                    delay: i * 0.01,
+                  }}
+                >
+                  <Card
+                    selected={selectedIndexes.includes(i)}
+                    onClick={() => handleClick(i)}
+                    card={card}
+                    hidden={card.color === null}
+                  />
+                </motion.div>
+              );
+            })}
         </AnimatePresence>
       </motion.div>
     </>

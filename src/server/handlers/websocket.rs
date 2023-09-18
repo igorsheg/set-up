@@ -156,8 +156,6 @@ async fn write_to_ws(
             Ok(_) => {}
             Err(err) => {
                 tracing::error!("Failed to send game message to WebSocket: {}", err);
-
-                break;
             }
         }
     }

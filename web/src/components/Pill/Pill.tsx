@@ -112,7 +112,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
                     yAlign="center"
                     gap={vars.sizes.s2}
                   >
-                    <i>{notification.icon}</i>
+                    <span>{notification.icon}</span>
                     <span style={{ ...vars.typography.m }}>
                       {notification.content}
                     </span>
@@ -178,7 +178,7 @@ const AvatarTooltipContent: FC<PropsWithChildren<AvatarProps>> = ({
         <Avatar
           alt={`${player.name}'s avatar`}
           fallback={player.name.substring(0, 1)}
-          image={`https://source.boringavatars.com/beam/40/${player.name}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
+          image={`https://source.boringavatars.com/beam/40/${player.client_id}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
         />
         <p style={{ fontWeight: 500 }}>{player.name}</p>
       </Box>

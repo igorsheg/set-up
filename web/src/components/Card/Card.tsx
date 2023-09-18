@@ -43,8 +43,9 @@ export default function Card(props: Props): React.ReactElement {
     return (
       <div
         key={`${color}-${shape}-${number}-${index}`}
-        className={`${shapeWrap({ size: (number + 1) as 1 | 2 | 3 })} ${!threeElements ? "" : isMiddle ? styles.middle : styles.leftRight
-          }`}
+        className={`${shapeWrap({ size: (number + 1) as 1 | 2 | 3 })} ${
+          !threeElements ? "" : isMiddle ? styles.middle : styles.leftRight
+        }`}
       >
         {element}
       </div>
@@ -59,7 +60,7 @@ export default function Card(props: Props): React.ReactElement {
         !onClick && styles.thumbnail,
       )}
       onClick={onClick}
-      onKeyDown={onClick}
+      onKeyDown={(e) => e.key === "Enter" && onClick && onClick()}
       role="button"
       tabIndex={0}
     >
