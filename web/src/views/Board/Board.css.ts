@@ -42,4 +42,21 @@ export const boardStyles = {
       backgroundColor: vars.colors.background,
     },
   }),
+  cardWrap: style({
+    display: "flex",
+    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    height: vars.sizes.s12,
+    width: vars.sizes.s12,
+    position: "relative",
+    gap: vars.sizes.s1,
+
+    "@media": {
+      "(max-width: 768px)": {
+        height: "78px",
+        width: "78px",
+      },
+    },
+  }),
 };

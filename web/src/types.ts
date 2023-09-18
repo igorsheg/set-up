@@ -21,7 +21,7 @@ export enum GameMode {
 
 export type Data = {
   game_over?: boolean;
-  in_play?: Card[];
+  in_play: Card[] | [];
   last_player: string | null;
   last_set?: Card[] | null;
   players: Player[];
