@@ -108,7 +108,7 @@ export const tooltip = {
     borderRadius: vars.radius.base,
     padding: vars.sizes.s2,
     background: vars.colorVars.a1,
-    boxShadow: vars.shadows.sm,
+    boxShadow: `0 0 0 1px ${vars.colorVars.d5}, ${vars.shadows.lg}`,
     userSelect: "none",
     animationDuration: "400ms",
     animationTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",

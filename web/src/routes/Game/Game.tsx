@@ -61,10 +61,6 @@ export default function Game() {
   };
 
   useEffect(() => {
-    console.log("gameData changed", gameData);
-  }, [gameData]);
-
-  useEffect(() => {
     if (
       websockerStatus !== "OPEN" &&
       activeRoom?.code &&
