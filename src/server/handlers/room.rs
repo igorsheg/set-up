@@ -17,9 +17,7 @@ pub async fn check_game_exists(
     Path(room_code): Path<String>,
     Extension(context): Extension<Arc<Context>>,
 ) -> impl IntoResponse {
-    let mut room_manager = context.room_manager().lock().await;
-
-    match room_manager.get_game_state(&room_code) {
+    match context.room_manager().get_game_state(&room_code).await {
         Ok(_) => StatusCode::OK,
         Err(_) => {
             tracing::error!(room_code = %room_code, "Game not found");
@@ -43,7 +41,7 @@ pub async fn new_room_handler(
 
     match mode_str.parse::<GameMode>() {
         Ok(mode) => {
-            if let Ok(room_code) = context.new_room(mode).await {
+            if let Ok(room_code) = context.room_manager().handle_new(mode).await {
                 tracing::info!(room_code = %room_code, "Successfully created new room");
                 Json(room_code)
             } else {
@@ -64,8 +62,9 @@ pub async fn get_past_rooms(
         .ok_or_else(|| Error::AxumError("No client_id cookie found".to_string()))?;
     let client_id = Uuid::parse_str(cookie.value()).unwrap_or_else(|_| Uuid::new_v4());
 
-    let mut client_manager = context.client_manager().lock().await;
-    let client = client_manager.find_client(client_id)?;
+    let client_arc = context.client_manager().find_client(client_id).await?;
+
+    let client = client_arc.lock().await;
 
     let past_rooms = client.get_past_rooms();
 
