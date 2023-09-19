@@ -1,11 +1,12 @@
-use crate::{infra::error::Error, message::WsMessage, room::RoomManager};
-use std::collections::HashMap;
+use crate::{game::game::Game, infra::error::Error, message::WsMessage};
+use std::{collections::HashMap, sync::Arc};
+use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use super::Client;
 
 pub struct ClientManager {
-    clients: HashMap<Uuid, Client>,
+    clients: Mutex<HashMap<Uuid, Arc<Mutex<Client>>>>,
 }
 
 impl Default for ClientManager {
@@ -17,50 +18,60 @@ impl Default for ClientManager {
 impl ClientManager {
     pub fn new() -> Self {
         Self {
-            clients: HashMap::new(),
+            clients: Mutex::new(HashMap::new()),
         }
     }
 
-    pub fn find_client(&mut self, client_id: Uuid) -> Result<&mut Client, Error> {
+    pub async fn find_client(&self, client_id: Uuid) -> Result<Arc<Mutex<Client>>, Error> {
         self.clients
-            .get_mut(&client_id)
+            .lock()
+            .await
+            .get(&client_id)
+            .cloned()
             .ok_or(Error::ClientNotFound("Client not found".to_string()))
     }
 
-    pub fn add_client(&mut self, id: Uuid, client: Client) {
-        self.clients.insert(id, client);
+    pub async fn add_client(&self, id: Uuid, client: Client) {
+        self.clients
+            .lock()
+            .await
+            .insert(id, Arc::new(Mutex::new(client)));
         tracing::info!(client_id = %id, "New client added.");
     }
 
-    pub fn remove_client(&mut self, id: Uuid) {
-        self.clients.remove(&id);
+    pub async fn remove_client(&self, id: Uuid) {
+        self.clients.lock().await.remove(&id);
         tracing::info!(client_id = %id, "Client removed.");
     }
 
-    pub fn get_clients_in_room(&mut self, room_code: &str) -> Vec<&mut Client> {
-        self.clients
-            .values_mut()
-            .filter(|client| {
-                if let Ok(client_room_code) = client.get_room_code() {
-                    client_room_code == room_code
-                } else {
-                    false
+    pub async fn get_clients_in_room(
+        &self,
+        room_code: &str,
+    ) -> Result<Vec<Arc<Mutex<Client>>>, Error> {
+        let mut clients_in_room = Vec::new();
+
+        for client_arc in self.clients.lock().await.values() {
+            let client = client_arc.lock().await;
+            if let Ok(client_room_code) = client.get_room_code() {
+                if client_room_code == room_code {
+                    clients_in_room.push(client_arc.clone());
                 }
-            })
-            .collect()
+            }
+        }
+
+        Ok(clients_in_room)
     }
 
     pub async fn broadcast_game_state(
-        &mut self,
+        &self,
         message: &WsMessage,
-        room_manager: &mut RoomManager,
+        game_state: &Game,
     ) -> Result<(), Error> {
         let room_code = message.get_room_code()?;
+        let clients_in_room = self.get_clients_in_room(&room_code).await?;
 
-        let game_state = room_manager.get_game_state(&room_code)?;
-        let clients_in_room = self.get_clients_in_room(&room_code);
-
-        for client in clients_in_room {
+        for client_arc in clients_in_room {
+            let mut client = client_arc.lock().await; // Lock the client
             client.send_message(game_state).await.map_err(|err| {
                 Error::WebsocketError(format!("Failed to send message to client: {:?}", err))
             })?;

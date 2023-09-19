@@ -66,11 +66,13 @@ async fn setup_client(
     client_id: Uuid,
 ) -> Result<(mpsc::Sender<Game>, mpsc::Receiver<Game>), Error> {
     let (tx, rx) = mpsc::channel(32);
-    let mut client_manager = context.client_manager().lock().await;
-    if client_manager.find_client(client_id).is_ok() {
-        client_manager.remove_client(client_id);
+    let client_manager = context.client_manager();
+    if client_manager.find_client(client_id).await.is_ok() {
+        client_manager.remove_client(client_id).await;
     }
-    client_manager.add_client(client_id, Client::new(tx.clone(), client_id));
+    client_manager
+        .add_client(client_id, Client::new(tx.clone(), client_id))
+        .await;
     Ok((tx, rx))
 }
 
@@ -81,7 +83,7 @@ async fn read_from_ws(
 ) -> Result<(), Error> {
     while let Some(result) = ws_rx.next().await {
         match result {
-            Ok(msg) => handle_incoming_message(msg, &context, client_id).await?,
+            Ok(msg) => handle_incoming_message(msg, context.clone(), client_id).await?,
             Err(e) => handle_incoming_error(e)?,
         }
     }
@@ -94,7 +96,7 @@ async fn read_from_ws(
 
 async fn handle_incoming_message(
     msg: Message,
-    context: &Arc<Context>,
+    context: Arc<Context>,
     client_id: Uuid,
 ) -> Result<(), Error> {
     let text = msg.to_text().map_err(|e| {
@@ -117,7 +119,12 @@ async fn handle_incoming_message(
         Error::WebsocketError(e.to_string())
     })?;
 
-    context.handle_message(message_type, client_id).await?;
+    let client_manager = context.client_manager();
+    let room_manager = context.room_manager();
+
+    context
+        .handle_message(message_type, client_id, room_manager, client_manager)
+        .await?;
 
     Ok(())
 }
@@ -164,12 +171,9 @@ async fn write_to_ws(
 }
 
 async fn cleanup_client(context: Arc<Context>, client_id: Uuid) -> Result<(), Error> {
-    let mut room_manager = context.room_manager().lock().await;
-    let mut client_manager = context.client_manager().lock().await;
-    match room_manager
-        .handle_leave(client_id, &mut client_manager)
-        .await
-    {
+    let room_manager = context.room_manager();
+    let client_manager = context.client_manager();
+    match room_manager.handle_leave(client_id, client_manager).await {
         Ok(_) => Ok(()),
         Err(e) if e.to_string().contains("Client not in a room") => {
             tracing::info!("Client {} was not in any room.", client_id);

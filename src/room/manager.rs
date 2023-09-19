@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
+use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::{
@@ -13,7 +14,7 @@ use crate::{
 };
 
 pub struct RoomManager {
-    rooms: HashMap<String, Game>,
+    rooms: Mutex<HashMap<String, Arc<Mutex<Game>>>>,
 }
 
 impl Default for RoomManager {
@@ -25,140 +26,177 @@ impl Default for RoomManager {
 impl RoomManager {
     pub fn new() -> Self {
         Self {
-            rooms: HashMap::new(),
+            rooms: Mutex::new(HashMap::new()),
         }
     }
 
-    pub fn add_room(&mut self, name: String, game: Game) {
-        self.rooms.insert(name.clone(), game);
+    pub async fn add_room(&self, name: String, game: Game) -> Result<(), Error> {
+        let mut rooms = self.rooms.lock().await;
+        let game = Arc::new(Mutex::new(game));
+        rooms.insert(name.clone(), game);
         tracing::info!(room_name = %name, "New room added.");
+        Ok(())
     }
 
-    pub fn remove_room(&mut self, name: &str) {
-        self.rooms.remove(name);
+    pub async fn remove_room(&self, name: &str) -> Result<(), Error> {
+        let mut rooms = self.rooms.lock().await;
+        rooms.remove(name);
+        Ok(())
     }
 
-    pub fn get_game_state(&mut self, room_code: &str) -> Result<&mut Game, Error> {
-        if let Some(game_state) = self.rooms.get_mut(room_code) {
-            Ok(game_state)
+    pub async fn get_game_state(&self, room_code: &str) -> Result<Arc<Mutex<Game>>, Error> {
+        let rooms = self.rooms.lock().await;
+        if let Some(game_state) = rooms.get(room_code) {
+            Ok(game_state.clone())
         } else {
             Err(Error::GameError("Game not found".to_string()))
         }
     }
 
     pub async fn handle_join(
-        &mut self,
+        &self,
         message: WsMessage,
         client_id: Uuid,
-        client_manager: &mut ClientManager,
+        client_manager: &ClientManager,
     ) -> Result<(), Error> {
         let room_code = message.get_room_code()?;
         tracing::info!(client_id = %client_id, room_code = %room_code, "Handling join request.");
-        let game_state = self.get_game_state(&room_code)?;
-        let client = client_manager.find_client(client_id)?;
+        let game_state_arc = self.get_game_state(&room_code).await?;
+        let mut game_state = game_state_arc.lock().await;
+        let client_arc = client_manager.find_client(client_id).await?;
 
-        if game_state.restore_player(client_id).is_err() {
-            let player_username = message.get_player_username()?;
-            let player = Player::new(client.id, player_username);
-            game_state.add_player(player);
+        {
+            let mut client = client_arc.lock().await;
+
+            if game_state.restore_player(client_id).is_err() {
+                let player_username = message.get_player_username()?;
+                let player = Player::new(client.id, player_username);
+                game_state.add_player(player);
+            }
+
+            client.set_room_code(room_code);
         }
 
-        client.set_room_code(room_code);
-        client_manager.broadcast_game_state(&message, self).await?;
+        client_manager
+            .broadcast_game_state(&message, &game_state)
+            .await?;
 
         Ok(())
     }
 
     pub async fn handle_leave(
-        &mut self,
+        &self,
         client_id: Uuid,
-        client_manager: &mut ClientManager,
+        client_manager: &ClientManager,
     ) -> Result<(), Error> {
-        let client = client_manager.find_client(client_id)?;
-        let room_code = client.get_room_code()?;
-        let game_state = self.get_game_state(room_code)?;
+        let client_arc = client_manager.find_client(client_id).await?;
+        let room_code = {
+            let client = client_arc.lock().await;
+            client.get_room_code()?.clone()
+        };
 
+        let game_state_arc = self.get_game_state(&room_code).await?;
+        let mut game_state = game_state_arc.lock().await;
         game_state.remove_player(client_id);
 
-        let message = WsMessage::new_update_message(room_code);
-        client_manager.broadcast_game_state(&message, self).await?;
+        let message = WsMessage::new_update_message(&room_code);
+        client_manager
+            .broadcast_game_state(&message, &game_state)
+            .await?;
 
         Ok(())
     }
 
     pub async fn handle_move(
-        &mut self,
+        &self,
         message: WsMessage,
         client_id: Uuid,
-        client_manager: &mut ClientManager,
+        client_manager: &ClientManager,
     ) -> Result<(), Error> {
         let game_move: Move = message.get_payload_as()?;
 
-        let game_state = self.get_game_state(&game_move.room_code)?;
+        let game_state_arc = self.get_game_state(&game_move.room_code).await?;
+        let mut game_state = game_state_arc.lock().await;
+
         game_state.make_move(client_id, game_move.cards)?;
 
-        client_manager.broadcast_game_state(&message, self).await?;
+        client_manager
+            .broadcast_game_state(&message, &game_state)
+            .await?;
 
         Ok(())
     }
 
     pub async fn handle_request(
-        &mut self,
+        &self,
         message: WsMessage,
         client_id: Uuid,
-        client_manager: &mut ClientManager,
+        client_manager: &ClientManager,
     ) -> Result<(), Error> {
         let room_code = message.get_room_code()?;
-        let game_state = self.get_game_state(&room_code)?;
+        let game_state_arc = self.get_game_state(&room_code).await?;
+        let mut game_state = game_state_arc.lock().await;
 
-        for player in game_state.players.iter_mut() {
-            if player.client_id == client_id {
-                player.request = true;
-                game_state.events.push(Event::new(
-                    EventType::PlayerRequestedCards,
-                    player.name.clone(),
-                ));
-                tracing::info!(player_id = %client_id, player_name = %player.name, "Player requested cards.");
-            }
+        if let Some(player) = game_state
+            .players
+            .iter_mut()
+            .find(|p| p.client_id == client_id)
+        {
+            player.request = true;
+            let player_name = player.name.clone();
+            game_state.events.push(Event::new(
+                EventType::PlayerRequestedCards,
+                player_name.clone(),
+            ));
+            tracing::info!(player_id = %client_id, player_name = %player_name, "Player requested cards.");
+        } else {
+            return Err(Error::ClientNotFound("Client not found".to_string()));
         }
-        let request = game_state.players.iter().all(|player| player.request);
 
-        if request && !game_state.deck.cards.is_empty() {
+        let all_requested = game_state.players.iter().all(|player| player.request);
+
+        if all_requested && !game_state.deck.cards.is_empty() {
             game_state.add_cards();
             for player in game_state.players.iter_mut() {
                 player.request = false; // Reset the request flags
             }
         }
 
-        client_manager.broadcast_game_state(&message, self).await?;
+        client_manager
+            .broadcast_game_state(&message, &game_state)
+            .await?;
 
         Ok(())
     }
 
-    pub async fn handle_new(&mut self, mode: GameMode) -> Result<String, Error> {
+    pub async fn handle_new(&self, mode: GameMode) -> Result<String, Error> {
         let room_code = nanoid::nanoid!(6);
 
         let mut game = Game::new(mode);
-        let mut players = game.players.clone();
-        for player in &mut players {
+        for player in &mut game.players {
             player.score = 0;
         }
-        game.players = players;
 
-        self.rooms.insert(room_code.clone(), game);
+        let mut rooms = self.rooms.lock().await;
+        rooms.insert(room_code.clone(), Arc::new(Mutex::new(game)));
 
         Ok(room_code)
     }
+
     pub async fn reset_game(
-        &mut self,
+        &self,
         message: WsMessage,
-        client_manager: &mut ClientManager,
+        client_manager: &ClientManager,
     ) -> Result<(), Error> {
         let room_code = message.get_room_code()?;
-        let game_sate = self.get_game_state(&room_code)?;
-        game_sate.reset();
+        let game_state_arc = self.get_game_state(&room_code).await?;
+        let mut game_state = game_state_arc.lock().await;
+
+        game_state.reset();
         let message = WsMessage::new_update_message(&room_code);
-        client_manager.broadcast_game_state(&message, self).await?;
+        client_manager
+            .broadcast_game_state(&message, &game_state)
+            .await?;
         Ok(())
     }
 }
