@@ -27,6 +27,9 @@ pub enum Error {
 
     #[error("Game rules error. {0}")]
     GameRuleError(String),
+
+    #[error("Database error: {0}")]
+    DatabaseError(String),
 }
 
 pub struct AppError(pub Error);
@@ -57,5 +60,11 @@ impl From<axum::Error> for Error {
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Self {
         Error::JsonError(err.to_string())
+    }
+}
+
+impl From<sqlx::Error> for Error {
+    fn from(err: sqlx::Error) -> Self {
+        Error::DatabaseError(err.to_string())
     }
 }

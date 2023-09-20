@@ -1,4 +1,10 @@
+use std::sync::Arc;
+
 use crate::config::Configuration;
+use infra::{
+    ba::{init_db_pool, AnalyticsObserver, BAService},
+    error::Error,
+};
 use sentry::ClientOptions;
 use sentry_tracing::EventFilter;
 use server::Server;
@@ -14,7 +20,7 @@ pub mod room;
 pub mod server;
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<(), Error> {
     let config = Configuration::new();
 
     let _guard = sentry::init(ClientOptions {
@@ -41,10 +47,14 @@ async fn main() -> std::io::Result<()> {
 
     tracing::subscriber::set_global_default(subscriber).expect("Setting global default failed");
 
+    let db_pool = init_db_pool(&config.server.db_url).await?;
+    let analytics_observer: Arc<dyn AnalyticsObserver> = Arc::new(BAService::new(db_pool));
+
     let server = Server::new(
         config.server.host,
         config.server.port.parse().unwrap(),
         config.is_production,
+        analytics_observer.clone(),
     );
 
     server.run().await;

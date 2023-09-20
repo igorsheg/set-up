@@ -23,3 +23,5 @@ dist
 web/dist
 
 .direnv
+
+*.db

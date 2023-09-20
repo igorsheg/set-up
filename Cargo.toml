@@ -44,3 +44,5 @@ sentry = { version = "0.31.7", default-features = false, features = [
   "rustls",
 ] }
 sentry-tracing = "0.31.7"
+sqlx = { version = "0.7.1", features = ["sqlite", "runtime-tokio"] }
+strum = { version = "0.25", features = ["derive"] }
