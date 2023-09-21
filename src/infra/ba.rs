@@ -1,4 +1,3 @@
-use sqlx::ConnectOptions;
 use std::str::FromStr;
 
 use chrono::Utc;
@@ -107,11 +106,6 @@ impl BAService {
         .execute(&mut *conn)
         .await?;
 
-        // event_type_str,
-        // client_id_str,
-        // room_code,
-        // additional_data_str,
-        // timestamp_str
         Ok(())
     }
 }
@@ -146,6 +140,8 @@ pub async fn init_db_pool(db_url: &str) -> Result<SqlitePool, Error> {
             tracing::error!("Unable to connect to database. Error: {}", e);
             Error::DatabaseError(e.to_string())
         })?;
+
+    sqlx::migrate!().run(&pool).await?;
 
     tracing::info!("Successfully connected to database.");
     Ok(pool)

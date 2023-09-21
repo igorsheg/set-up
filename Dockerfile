@@ -15,6 +15,7 @@ COPY --from=node-builder /app/web/dist ./web/dist
 COPY ./src ./src
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./Cargo.lock ./Cargo.lock
+COPY ./migrations ./migrations
 
 RUN apt-get update && apt-get install -y build-essential pkg-config libssl-dev
 RUN rustup target add x86_64-unknown-linux-gnu
@@ -22,7 +23,6 @@ RUN rustup target add x86_64-unknown-linux-gnu
 RUN cargo build --release
 
 RUN mv target/release/set-up /app/set-up
-
 
 #########
 

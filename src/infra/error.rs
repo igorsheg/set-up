@@ -68,3 +68,8 @@ impl From<sqlx::Error> for Error {
         Error::DatabaseError(err.to_string())
     }
 }
+impl From<sqlx::migrate::MigrateError> for Error {
+    fn from(err: sqlx::migrate::MigrateError) -> Self {
+        Error::DatabaseError(err.to_string())
+    }
+}
