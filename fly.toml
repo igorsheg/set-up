@@ -7,6 +7,11 @@ kill_timeout = "5s"
 auto_rollback = true
 allowed_public_ports = []
 
+[mounts]
+source = "events_db_vol"
+destination = "/data"
+
+
 [[services]]
 protocol = "tcp"
 internal_port = 5432

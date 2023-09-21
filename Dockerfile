@@ -31,5 +31,6 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y  iproute2 curl ca-certificates htop
 WORKDIR /app
 COPY --from=rust-builder /app/set-up .
+RUN mkdir /app/data
 CMD ["/app/set-up"]
 

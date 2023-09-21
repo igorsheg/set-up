@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
+use serde_json::json;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
@@ -9,7 +10,10 @@ use crate::{
         game::{Event, EventType, Game, GameMode, Move},
         player::Player,
     },
-    infra::error::Error,
+    infra::{
+        ba::{self, AnalyticsObserver},
+        error::Error,
+    },
     message::WsMessage,
 };
 
@@ -55,6 +59,7 @@ impl RoomManager {
 
     pub async fn handle_join(
         &self,
+        analytics_observer: &Arc<dyn AnalyticsObserver>, // Add this line
         message: WsMessage,
         client_id: Uuid,
         client_manager: &ClientManager,
@@ -73,6 +78,15 @@ impl RoomManager {
                 let player = Player::new(client.id, player_username);
                 game_state.add_player(player);
             }
+
+            let event = ba::Event::new(
+                ba::EventType::PlayerJoined,
+                Some(client.id),
+                Some(room_code.clone()),
+                None,
+            );
+
+            analytics_observer.observe(event);
 
             client.set_room_code(room_code);
         }
@@ -109,6 +123,7 @@ impl RoomManager {
 
     pub async fn handle_move(
         &self,
+        analytics_observer: &Arc<dyn AnalyticsObserver>, // Add this line
         message: WsMessage,
         client_id: Uuid,
         client_manager: &ClientManager,
@@ -118,7 +133,21 @@ impl RoomManager {
         let game_state_arc = self.get_game_state(&game_move.room_code).await?;
         let mut game_state = game_state_arc.lock().await;
 
-        game_state.make_move(client_id, game_move.cards)?;
+        let move_result = game_state.make_move(client_id, game_move.cards.clone())?;
+
+        let event_type = if move_result {
+            ba::EventType::PlayerMoveValid
+        } else {
+            ba::EventType::PlayerMoveInvalid
+        };
+
+        let event = ba::Event::new(
+            event_type,
+            Some(client_id),
+            Some(game_move.room_code),
+            Some(json!(game_move.cards)),
+        );
+        analytics_observer.observe(event);
 
         client_manager
             .broadcast_game_state(&message, &game_state)
@@ -129,6 +158,7 @@ impl RoomManager {
 
     pub async fn handle_request(
         &self,
+        analytics_observer: &Arc<dyn AnalyticsObserver>, // Add this line
         message: WsMessage,
         client_id: Uuid,
         client_manager: &ClientManager,
@@ -148,6 +178,14 @@ impl RoomManager {
                 EventType::PlayerRequestedCards,
                 player_name.clone(),
             ));
+            let event = ba::Event::new(
+                ba::EventType::PlayerRequestedCards,
+                Some(client_id),
+                Some(room_code.clone()),
+                None,
+            );
+
+            analytics_observer.observe(event);
             tracing::info!(player_id = %client_id, player_name = %player_name, "Player requested cards.");
         } else {
             return Err(Error::ClientNotFound("Client not found".to_string()));
