@@ -1,7 +1,12 @@
+use sqlx::ConnectOptions;
+use std::str::FromStr;
 
 use chrono::Utc;
 use serde::Serialize;
-use sqlx::SqlitePool;
+use sqlx::{
+    sqlite::{SqliteConnectOptions, SqliteJournalMode},
+    SqlitePool,
+};
 use strum::{Display, EnumString};
 use uuid::Uuid;
 
@@ -51,8 +56,6 @@ pub struct Event {
     timestamp: chrono::DateTime<Utc>,
 }
 
-
-
 impl Event {
     pub fn new(
         event_type: EventType,
@@ -71,11 +74,11 @@ impl Event {
 }
 
 pub struct BAService {
-        db_pool: SqlitePool, // Assume we have a database pool here
+    db_pool: SqlitePool, // Assume we have a database pool here
 }
 
 impl BAService {
-     pub fn new(db_pool: SqlitePool) -> Self {
+    pub fn new(db_pool: SqlitePool) -> Self {
         Self { db_pool }
     }
 
@@ -94,17 +97,21 @@ impl BAService {
         let timestamp_str = timestamp.to_rfc3339();
         let event_type_str = event_type.to_string();
 
-        sqlx::query!(
+        sqlx::query(
             "INSERT INTO events (event_type, client_id, room_code, additional_data, timestamp) VALUES (?, ?, ?, ?, ?)",
-            event_type_str,
-            client_id_str,
-            room_code,
-            additional_data_str,
-            timestamp_str  
-        )
+        ).bind(event_type_str)
+            .bind(client_id_str)
+            .bind(room_code)
+            .bind(additional_data_str)
+            .bind(timestamp_str)
         .execute(&mut *conn)
         .await?;
 
+        // event_type_str,
+        // client_id_str,
+        // room_code,
+        // additional_data_str,
+        // timestamp_str
         Ok(())
     }
 }
@@ -125,15 +132,21 @@ impl AnalyticsObserver for BAService {
 }
 
 pub async fn init_db_pool(db_url: &str) -> Result<SqlitePool, Error> {
-    match SqlitePool::connect(db_url).await {
-        Ok(pool) => {
-            tracing::info!("Successfully connected to database.");
-            Ok(pool)
-        }
-        Err(e) => {
-            tracing::error!("Unable to connect to database. Error: {}", e);
-            Err(Error::DatabaseError(e.to_string()))
-        }
-    }
-}
+    let connect_options = SqliteConnectOptions::from_str(db_url)
+        .map_err(|e| {
+            tracing::error!("Error parsing SQLite connection string: {}", e);
+            Error::DatabaseError(e.to_string())
+        })?
+        .journal_mode(SqliteJournalMode::Wal)
+        .create_if_missing(true);
 
+    let pool = SqlitePool::connect_with(connect_options)
+        .await
+        .map_err(|e| {
+            tracing::error!("Unable to connect to database. Error: {}", e);
+            Error::DatabaseError(e.to_string())
+        })?;
+
+    tracing::info!("Successfully connected to database.");
+    Ok(pool)
+}
