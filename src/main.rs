@@ -38,6 +38,7 @@ async fn main() -> Result<(), Error> {
     let subscriber = tracing_subscriber::fmt()
         .with_env_filter(filter)
         .pretty()
+        .json()
         .with_ansi(true)
         .with_thread_ids(true)
         .with_target(true)
