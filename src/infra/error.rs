@@ -30,6 +30,9 @@ pub enum Error {
 
     #[error("Database error: {0}")]
     DatabaseError(String),
+
+    #[error("Environment error: {0}")]
+    EnviormentError(String),
 }
 
 pub struct AppError(pub Error);
@@ -70,6 +73,17 @@ impl From<sqlx::Error> for Error {
 }
 impl From<sqlx::migrate::MigrateError> for Error {
     fn from(err: sqlx::migrate::MigrateError) -> Self {
+        Error::DatabaseError(err.to_string())
+    }
+}
+impl From<tracing_loki::Error> for Error {
+    fn from(err: tracing_loki::Error) -> Self {
+        Error::DatabaseError(err.to_string())
+    }
+}
+
+impl From<std::env::VarError> for Error {
+    fn from(err: std::env::VarError) -> Self {
         Error::DatabaseError(err.to_string())
     }
 }

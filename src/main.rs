@@ -8,6 +8,7 @@ use infra::{
 use sentry::ClientOptions;
 use sentry_tracing::EventFilter;
 use server::Server;
+use tracing_loki::url::Url;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
 pub mod client;
@@ -35,15 +36,18 @@ async fn main() -> Result<(), Error> {
         _ => EventFilter::Ignore,
     });
 
+    let loki_url = std::env::var("LOKI_URL")?;
+
+    let (loki_tracing_layer, loki_tracing_task) = tracing_loki::builder()
+        .label("host", "set-up-rust")?
+        .build_url(Url::parse(&loki_url).unwrap())?;
+
     let subscriber = tracing_subscriber::fmt()
         .with_env_filter(filter)
-        .pretty()
         .json()
-        .with_ansi(true)
-        .with_thread_ids(true)
-        .with_target(true)
         .compact()
         .finish()
+        .with(loki_tracing_layer)
         .with(sentry_layer);
 
     tracing::subscriber::set_global_default(subscriber).expect("Setting global default failed");
@@ -57,6 +61,8 @@ async fn main() -> Result<(), Error> {
         config.is_production,
         analytics_observer.clone(),
     );
+
+    tokio::spawn(loki_tracing_task);
 
     server.run().await;
 
