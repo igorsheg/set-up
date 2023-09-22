@@ -65,7 +65,6 @@ impl RoomManager {
         client_manager: &ClientManager,
     ) -> Result<(), Error> {
         let room_code = message.get_room_code()?;
-        tracing::info!(client_id = %client_id, room_code = %room_code, "Handling join request.");
         let game_state_arc = self.get_game_state(&room_code).await?;
         let mut game_state = game_state_arc.lock().await;
         let client_arc = client_manager.find_client(client_id).await?;
@@ -76,7 +75,13 @@ impl RoomManager {
             if game_state.restore_player(client_id).is_err() {
                 let player_username = message.get_player_username()?;
                 let player = Player::new(client.id, player_username);
-                game_state.add_player(player);
+                game_state.add_player(player.clone());
+
+                tracing::info!(
+                event_type = %ba::EventType::PlayerRejoined,
+                client_id = %client_id,
+                player_name = %player.name,
+                );
             }
 
             let event = ba::Event::new(
@@ -87,6 +92,12 @@ impl RoomManager {
             );
 
             analytics_observer.observe(event);
+
+            tracing::info!(
+            event_type = %EventType::PlayerJoined,
+            room_code = %room_code,
+            client_id = %client_id,
+            );
 
             client.set_room_code(room_code);
         }
@@ -142,12 +153,22 @@ impl RoomManager {
         };
 
         let event = ba::Event::new(
-            event_type,
+            event_type.clone(),
             Some(client_id),
-            Some(game_move.room_code),
+            Some(game_move.room_code.clone()),
             Some(json!(game_move.cards)),
         );
         analytics_observer.observe(event);
+
+        tracing::info!(event_type = %event_type, room_code = %game_move.room_code, client_id = %client_id, cards = %json!(game_move.cards));
+
+        if game_state.game_over.is_some() {
+            tracing::info!(
+            event_type = %EventType::GameOver,
+            room_code = %game_move.room_code,
+            client_id = %client_id,
+            );
+        }
 
         client_manager
             .broadcast_game_state(&message, &game_state)
@@ -186,7 +207,12 @@ impl RoomManager {
             );
 
             analytics_observer.observe(event);
-            tracing::info!(player_id = %client_id, player_name = %player_name, "Player requested cards.");
+            tracing::info!(
+                event_type = %EventType::PlayerRequestedCards,
+                room_code = %room_code,
+                client_id = %client_id,
+                player_name = %player_name
+            );
         } else {
             return Err(Error::ClientNotFound("Client not found".to_string()));
         }

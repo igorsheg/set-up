@@ -1,7 +1,10 @@
 use crate::{
     context::Context,
     game::game::GameMode,
-    infra::error::{AppError, Error},
+    infra::{
+        ba,
+        error::{AppError, Error},
+    },
 };
 use axum::{
     extract::{Path, Query},
@@ -37,12 +40,15 @@ pub async fn new_room_handler(
     Query(query): Query<NewGameQuery>,
 ) -> impl IntoResponse {
     let mode_str = query.mode.unwrap_or_else(|| "classic".to_string());
-    tracing::info!(mode = %mode_str, "Creating new room");
 
     match mode_str.parse::<GameMode>() {
         Ok(mode) => {
             if let Ok(room_code) = context.room_manager().handle_new(mode).await {
-                tracing::info!(room_code = %room_code, "Successfully created new room");
+                tracing::info!(
+                event_type = %ba::EventType::RoomCreated,
+                room_code = %room_code,
+                mode = %mode_str,
+                );
                 Json(room_code)
             } else {
                 Json("Error creating room".to_string())

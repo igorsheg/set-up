@@ -136,7 +136,6 @@ impl Game {
         self.events
             .push(Event::new(EventType::PlayerJoined, player.name.clone()));
         self.players.push(player.clone());
-        tracing::info!(event_type = %EventType::PlayerJoined, player_name = %player.name, "Player joined the game.");
     }
 
     pub fn remove_player(&mut self, client_id: Uuid) -> bool {
@@ -164,7 +163,6 @@ impl Game {
                 .as_secs();
 
             if current_time - timestamp < 5 * 60 {
-                tracing::info!(player_id = %client_id, player_name = %player.name, "Player found, restoring...");
                 self.players.push(player);
                 return Ok(());
             } else {
@@ -190,7 +188,6 @@ impl Game {
 
     pub fn make_move(&mut self, player_id: Uuid, selected_cards: Vec<Card>) -> Result<bool, Error> {
         let (valid, err) = self.check_set(&selected_cards);
-        tracing::info!(event_type = %EventType::PlayerMove, player_id = %player_id, is_valid = %valid, ?err, "Player made a move.");
 
         if !valid || err.is_some() {
             return Ok(false);
@@ -233,14 +230,12 @@ impl Game {
 
         if self.mode == GameMode::Classic {
             if self.deck.cards.is_empty() && self.check_remaining_sets() {
-                tracing::info!(event_type = %EventType::GameOver, game_mode = %self.mode, "Game over in Classic mode!");
                 self.state = GameState::Ended;
                 self.game_over = Some(true);
             }
         } else if self.mode == GameMode::BestOf3
             && self.players.iter().any(|p| p.score >= BEST_OF_3_SCORE)
         {
-            tracing::info!(event_type = %EventType::GameOver, game_mode = %self.mode, "Game over in BestOf3 mode!");
             self.state = GameState::Ended;
             self.game_over = Some(true);
         }

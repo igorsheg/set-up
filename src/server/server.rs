@@ -76,7 +76,7 @@ impl Server {
             .layer(Extension(app_state))
             .layer(Extension(context));
 
-        tracing::info!("Listening on {}", &addr);
+        tracing::debug!("Listening on {}", &addr);
 
         axum::Server::bind(&addr)
             .serve(app.into_make_service())
