@@ -1,5 +1,4 @@
 use tokio::sync::mpsc;
-use uuid::Uuid;
 
 use crate::{game::game::Game, infra::error::Error};
 
@@ -11,14 +10,14 @@ enum ClientState {
 
 #[derive(Debug)]
 pub struct Client {
-    pub id: Uuid,
+    pub id: u16,
     pub tx: mpsc::Sender<Game>,
     state: ClientState,
     past_rooms: Vec<String>,
 }
 
 impl Client {
-    pub fn new(tx: mpsc::Sender<Game>, id: Uuid) -> Self {
+    pub fn new(tx: mpsc::Sender<Game>, id: u16) -> Self {
         Self {
             id,
             tx,

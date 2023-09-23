@@ -1,18 +1,17 @@
-use std::collections::HashMap;
-use std::fmt;
-use std::str::FromStr;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
+use std::{
+    fmt,
+    str::FromStr,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
-use crate::game::deck::Deck;
-use crate::game::player::Player;
-use crate::infra::error::Error;
-use chrono::Utc;
-use serde::Deserialize;
-use serde::Serialize;
-use uuid::Uuid;
+use ahash::{HashMap, HashMapExt};
+use serde::{Deserialize, Serialize};
 
 use super::card::Card;
+use crate::{
+    game::{deck::Deck, player::Player},
+    infra::error::Error,
+};
 
 const BEST_OF_3_SCORE: i64 = 3;
 
@@ -49,7 +48,7 @@ impl fmt::Display for EventType {
 pub struct Event {
     event_type: EventType,
     data: String,
-    timestamp: chrono::DateTime<Utc>, // TODO: consider switching to SystemTime
+    timestamp: std::time::SystemTime, // TODO: consider switching to SystemTime
 }
 
 impl Event {
@@ -57,7 +56,7 @@ impl Event {
         Self {
             event_type,
             data,
-            timestamp: Utc::now(),
+            timestamp: SystemTime::now(),
         }
     }
 }
@@ -95,7 +94,7 @@ pub struct Game {
     pub remaining: i64,              // The number of remaining cards in the deck
     pub state: GameState,
     pub mode: GameMode,
-    pub disconnected_players: HashMap<Uuid, (u64, Player)>,
+    pub disconnected_players: HashMap<u16, (u64, Player)>,
     pub events: Vec<Event>,
 }
 
@@ -138,7 +137,7 @@ impl Game {
         self.players.push(player.clone());
     }
 
-    pub fn remove_player(&mut self, client_id: Uuid) -> bool {
+    pub fn remove_player(&mut self, client_id: u16) -> bool {
         let start = SystemTime::now();
         let since_the_epoch = start
             .duration_since(UNIX_EPOCH)
@@ -155,7 +154,7 @@ impl Game {
         }
     }
 
-    pub fn restore_player(&mut self, client_id: Uuid) -> Result<(), &'static str> {
+    pub fn restore_player(&mut self, client_id: u16) -> Result<(), &'static str> {
         if let Some((timestamp, player)) = self.disconnected_players.remove(&client_id) {
             let current_time = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -186,7 +185,7 @@ impl Game {
         self.remaining = self.deck.cards.len() as i64;
     }
 
-    pub fn make_move(&mut self, player_id: Uuid, selected_cards: Vec<Card>) -> Result<bool, Error> {
+    pub fn make_move(&mut self, player_id: u16, selected_cards: Vec<Card>) -> Result<bool, Error> {
         let (valid, err) = self.check_set(&selected_cards);
 
         if !valid || err.is_some() {
@@ -301,7 +300,7 @@ impl Game {
         self.remaining = self.deck.cards.len() as i64;
     }
 
-    pub fn update_score(&mut self, player_id: Uuid, value: i64) {
+    pub fn update_score(&mut self, player_id: u16, value: i64) {
         let player = self.players.iter_mut().find(|p| p.client_id == player_id);
         if let Some(player) = player {
             if player.score == 0 && value < 0 {

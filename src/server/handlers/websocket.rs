@@ -1,12 +1,5 @@
 use std::sync::Arc;
 
-use crate::{
-    client::Client,
-    context::Context,
-    game::game::Game,
-    infra::error::Error,
-    message::{MessageType, WsMessage},
-};
 use axum::{
     extract::{
         ws::{Message, WebSocket},
@@ -18,7 +11,14 @@ use axum::{
 use axum_extra::extract::CookieJar;
 use futures::{sink::SinkExt, stream::StreamExt};
 use tokio::sync::mpsc;
-use uuid::Uuid;
+
+use crate::{
+    client::Client,
+    context::Context,
+    game::game::Game,
+    infra::error::Error,
+    message::{MessageType, WsMessage},
+};
 
 #[axum::debug_handler]
 pub async fn ws_handler(
@@ -35,16 +35,16 @@ pub async fn ws_handler(
     })
 }
 
-fn get_client_id_from_cookies(jar: &CookieJar) -> Uuid {
+fn get_client_id_from_cookies(jar: &CookieJar) -> u16 {
     jar.get("client_id")
-        .and_then(|cookie| Uuid::parse_str(cookie.value()).ok())
-        .unwrap_or_else(Uuid::new_v4)
+        .and_then(|cookie| cookie.value().parse::<u16>().ok())
+        .unwrap_or_else(rand::random)
 }
 
 async fn handle_connection(
     ws: WebSocket,
     context: Arc<Context>,
-    client_id: Uuid,
+    client_id: u16,
 ) -> Result<(), Error> {
     let (ws_tx, ws_rx) = ws.split();
 
@@ -63,7 +63,7 @@ async fn handle_connection(
 
 async fn setup_client(
     context: Arc<Context>,
-    client_id: Uuid,
+    client_id: u16,
 ) -> Result<(mpsc::Sender<Game>, mpsc::Receiver<Game>), Error> {
     let (tx, rx) = mpsc::channel(32);
     let client_manager = context.client_manager();
@@ -79,7 +79,7 @@ async fn setup_client(
 async fn read_from_ws(
     mut ws_rx: impl StreamExt<Item = Result<Message, axum::Error>> + Unpin,
     context: Arc<Context>,
-    client_id: Uuid,
+    client_id: u16,
 ) -> Result<(), Error> {
     while let Some(result) = ws_rx.next().await {
         match result {
@@ -97,7 +97,7 @@ async fn read_from_ws(
 async fn handle_incoming_message(
     msg: Message,
     context: Arc<Context>,
-    client_id: Uuid,
+    client_id: u16,
 ) -> Result<(), Error> {
     let text = msg.to_text().map_err(|e| {
         tracing::error!(error = %e, "Failed to convert message to text");
@@ -170,7 +170,7 @@ async fn write_to_ws(
     Ok(())
 }
 
-async fn cleanup_client(context: Arc<Context>, client_id: Uuid) -> Result<(), Error> {
+async fn cleanup_client(context: Arc<Context>, client_id: u16) -> Result<(), Error> {
     let room_manager = context.room_manager();
     let client_manager = context.client_manager();
     match room_manager.handle_leave(client_id, client_manager).await {

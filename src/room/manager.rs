@@ -1,19 +1,18 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
+use ahash::{HashMap, HashMapExt};
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde_json::json;
 use tokio::sync::Mutex;
-use uuid::Uuid;
 
 use crate::{
     client::ClientManager,
+    game,
     game::{
-        game::{Event, EventType, Game, GameMode, Move},
+        game::{Event, Game, GameMode, Move},
         player::Player,
     },
-    infra::{
-        ba::{self, AnalyticsObserver},
-        error::Error,
-    },
+    infra::{ba, error::Error},
     message::WsMessage,
 };
 
@@ -59,9 +58,8 @@ impl RoomManager {
 
     pub async fn handle_join(
         &self,
-        analytics_observer: &Arc<dyn AnalyticsObserver>, // Add this line
         message: WsMessage,
-        client_id: Uuid,
+        client_id: u16,
         client_manager: &ClientManager,
     ) -> Result<(), Error> {
         let room_code = message.get_room_code()?;
@@ -84,17 +82,8 @@ impl RoomManager {
                 );
             }
 
-            let event = ba::Event::new(
-                ba::EventType::PlayerJoined,
-                Some(client.id),
-                Some(room_code.clone()),
-                None,
-            );
-
-            analytics_observer.observe(event);
-
             tracing::info!(
-            event_type = %EventType::PlayerJoined,
+            event_type = %ba::EventType::PlayerJoined,
             room_code = %room_code,
             client_id = %client_id,
             );
@@ -111,7 +100,7 @@ impl RoomManager {
 
     pub async fn handle_leave(
         &self,
-        client_id: Uuid,
+        client_id: u16,
         client_manager: &ClientManager,
     ) -> Result<(), Error> {
         let client_arc = client_manager.find_client(client_id).await?;
@@ -134,9 +123,8 @@ impl RoomManager {
 
     pub async fn handle_move(
         &self,
-        analytics_observer: &Arc<dyn AnalyticsObserver>, // Add this line
         message: WsMessage,
-        client_id: Uuid,
+        client_id: u16,
         client_manager: &ClientManager,
     ) -> Result<(), Error> {
         let game_move: Move = message.get_payload_as()?;
@@ -152,19 +140,11 @@ impl RoomManager {
             ba::EventType::PlayerMoveInvalid
         };
 
-        let event = ba::Event::new(
-            event_type.clone(),
-            Some(client_id),
-            Some(game_move.room_code.clone()),
-            Some(json!(game_move.cards)),
-        );
-        analytics_observer.observe(event);
-
         tracing::info!(event_type = %event_type, room_code = %game_move.room_code, client_id = %client_id, cards = %json!(game_move.cards));
 
         if game_state.game_over.is_some() {
             tracing::info!(
-            event_type = %EventType::GameOver,
+            event_type = %ba::EventType::GameOver,
             room_code = %game_move.room_code,
             client_id = %client_id,
             );
@@ -179,9 +159,8 @@ impl RoomManager {
 
     pub async fn handle_request(
         &self,
-        analytics_observer: &Arc<dyn AnalyticsObserver>, // Add this line
         message: WsMessage,
-        client_id: Uuid,
+        client_id: u16,
         client_manager: &ClientManager,
     ) -> Result<(), Error> {
         let room_code = message.get_room_code()?;
@@ -196,19 +175,12 @@ impl RoomManager {
             player.request = true;
             let player_name = player.name.clone();
             game_state.events.push(Event::new(
-                EventType::PlayerRequestedCards,
+                game::game::EventType::PlayerJoined,
                 player_name.clone(),
             ));
-            let event = ba::Event::new(
-                ba::EventType::PlayerRequestedCards,
-                Some(client_id),
-                Some(room_code.clone()),
-                None,
-            );
 
-            analytics_observer.observe(event);
             tracing::info!(
-                event_type = %EventType::PlayerRequestedCards,
+                event_type = %ba::EventType::PlayerRequestedCards,
                 room_code = %room_code,
                 client_id = %client_id,
                 player_name = %player_name
@@ -234,7 +206,13 @@ impl RoomManager {
     }
 
     pub async fn handle_new(&self, mode: GameMode) -> Result<String, Error> {
-        let room_code = nanoid::nanoid!(6);
+        // let room_code = nanoid::nanoid!(6);
+
+        let room_code: String = thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(6)
+            .map(char::from)
+            .collect();
 
         let mut game = Game::new(mode);
         for player in &mut game.players {
