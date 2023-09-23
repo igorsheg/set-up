@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use ahash::{HashMap, HashMapExt};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::infra::error::Error;

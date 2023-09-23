@@ -1,17 +1,19 @@
-use axum::{response::IntoResponse, routing::get, Extension};
-use minicdn::release_include_mini_cdn;
-use std::{
-    net::SocketAddr,
-    sync::{Arc, RwLock},
+use std::{net::SocketAddr, sync::Arc};
+
+use axum::{
+    http::{header, HeaderValue},
+    middleware::map_response,
+    response::{IntoResponse, Response},
+    routing::get,
+    Extension,
 };
 
 use crate::{
     context::Context,
-    infra::ba::AnalyticsObserver,
     server::handlers::{
+        asset,
         client::auth,
         room::{check_game_exists, get_past_rooms, new_room_handler},
-        static_files::StaticFilesHandler,
         websocket::ws_handler,
     },
 };
@@ -20,7 +22,6 @@ pub struct Server {
     host: String,
     port: u16,
     is_production: bool,
-    analytics_observer: Arc<dyn AnalyticsObserver>,
 }
 
 pub struct AppState {
@@ -34,17 +35,11 @@ impl AppState {
 }
 
 impl Server {
-    pub fn new(
-        host: String,
-        port: u16,
-        is_production: bool,
-        analytics_observer: Arc<dyn AnalyticsObserver>,
-    ) -> Self {
+    pub fn new(host: String, port: u16, is_production: bool) -> Self {
         Self {
             host,
             port,
             is_production,
-            analytics_observer,
         }
     }
 
@@ -53,10 +48,8 @@ impl Server {
             .parse()
             .expect("Unable to parse address");
 
-        let context = Arc::new(Context::new(self.analytics_observer.clone())); // Modify this line
+        let context = Arc::new(Context::new()); // Modify this line
         let app_state = Arc::new(AppState::new(self.is_production));
-
-        let client = Arc::new(RwLock::new(release_include_mini_cdn!("../../web/dist")));
 
         let api_routes = axum::Router::new()
             .route("/health", get(health_check))
@@ -68,13 +61,16 @@ impl Server {
 
         let app = axum::Router::new()
             .nest("/api", api_routes)
-            .fallback(get(StaticFilesHandler {
-                cdn: client,
-                prefix: "",
-                browser_router: true,
-            }))
+            .fallback(asset::handler)
             .layer(Extension(app_state))
-            .layer(Extension(context));
+            .layer(Extension(context))
+            .layer(map_response(|mut resp: Response| async {
+                resp.headers_mut().insert(
+                    header::SERVER,
+                    HeaderValue::from_static(concat!("set-up", env!("CARGO_PKG_VERSION"))),
+                );
+                resp
+            }));
 
         tracing::debug!("Listening on {}", &addr);
 

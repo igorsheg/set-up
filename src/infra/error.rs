@@ -1,6 +1,7 @@
-use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
-
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 use thiserror::Error as ThisError;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -66,16 +67,6 @@ impl From<serde_json::Error> for Error {
     }
 }
 
-impl From<sqlx::Error> for Error {
-    fn from(err: sqlx::Error) -> Self {
-        Error::DatabaseError(err.to_string())
-    }
-}
-impl From<sqlx::migrate::MigrateError> for Error {
-    fn from(err: sqlx::migrate::MigrateError) -> Self {
-        Error::DatabaseError(err.to_string())
-    }
-}
 impl From<tracing_loki::Error> for Error {
     fn from(err: tracing_loki::Error) -> Self {
         Error::DatabaseError(err.to_string())

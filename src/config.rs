@@ -1,6 +1,7 @@
+use std::env;
+
 use dotenv::dotenv;
 use lazy_static::lazy_static;
-use std::env;
 
 lazy_static! {
     static ref CONFIGURATION: Configuration = Configuration::new();
@@ -17,7 +18,6 @@ pub struct DatabaseConfiguration {
 pub struct ServerConfiguration {
     pub host: String,
     pub port: String,
-    pub db_url: String,
 }
 
 pub struct Configuration {
@@ -30,7 +30,6 @@ impl Default for ServerConfiguration {
         ServerConfiguration {
             host: env::var("HOST").expect("HOST must be set"),
             port: env::var("PORT").expect("PORT must be set"),
-            db_url: env::var("DATABASE_URL").expect("DATABASE_URL must be set"),
         }
     }
 }

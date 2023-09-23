@@ -1,12 +1,13 @@
-use crate::{game::game::Game, infra::error::Error, message::WsMessage};
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
+
+use ahash::{HashMap, HashMapExt};
 use tokio::sync::Mutex;
-use uuid::Uuid;
 
 use super::Client;
+use crate::{game::game::Game, infra::error::Error, message::WsMessage};
 
 pub struct ClientManager {
-    clients: Mutex<HashMap<Uuid, Arc<Mutex<Client>>>>,
+    clients: Mutex<HashMap<u16, Arc<Mutex<Client>>>>,
 }
 
 impl Default for ClientManager {
@@ -22,7 +23,7 @@ impl ClientManager {
         }
     }
 
-    pub async fn find_client(&self, client_id: Uuid) -> Result<Arc<Mutex<Client>>, Error> {
+    pub async fn find_client(&self, client_id: u16) -> Result<Arc<Mutex<Client>>, Error> {
         self.clients
             .lock()
             .await
@@ -31,7 +32,7 @@ impl ClientManager {
             .ok_or(Error::ClientNotFound("Client not found".to_string()))
     }
 
-    pub async fn add_client(&self, id: Uuid, client: Client) {
+    pub async fn add_client(&self, id: u16, client: Client) {
         self.clients
             .lock()
             .await
@@ -39,7 +40,7 @@ impl ClientManager {
         tracing::info!(client_id = %id, "New client added.");
     }
 
-    pub async fn remove_client(&self, id: Uuid) {
+    pub async fn remove_client(&self, id: u16) {
         self.clients.lock().await.remove(&id);
         tracing::info!(client_id = %id, "Client removed.");
     }

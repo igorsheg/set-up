@@ -1,26 +1,24 @@
-use std::sync::Arc;
-
 use crate::{
-    client::ClientManager,
-    game::game::GameMode,
-    infra::{ba::AnalyticsObserver, error::Error},
-    message::MessageType,
+    client::ClientManager, game::game::GameMode, infra::error::Error, message::MessageType,
     room::RoomManager,
 };
-use uuid::Uuid;
 
 pub struct Context {
     client_manager: ClientManager,
     room_manager: RoomManager,
-    analytics_observer: Arc<dyn AnalyticsObserver>, // Add this line
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Context {
-    pub fn new(analytics_observer: Arc<dyn AnalyticsObserver>) -> Self {
+    pub fn new() -> Self {
         Self {
             client_manager: ClientManager::new(),
             room_manager: RoomManager::new(),
-            analytics_observer,
         }
     }
 
@@ -39,24 +37,24 @@ impl Context {
     pub async fn handle_message(
         &self,
         message_type: MessageType,
-        client_id: Uuid,
+        client_id: u16,
         room_manager: &RoomManager,
         client_manager: &ClientManager,
     ) -> Result<(), Error> {
         match message_type {
             MessageType::Join(message) => {
                 room_manager
-                    .handle_join(&self.analytics_observer, message, client_id, client_manager)
+                    .handle_join(message, client_id, client_manager)
                     .await
             }
             MessageType::Move(message) => {
                 room_manager
-                    .handle_move(&self.analytics_observer, message, client_id, client_manager)
+                    .handle_move(message, client_id, client_manager)
                     .await
             }
             MessageType::Request(message) => {
                 room_manager
-                    .handle_request(&self.analytics_observer, message, client_id, client_manager)
+                    .handle_request(message, client_id, client_manager)
                     .await
             }
             MessageType::Ping => Ok(()),
