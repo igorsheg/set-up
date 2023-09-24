@@ -1,5 +1,6 @@
 import { Middleware, MiddlewareAPI } from "@reduxjs/toolkit";
 import { RootState } from ".";
+import { Event } from "@types";
 
 const selectSound = new Audio("/sfx/navigation_forward-selection-minimal.wav");
 const notificationSound = new Audio("/sfx/notification_simple.wav");
@@ -29,9 +30,19 @@ export const audioMiddleware: Middleware =
       playSound(unSelectSound);
     }
     if (action.type === "gameManager/setEventLog") {
-      const last = action.payload[action.payload.length - 1];
+      const last = action.payload[action.payload.length - 1] as Event;
 
-      if (last && last.event_type === "PlayerFoundSet") {
+      const givenTimeInSeconds =
+        last.timestamp.secs_since_epoch +
+        last.timestamp.nanos_since_epoch / 1e9;
+
+      const currentTimeInSeconds = Date.now() / 1000;
+
+      const difference = Math.abs(currentTimeInSeconds - givenTimeInSeconds);
+      const tolerance = 1;
+      const isNow = difference <= tolerance;
+
+      if (isNow && last && last.event_type === "PlayerFoundSet") {
         playSound(notificationSound);
       }
     }

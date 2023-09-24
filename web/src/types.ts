@@ -42,10 +42,15 @@ export enum EventType {
   PlayerRequestedCards = "PlayerRequestedCards",
 }
 
+export type Timestamp = {
+  secs_since_epoch: number;
+  nanos_since_epoch: number;
+};
+
 export type Event = {
   event_type: EventType;
   data: string;
-  timestamp: string;
+  timestamp: Timestamp;
 };
 
 export type ColorMapping = typeof COLORS;

@@ -3,7 +3,7 @@ import {
   AppThunk,
   RootState,
   addNotification,
-  clearNotification,
+  // clearNotification,
   clearSelectedCards,
   setEventLog,
   setGameData,
@@ -24,7 +24,6 @@ export const setGameState =
   (newData: Data): AppThunk =>
   (dispatch, getState) => {
     const currentEventLog = getState().gameManager.eventLog;
-
     const newEvents = difference(newData.events, currentEventLog);
 
     newEvents.forEach((event) => {
@@ -105,8 +104,4 @@ export const displayNotificationWithTimer =
     };
 
     dispatch(addNotification(notification));
-
-    setTimeout(() => {
-      dispatch(clearNotification());
-    }, 6000);
   };

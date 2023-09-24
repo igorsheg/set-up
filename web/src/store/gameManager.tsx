@@ -1,12 +1,36 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { Data, GameMode, Event } from "@types";
+import { Data, GameMode, Event, Timestamp } from "@types";
 
-const MAX_ACTIVE_NOTIFICATIONS = 2;
+const MAX_ACTIVE_NOTIFICATIONS = 1;
+
+class RingBuffer<T> {
+  private buffer: Array<T | undefined>;
+  private size: number;
+  private next = 0;
+
+  constructor(size: number) {
+    this.buffer = new Array<T | undefined>(size);
+    this.size = size;
+  }
+
+  add(item: T): void {
+    this.buffer[this.next] = item;
+    this.next = (this.next + 1) % this.size;
+  }
+
+  toArray(): Array<T> {
+    return this.buffer.filter((item): item is T => item !== undefined);
+  }
+}
+
+const notificationBuffer = new RingBuffer<NotificationMessage>(
+  MAX_ACTIVE_NOTIFICATIONS,
+);
 
 export type NotificationMessage = {
   content: string;
   icon: string;
-  timestamp: string;
+  timestamp: Timestamp;
 };
 
 export type GameManagerState = {
@@ -63,13 +87,8 @@ export const gameManagerSlice = createSlice({
       state.selectedCardIndexes = [];
     },
     addNotification: (state, action: PayloadAction<NotificationMessage>) => {
-      state.activeNotifications.push(action.payload);
-      if (state.activeNotifications.length > MAX_ACTIVE_NOTIFICATIONS) {
-        state.activeNotifications.shift(); // Remove the oldest one, maybe keep it and manage it in the UI?
-      }
-    },
-    clearNotification: (state) => {
-      state.activeNotifications.shift();
+      notificationBuffer.add(action.payload);
+      state.activeNotifications = notificationBuffer.toArray();
     },
   },
 });
