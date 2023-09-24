@@ -36,7 +36,7 @@ export const {
   removeSelectedCard,
   setEventLog,
   addNotification,
-  clearNotification,
+  // clearNotification,
   clearSelectedCards,
 } = gameManagerSlice.actions;
 

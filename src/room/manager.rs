@@ -175,7 +175,7 @@ impl RoomManager {
             player.request = true;
             let player_name = player.name.clone();
             game_state.events.push(Event::new(
-                game::game::EventType::PlayerJoined,
+                game::game::EventType::PlayerRequestedCards,
                 player_name.clone(),
             ));
 

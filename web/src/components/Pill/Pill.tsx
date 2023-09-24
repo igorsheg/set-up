@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from "react";
+import { FC, PropsWithChildren, useEffect, useState } from "react";
 import { Data, Player } from "src/types";
 import * as styles from "./Pill.css";
 import Box from "@components/Box/Box";
@@ -13,6 +13,8 @@ import { Hand, Sparkle } from "lucide-react";
 import { AvatarGroup } from "@components/Avatar/AvatarGroup";
 import { Avatar } from "@components/Avatar/Avatar";
 import Loader from "@components/Loader/Loader";
+
+const NOTIFICATION_DURATION = 6000;
 
 interface PillProps {
   game: Data;
@@ -32,6 +34,19 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
     (state: RootState) => state.roomManager.webSocketStatus,
   );
   const appSettings = useSelector((state: RootState) => state.appSettings);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    if (activeNotifications.length > 0) {
+      setIsExpanded(true);
+      const timeoutId = setTimeout(
+        () => setIsExpanded(false),
+        NOTIFICATION_DURATION,
+      );
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [activeNotifications]);
 
   const variants = {
     collapsed: {
@@ -54,7 +69,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
       }}
       variants={variants}
       initial="collapsed"
-      animate={activeNotifications.length ? "expanded" : "collapsed"}
+      animate={isExpanded ? "expanded" : "collapsed"}
       className={cx(styles.pillWrap)}
     >
       {websocketState === "OPEN" ? (
@@ -95,11 +110,10 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
             </Box>
           </Box>
           <AnimatePresence>
-            {activeNotifications.map((notification, index) => {
-              return (
+            {isExpanded &&
+              activeNotifications.map((notification) => (
                 <motion.div
-                  layout="position"
-                  key={index}
+                  key={notification.timestamp.secs_since_epoch}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -118,8 +132,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
                     </span>
                   </Box>
                 </motion.div>
-              );
-            })}
+              ))}
           </AnimatePresence>
         </>
       ) : (

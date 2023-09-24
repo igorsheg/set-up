@@ -25,7 +25,6 @@ function Model(_props: GroupProps) {
   });
 
   useLayoutEffect(() => {
-    console.log("materials", materials);
     materials["default"].color.set("orange");
     materials["default"].roughness = 0;
     materials["default"].normalMap = new CanvasTexture(
