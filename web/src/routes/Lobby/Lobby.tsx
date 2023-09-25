@@ -1,9 +1,8 @@
 import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
 import { createNewRoom, getPastRooms } from "@services/roomService";
-import { AppDispatch, RootState, setActiveRoom } from "@store/index";
 import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+// import { useDispatch,  } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { NewGameDialog } from "../../dialogs/NewGameDialog";
 import { lobbyStyles } from "./Lobby.css";
@@ -13,6 +12,8 @@ import { GameMode } from "@types";
 import { AnimatePresence, motion } from "framer-motion";
 import { ThumbButton } from "@components/ThumbButton/ThumbButton";
 import { ACTIONS, LobbyActions } from "./lobby-actions";
+import { useStore } from "effector-react";
+import { $roomManager, setActiveRoom } from "@store/roomManager";
 
 const cardMotionVariants = {
   initial: { opacity: 0, y: 50 },
@@ -22,48 +23,42 @@ const cardMotionVariants = {
 
 export default function Lobby() {
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
 
   const [reqGame, setReqGame] = React.useState<
     Pick<LobbyActions, "type" | "mode"> & { roomCode?: string }
   >();
 
-  const pastRooms = useSelector(
-    (state: RootState) => state.roomManager.pastRooms,
-  );
+  const { pastRooms } = useStore($roomManager);
 
   const createGameHandler = async (playerUsername: string, mode: GameMode) => {
     try {
-      const actionResult = await dispatch(createNewRoom(mode));
+      // Invoke the Effector effect
+      const roomCode = await createNewRoom(mode);
 
-      if (createNewRoom.fulfilled.match(actionResult)) {
-        dispatch(
-          setActiveRoom({
-            code: actionResult.payload,
-            username: playerUsername,
-          }),
-        );
-        setReqGame({ type: "new", roomCode: actionResult.payload, mode });
-        navigate("/game/" + actionResult.payload);
-      }
+      // Dispatch Effector event
+      setActiveRoom({
+        code: roomCode,
+        username: playerUsername,
+      });
+
+      setReqGame({ type: "new", roomCode, mode });
+      navigate("/game/" + roomCode);
     } catch (error) {
       console.error("Error creating a new room:", error);
     }
   };
 
   const joinGameHandler = (roomCode: string, playerUsername: string) => {
-    dispatch(
-      setActiveRoom({
-        code: roomCode,
-        username: playerUsername,
-      }),
-    );
+    setActiveRoom({
+      code: roomCode,
+      username: playerUsername,
+    });
     setReqGame({ ...reqGame, type: "join", roomCode });
     navigate("/game/" + roomCode);
   };
 
   const getPlayerPastRooms = async () => {
-    await dispatch(getPastRooms());
+    await getPastRooms();
   };
 
   useEffect(() => {

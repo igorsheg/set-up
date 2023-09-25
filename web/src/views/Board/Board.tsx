@@ -1,18 +1,20 @@
 import * as React from "react";
-import { Card as CardType } from "../../types";
+import { Card as CardType, GameAction, MessageType } from "../../types";
 import Card from "@components/Card/Card";
 import { boardVars, boardStyles as styles } from "./Board.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  AppDispatch,
-  RootState,
-  addSelectedCard,
-  removeSelectedCard,
-} from "../../store";
 import { useIsMobile } from "@hooks/useIsMobile";
 import { moveCards } from "@services/gameService";
+import {
+  $gameManager,
+  addSelectedCard,
+  clearSelectedCards,
+  removeSelectedCard,
+} from "@store/gameManager";
+import { useStore } from "effector-react";
+import { $roomManager } from "@store/roomManager";
+import { sendAction } from "@store/websocket";
 
 const createCardKey = (card: CardType): string => {
   return `${card.color}-${card.shape}-${card.number}-${card.shading}`;
@@ -50,41 +52,41 @@ const AnimatedCard: React.FC<React.PropsWithChildren<AnimatedCardProps>> = ({
           selected={isSelected}
           onClick={() => onClick(index)}
           card={card}
-          hidden={card.color === null}
         />
       </motion.div>
     </AnimatePresence>
   );
 };
 
-export default function Board(): React.ReactElement {
-  const in_play = useSelector(
-    (state: RootState) => state.gameManager.gameData.in_play,
-  );
-
-  const selectedIndexes = useSelector(
-    (state: RootState) => state.gameManager.selectedCardIndexes,
-  );
-
-  const game_over = useSelector(
-    (state: RootState) => state.gameManager.gameData.game_over,
-  );
-  const dispatch = useDispatch<AppDispatch>();
+export const Board: React.FC = () => {
+  const { gameData, selectedCardIndexes } = useStore($gameManager);
+  const { activeRoom } = useStore($roomManager);
 
   const [numberOfColumns, setNumberOfColumns] = React.useState(4);
   const isMobile = useIsMobile();
 
   const handleClick = (index: number): void => {
-    if (!selectedIndexes.includes(index)) {
-      const newSelectedIndexes = [...selectedIndexes, index];
-      if (newSelectedIndexes.length === 3 && in_play) {
-        const selectedCards = newSelectedIndexes.map((i) => in_play[i]);
-        dispatch(moveCards(selectedCards));
+    if (!selectedCardIndexes.includes(index)) {
+      const newSelectedIndexes = [...selectedCardIndexes, index];
+      if (newSelectedIndexes.length === 3 && gameData.in_play && activeRoom) {
+        const selectedCards = newSelectedIndexes.map(
+          (i) => gameData.in_play[i],
+        );
+
+        const action: GameAction = {
+          type: MessageType.MOVE,
+          payload: {
+            room_code: activeRoom.code,
+            cards: selectedCards,
+          },
+        };
+        sendAction(action);
+        clearSelectedCards();
       } else {
-        dispatch(addSelectedCard(index));
+        addSelectedCard(index);
       }
     } else {
-      dispatch(removeSelectedCard(index));
+      removeSelectedCard(index);
     }
   };
 
@@ -92,14 +94,14 @@ export default function Board(): React.ReactElement {
     if (isMobile) {
       setNumberOfColumns(4);
     } else {
-      if (in_play && in_play.length > 12) {
-        const additionalColumns = Math.floor(in_play.length / 12);
+      if (gameData.in_play && gameData.in_play.length > 12) {
+        const additionalColumns = Math.floor(gameData.in_play.length / 12);
         setNumberOfColumns(4 + additionalColumns);
       } else {
         setNumberOfColumns(4);
       }
     }
-  }, [in_play, isMobile]);
+  }, [gameData.in_play, isMobile]);
 
   return (
     <>
@@ -112,9 +114,9 @@ export default function Board(): React.ReactElement {
         })}
       >
         <AnimatePresence>
-          {in_play &&
-            !game_over &&
-            in_play.map((card, index) => (
+          {gameData.in_play &&
+            !gameData.game_over &&
+            gameData.in_play.map((card, index) => (
               <motion.div
                 layout
                 key={index}
@@ -129,7 +131,7 @@ export default function Board(): React.ReactElement {
                   card={card}
                   index={index}
                   onClick={handleClick}
-                  isSelected={selectedIndexes.includes(index)}
+                  isSelected={selectedCardIndexes.includes(index)}
                 />
               </motion.div>
             ))}
@@ -137,4 +139,4 @@ export default function Board(): React.ReactElement {
       </motion.div>
     </>
   );
-}
+};

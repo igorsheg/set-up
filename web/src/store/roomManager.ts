@@ -1,37 +1,50 @@
-import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { getPastRooms } from "@services/roomService";
-import { WebSocketStatus } from "./websocket";
+import { createStore, sample } from "effector";
+import { createEvent, createEffect } from "effector";
+import { getPastRooms as getPastRoomsService } from "@services/roomService";
+import { JoinGameAction, MessageType } from "@types";
+import { $wsSocket } from "./websocket";
 
 export type ActiveRoom = {
   code: string;
   username: string;
 };
+
 export type RoomManagerState = {
-  webSocketStatus: WebSocketStatus;
   pastRooms: string[];
   activeRoom: ActiveRoom | null;
 };
 
-export const roomMangerSlice = createSlice({
-  name: "roomManager",
-  initialState: {
-    activeRoom: {} as ActiveRoom,
-    webSocketStatus: "IDLE",
-    pastRooms: [],
-  } as RoomManagerState,
-  reducers: {
-    setActiveRoom: (state, action: PayloadAction<ActiveRoom | null>) => {
-      state.activeRoom = action.payload;
-    },
-    setWebsocketStatus: (state, action: PayloadAction<WebSocketStatus>) => {
-      state.webSocketStatus = action.payload;
-    },
-  },
-  extraReducers: (builder) => {
-    builder.addCase(getPastRooms.fulfilled, (state, action) => {
-      state.pastRooms = action.payload;
-    });
-  },
+export const $roomManager = createStore<RoomManagerState>({
+  activeRoom: null,
+  pastRooms: [],
 });
 
-export const { setActiveRoom, setWebsocketStatus } = roomMangerSlice.actions;
+export const setActiveRoom = createEvent<ActiveRoom | null>();
+
+export const getPastRooms = createEffect(async () => {
+  const pastRooms = await getPastRoomsService();
+  return pastRooms;
+});
+
+$roomManager.on(setActiveRoom, (state, payload) => ({
+  ...state,
+  activeRoom: payload,
+}));
+
+export const joinGame = createEffect<JoinGameAction["payload"] | null, void>(
+  (payload) => {
+    $wsSocket
+      .getState()
+      ?.send(JSON.stringify({ type: MessageType.JOIN, payload }));
+  },
+);
+
+sample({
+  source: $roomManager,
+  clock: setActiveRoom,
+  fn: (_state, payload) =>
+    payload
+      ? { player_username: payload.username, room_code: payload.code }
+      : null,
+  target: joinGame,
+});

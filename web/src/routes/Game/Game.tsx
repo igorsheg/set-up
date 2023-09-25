@@ -1,37 +1,25 @@
-import Board from "@views/Board/Board";
+import { Board } from "@views/Board/Board";
 import * as styles from "./Game.css";
 import Pill from "@components/Pill/Pill";
-import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { ReJoinGameDialog } from "@dialogs/ReJoinGameDialog";
 import { InvitePlayersDialog } from "@dialogs/InvitePlayersDialog";
 import { GameMenuAction } from "@menus/GameMenu";
-import { joinRoom, leaveRoom } from "@services/roomService";
-import { AppDispatch, RootState } from "@store/index";
-import { requestCards } from "@services/gameService";
-import { setActiveRoom } from "@store/roomManager";
-import { MessageType } from "@store/websocket";
+import { $roomManager, setActiveRoom } from "@store/roomManager";
 import { AnimatePresence } from "framer-motion";
 import { GameEnded } from "@views/GameEnded/GameEnded";
 import { Splash } from "@components/Splash/Splash";
 import { vars } from "@styles/index.css";
+import { useStore } from "effector-react";
+import { $gameManager } from "@store/gameManager";
+import { GameAction, MessageType } from "@types";
+import { sendAction } from "@store/websocket";
 import { toggleSound } from "@store/app";
 
 export default function Game() {
-  const gameData = useSelector(
-    (state: RootState) => state.gameManager.gameData,
-  );
-  const activeRoom = useSelector(
-    (state: RootState) => state.roomManager.activeRoom,
-  );
-  const websockerStatus = useSelector(
-    (state: RootState) => state.roomManager.webSocketStatus,
-  );
-
-  const firstRender = useRef(true);
-
-  const dispatch = useDispatch<AppDispatch>();
+  const { gameData } = useStore($gameManager);
+  const { activeRoom } = useStore($roomManager);
 
   const navigate = useNavigate();
   const { room_code } = useParams<{ room_code: string }>();
@@ -48,7 +36,7 @@ export default function Game() {
         navigate("/");
         break;
       case GameMenuAction.mute:
-        dispatch(toggleSound());
+        toggleSound();
         break;
       default:
         console.log("Unknown action");
@@ -56,36 +44,19 @@ export default function Game() {
   };
 
   const joinGameHandler = (room_code: string, playerUsername: string) => {
-    dispatch(setActiveRoom({ code: room_code, username: playerUsername }));
+    setActiveRoom({ code: room_code, username: playerUsername });
     setRoomJoinDialogOpen(false);
   };
 
-  useEffect(() => {
-    if (
-      websockerStatus !== "OPEN" &&
-      activeRoom?.code &&
-      activeRoom?.username
-    ) {
-      dispatch({ type: MessageType.INIT });
-    } else if (
-      websockerStatus === "OPEN" &&
-      activeRoom?.code &&
-      activeRoom?.username
-    ) {
-      dispatch(joinRoom(activeRoom.code, activeRoom.username));
-    } else if (room_code && !gameData.in_play?.length) {
-      setRoomJoinDialogOpen(true);
-    }
-  }, [websockerStatus, activeRoom, room_code]);
-
-  useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
-    return () => {
-      dispatch(leaveRoom());
+  const requestCardsHandler = useCallback(() => {
+    const action: GameAction = {
+      type: MessageType.REQUEST,
+      payload: {
+        room_code: activeRoom?.code,
+      },
     };
+
+    sendAction(action);
   }, []);
 
   const routeState = () => {
@@ -109,7 +80,7 @@ export default function Game() {
       <>
         <Board />
         <Pill
-          handleRequest={() => dispatch(requestCards())}
+          handleRequest={requestCardsHandler}
           game={gameData}
           onMenuItemSelect={handleGameMenuitemSelect}
         />

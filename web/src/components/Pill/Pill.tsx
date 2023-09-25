@@ -5,14 +5,18 @@ import Box from "@components/Box/Box";
 import { AnimatePresence, motion } from "framer-motion";
 import { vars } from "@styles/index.css";
 import { cx } from "../../util/cx";
-import { useSelector } from "react-redux";
-import { RootState } from "../../store";
+// import { useSelector } from "react-redux";
+// import { RootState } from "../../store";
 import { GameMenu, GameMenuAction } from "../../menus/GameMenu";
 import Button from "@components/Button/Button";
 import { Hand, Sparkle } from "lucide-react";
 import { AvatarGroup } from "@components/Avatar/AvatarGroup";
 import { Avatar } from "@components/Avatar/Avatar";
 import Loader from "@components/Loader/Loader";
+import { useStore } from "effector-react";
+import { $webSocketStatus } from "@store/websocket";
+import { $gameManager } from "@store/gameManager";
+import { $appSettings } from "@store/app";
 
 const NOTIFICATION_DURATION = 6000;
 
@@ -26,14 +30,18 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
   handleRequest,
   onMenuItemSelect,
 }) => {
-  const activeNotifications = useSelector(
-    (state: RootState) => state.gameManager.activeNotifications,
-  );
+  // const activeNotifications = useSelector(
+  //   (state: RootState) => state.gameManager.activeNotifications,
+  // );
+  //
+  // const websocketState = useSelector(
+  //   (state: RootState) => state.roomManager.webSocketStatus,
+  // );
 
-  const websocketState = useSelector(
-    (state: RootState) => state.roomManager.webSocketStatus,
-  );
-  const appSettings = useSelector((state: RootState) => state.appSettings);
+  // const appSettings = useSelector((state: RootState) => state.appSettings);
+  const appSettings = useStore($appSettings);
+  const websocketStatus = useStore($webSocketStatus);
+  const { activeNotifications } = useStore($gameManager);
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
@@ -72,7 +80,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
       animate={isExpanded ? "expanded" : "collapsed"}
       className={cx(styles.pillWrap)}
     >
-      {websocketState === "OPEN" ? (
+      {websocketStatus === "OPEN" ? (
         <>
           <Box orientation="row" yAlign="center" gap={vars.sizes.s6}>
             <Players players={game.players} />

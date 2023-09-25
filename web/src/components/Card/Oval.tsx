@@ -1,4 +1,6 @@
-export default function Icon(props: any) {
+import { SVGProps } from "react";
+
+const Oval: React.FC<SVGProps<SVGSVGElement>> = (props) => {
   return (
     <svg
       width={18}
@@ -28,4 +30,6 @@ export default function Icon(props: any) {
       />
     </svg>
   );
-}
+};
+
+export default Oval;

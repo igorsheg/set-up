@@ -3,14 +3,13 @@ import { GameMode, Player } from "@types";
 import { motion } from "framer-motion";
 import * as styles from "./GameEnded.css";
 import Box from "@components/Box/Box";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@store/index";
 import { vars } from "@styles/index.css";
 import { StarScene } from "@components/Star/Star";
 import { useGLTF } from "@react-three/drei";
 import Button from "@components/Button/Button";
 import { useNavigate } from "react-router-dom";
-import { resetGame } from "@services/gameService";
+import { useStore } from "effector-react";
+import { $gameManager, resetGameData } from "@store/gameManager";
 
 useGLTF.preload("/star.gltf");
 
@@ -40,10 +39,12 @@ const confettiProps: confetti.Options = {
 
 export const GameEnded = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
-  const gameData = useSelector(
-    (state: RootState) => state.gameManager.gameData,
-  );
+  // const dispatch = useDispatch<AppDispatch>();
+  // const gameData = useSelector(
+  //   (state: RootState) => state.gameManager.gameData,
+  // );
+
+  const { gameData } = useStore($gameManager);
 
   const highestScore = Math.max(
     ...gameData.players.map((p: Player) => p.score),
@@ -148,7 +149,7 @@ export const GameEnded = () => {
           <Button onClick={() => navigate("/")} variant="ghost">
             Back to Main Menu
           </Button>
-          <Button onClick={() => dispatch(resetGame())}>Play Again</Button>
+          <Button onClick={() => resetGameData()}>Play Again</Button>
         </Box>
       </motion.div>
     </>
