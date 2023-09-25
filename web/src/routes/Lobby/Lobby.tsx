@@ -2,7 +2,6 @@ import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
 import { createNewRoom, getPastRooms } from "@services/roomService";
 import React, { useEffect } from "react";
-// import { useDispatch,  } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { NewGameDialog } from "../../dialogs/NewGameDialog";
 import { lobbyStyles } from "./Lobby.css";
@@ -32,10 +31,8 @@ export default function Lobby() {
 
   const createGameHandler = async (playerUsername: string, mode: GameMode) => {
     try {
-      // Invoke the Effector effect
       const roomCode = await createNewRoom(mode);
 
-      // Dispatch Effector event
       setActiveRoom({
         code: roomCode,
         username: playerUsername,

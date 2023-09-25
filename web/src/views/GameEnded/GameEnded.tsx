@@ -39,10 +39,6 @@ const confettiProps: confetti.Options = {
 
 export const GameEnded = () => {
   const navigate = useNavigate();
-  // const dispatch = useDispatch<AppDispatch>();
-  // const gameData = useSelector(
-  //   (state: RootState) => state.gameManager.gameData,
-  // );
 
   const { gameData } = useStore($gameManager);
 

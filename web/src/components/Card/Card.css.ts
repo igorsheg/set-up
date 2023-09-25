@@ -161,7 +161,6 @@ export const cardStyles = {
     height: vars.sizes.s9,
     width: vars.sizes.s9,
     borderRadius: "6px",
-    // padding: "6px",
   }),
 };
 
