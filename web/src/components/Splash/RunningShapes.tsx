@@ -1,5 +1,5 @@
 import { shapeStyles } from "@components/Card/Card.css";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../util/cx";
 import { splashScreenContentShapes } from "./Splash.css";
 import Diamond from "@components/Card/Diamond";
@@ -22,7 +22,10 @@ export const RunningShapes = () => {
     shading: "solid",
   });
 
-  const colors: ShapeStyle["color"][] = ["red", "purple", "green"];
+  const colors: ShapeStyle["color"][] = useMemo(
+    () => ["red", "purple", "green"],
+    [],
+  );
   const shadings: ShapeStyle["shading"][] = ["outlined", "striped", "solid"];
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export const RunningShapes = () => {
     }, 500);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [colors, shadings]);
 
   const appliedStyles = shapeStyles({
     color: currentStyle.color,

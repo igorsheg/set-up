@@ -1,18 +1,18 @@
 import { FC, PropsWithChildren, useEffect, useState } from "react";
-import { Data, Player } from "src/types";
+import { Data, GameMenuAction, NotificationMessage, Player } from "src/types";
 import * as styles from "./Pill.css";
 import Box from "@components/Box/Box";
 import { AnimatePresence, motion } from "framer-motion";
 import { vars } from "@styles/index.css";
 import { cx } from "../../util/cx";
-import { GameMenu, GameMenuAction } from "../../menus/GameMenu";
+import { GameMenu } from "../../menus/GameMenu";
 import Button from "@components/Button/Button";
 import { Hand, Sparkle } from "lucide-react";
 import { AvatarGroup } from "@components/Avatar/AvatarGroup";
 import { Avatar } from "@components/Avatar/Avatar";
 import Loader from "@components/Loader/Loader";
-import { useGameManager } from "@services/gameService";
 import { useAppSettings } from "@services/appSettingsService";
+import { WebSocketStatus } from "@store/websocket";
 
 const NOTIFICATION_DURATION = 6000;
 
@@ -20,15 +20,19 @@ interface PillProps {
   game: Data;
   handleRequest: () => void;
   onMenuItemSelect: (action: GameMenuAction) => void;
+  activeNotifications: NotificationMessage[];
+  websocketStatus: WebSocketStatus;
 }
 const Pill: FC<PropsWithChildren<PillProps>> = ({
   game,
   handleRequest,
   onMenuItemSelect,
+  activeNotifications,
+  websocketStatus,
 }) => {
   // const appSettings = useStore($appSettings);
   const { soundEnabled } = useAppSettings();
-  const { activeNotifications, websocketStatus } = useGameManager();
+  // const { activeNotifications, websocketStatus } = useGameManager();
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {

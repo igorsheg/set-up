@@ -8,12 +8,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-
-export enum GameMenuAction {
-  invite = "invite",
-  leave = "leave",
-  mute = "mute",
-}
+import { GameMenuAction } from "@types";
 
 interface GameMenuProps {
   onItemSelect: (action: GameMenuAction) => void;

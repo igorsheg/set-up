@@ -5,7 +5,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ReJoinGameDialog } from "@dialogs/ReJoinGameDialog";
 import { InvitePlayersDialog } from "@dialogs/InvitePlayersDialog";
-import { GameMenuAction } from "@menus/GameMenu";
 import { AnimatePresence } from "framer-motion";
 import { GameEnded } from "@views/GameEnded/GameEnded";
 import { Splash } from "@components/Splash/Splash";
@@ -13,10 +12,19 @@ import { vars } from "@styles/index.css";
 import { useGameManager } from "@services/gameService";
 import { useRoomManager } from "@services/roomService";
 import { useAppSettings } from "@services/appSettingsService";
+import { GameMenuAction } from "@types";
 
 export default function Game() {
   const { toggleSound } = useAppSettings();
-  const { gameData, requestCards } = useGameManager();
+  const {
+    gameData,
+    requestCards,
+    addCardToSelection,
+    removeCardFromSelection,
+    selectedCardIndexes,
+    activeNotifications,
+    websocketStatus,
+  } = useGameManager();
   const { setActiveRoom, activeRoom } = useRoomManager();
 
   const navigate = useNavigate();
@@ -71,8 +79,15 @@ export default function Game() {
       </div>
     ) : (
       <>
-        <Board />
+        <Board
+          gameData={gameData}
+          addCardToSelection={addCardToSelection}
+          removeCardFromSelection={removeCardFromSelection}
+          selectedCardIndexes={selectedCardIndexes}
+        />
         <Pill
+          activeNotifications={activeNotifications}
+          websocketStatus={websocketStatus}
           handleRequest={requestCards}
           game={gameData}
           onMenuItemSelect={handleGameMenuitemSelect}
