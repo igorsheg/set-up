@@ -49,13 +49,13 @@ export function useGameManager() {
       sendAction(action);
       clearSelectedCards();
     }
-  }, [activeRoom, gameData.in_play, selectedCardIndexes]);
+  }, [selectedCardIndexes, gameData.in_play, activeRoom]);
 
   useEffect(() => {
     if (selectedCardIndexes.length === 3 && gameData.in_play) {
       makeMove();
     }
-  }, [selectedCardIndexes, gameData.in_play]);
+  }, [selectedCardIndexes, gameData.in_play, activeRoom]);
 
   return {
     gameData,

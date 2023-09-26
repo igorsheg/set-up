@@ -1,7 +1,7 @@
 import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
 import { useRoomManager } from "@services/roomService";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { NewGameDialog } from "../../dialogs/NewGameDialog";
 import { lobbyStyles } from "./Lobby.css";
@@ -46,13 +46,13 @@ export default function Lobby() {
     navigate("/game/" + roomCode);
   };
 
-  const getPlayerPastRooms = async () => {
+  const getPlayerPastRooms = useCallback(async () => {
     await getPastRooms();
-  };
+  }, [getPastRooms]);
 
   useEffect(() => {
     getPlayerPastRooms();
-  }, []);
+  }, [getPlayerPastRooms]);
 
   const handleActionClick = ({ type, mode }: LobbyActions) => {
     setReqGame({ ...reqGame, type, mode: mode });

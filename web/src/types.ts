@@ -104,3 +104,9 @@ export interface RequestCardsAction extends BaseAction {
 }
 
 export type GameAction = JoinGameAction | MoveGameAction | RequestCardsAction;
+
+export enum GameMenuAction {
+  invite = "invite",
+  leave = "leave",
+  mute = "mute",
+}

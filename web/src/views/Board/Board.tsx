@@ -1,11 +1,10 @@
 import * as React from "react";
-import { Card as CardType } from "../../types";
+import { Card as CardType, Data } from "../../types";
 import Card from "@components/Card/Card";
 import { boardVars, boardStyles as styles } from "./Board.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import { useIsMobile } from "@hooks/useIsMobile";
-import { useGameManager } from "@services/gameService";
 
 const createCardKey = (card: CardType): string => {
   return `${card.color}-${card.shape}-${card.number}-${card.shading}`;
@@ -49,24 +48,29 @@ const AnimatedCard: React.FC<React.PropsWithChildren<AnimatedCardProps>> = ({
   );
 };
 
-export const Board: React.FC = () => {
-  const {
-    gameData,
-    selectedCardIndexes,
-    addCardToSelection,
-    removeCardFromSelection,
-  } = useGameManager();
+interface BoardProps {
+  gameData: Data;
+  selectedCardIndexes: number[];
+  addCardToSelection: (index: number) => void;
+  removeCardFromSelection: (index: number) => void;
+}
 
+export const Board: React.FC<React.PropsWithChildren<BoardProps>> = ({
+  gameData,
+  selectedCardIndexes,
+  addCardToSelection,
+  removeCardFromSelection,
+}) => {
   const [numberOfColumns, setNumberOfColumns] = React.useState(4);
   const isMobile = useIsMobile();
 
-  const handleClick = (index: number): void => {
+  const handleClick = React.useCallback((index: number): void => {
     if (!selectedCardIndexes.includes(index)) {
       addCardToSelection(index);
     } else {
       removeCardFromSelection(index);
     }
-  };
+  }, []);
 
   React.useEffect(() => {
     if (isMobile) {
