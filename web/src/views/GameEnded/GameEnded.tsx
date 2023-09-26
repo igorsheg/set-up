@@ -5,12 +5,9 @@ import * as styles from "./GameEnded.css";
 import Box from "@components/Box/Box";
 import { vars } from "@styles/index.css";
 import { StarScene } from "@components/Star/Star";
-import { useGLTF } from "@react-three/drei";
 import Button from "@components/Button/Button";
 import { useNavigate } from "react-router-dom";
 import { useGameManager } from "@services/gameService";
-
-useGLTF.preload("/star.gltf");
 
 const viewAnimationProps = {
   initial: { opacity: 0, y: 50 },

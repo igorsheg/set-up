@@ -20,6 +20,7 @@ export const $receivedMessages = createStore<Data>({} as Data);
 
 export const setWebSocket = createEvent<WebSocket | null>();
 export const closeWebSocket = createEvent();
+export const webSocketOpened = createEvent();
 export const messageReceived = createEvent<Data>();
 export const sendAction = createEvent<GameAction>();
 
@@ -29,12 +30,14 @@ export const initializeWebSocket = createEffect<void, void, Error>({
 
     socket.onopen = () => {
       setWebSocket(socket);
+      webSocketOpened();
     };
     socket.onerror = (err) => {
       console.error("ws error", err);
     };
     socket.onclose = () => {
       setWebSocket(null);
+      closeWebSocket();
       setTimeout(() => initializeWebSocket(), RECONNECT_TIMEOUT);
     };
     socket.onmessage = (event) => {
@@ -49,7 +52,7 @@ export const initializeWebSocket = createEffect<void, void, Error>({
 });
 
 $wsSocket.on(setWebSocket, (_, socket) => socket);
-$webSocketStatus.on(initializeWebSocket.done, () => "OPEN");
+$webSocketStatus.on(webSocketOpened, () => "OPEN");
 $webSocketStatus.on(closeWebSocket, () => "CLOSED");
 
 sample({
@@ -58,6 +61,7 @@ sample({
   fn: (_currentGameData, newGameData) => newGameData,
   target: setGameData,
   filter: (source, clock) =>
+    JSON.stringify(source.gameData.players) !== JSON.stringify(clock.players) ||
     JSON.stringify(source.gameData.in_play) !== JSON.stringify(clock.in_play),
 });
 
