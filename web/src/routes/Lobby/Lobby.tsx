@@ -1,6 +1,6 @@
 import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
-import { createNewRoom, getPastRooms } from "@services/roomService";
+import { useRoomManager } from "@services/roomService";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { NewGameDialog } from "../../dialogs/NewGameDialog";
@@ -11,8 +11,6 @@ import { GameMode } from "@types";
 import { AnimatePresence, motion } from "framer-motion";
 import { ThumbButton } from "@components/ThumbButton/ThumbButton";
 import { ACTIONS, LobbyActions } from "./lobby-actions";
-import { useStore } from "effector-react";
-import { $roomManager, setActiveRoom } from "@store/roomManager";
 
 const cardMotionVariants = {
   initial: { opacity: 0, y: 50 },
@@ -27,18 +25,12 @@ export default function Lobby() {
     Pick<LobbyActions, "type" | "mode"> & { roomCode?: string }
   >();
 
-  const { pastRooms } = useStore($roomManager);
+  const { getPastRooms, pastRooms, setActiveRoom, createNewRoomAndJoin } =
+    useRoomManager();
 
   const createGameHandler = async (playerUsername: string, mode: GameMode) => {
     try {
-      const roomCode = await createNewRoom(mode);
-
-      setActiveRoom({
-        code: roomCode,
-        username: playerUsername,
-      });
-
-      setReqGame({ type: "new", roomCode, mode });
+      const roomCode = await createNewRoomAndJoin({ mode, playerUsername });
       navigate("/game/" + roomCode);
     } catch (error) {
       console.error("Error creating a new room:", error);

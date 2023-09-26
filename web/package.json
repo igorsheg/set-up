@@ -35,7 +35,7 @@
     "react-router-dom": "^6.14.2",
     "three": "^0.156.1",
     "three-stdlib": "^2.25.1",
-    "vaul": "^0.3.7"
+    "vaul": "^0.6.7"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.6.0",

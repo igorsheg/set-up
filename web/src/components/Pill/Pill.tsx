@@ -11,10 +11,8 @@ import { Hand, Sparkle } from "lucide-react";
 import { AvatarGroup } from "@components/Avatar/AvatarGroup";
 import { Avatar } from "@components/Avatar/Avatar";
 import Loader from "@components/Loader/Loader";
-import { useStore } from "effector-react";
-import { $webSocketStatus } from "@store/websocket";
-import { $gameManager } from "@store/gameManager";
-import { $appSettings } from "@store/app";
+import { useGameManager } from "@services/gameService";
+import { useAppSettings } from "@services/appSettingsService";
 
 const NOTIFICATION_DURATION = 6000;
 
@@ -28,9 +26,9 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
   handleRequest,
   onMenuItemSelect,
 }) => {
-  const appSettings = useStore($appSettings);
-  const websocketStatus = useStore($webSocketStatus);
-  const { activeNotifications } = useStore($gameManager);
+  // const appSettings = useStore($appSettings);
+  const { soundEnabled } = useAppSettings();
+  const { activeNotifications, websocketStatus } = useGameManager();
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
@@ -101,7 +99,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
                 Request
               </Button>
               <GameMenu
-                appSettings={appSettings}
+                soundEnabled={soundEnabled}
                 onItemSelect={onMenuItemSelect}
               />
             </Box>

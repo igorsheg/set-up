@@ -111,6 +111,8 @@ sample({
   },
   clock: setGameData,
   fn: ({ previousEvents, currentEvents }) => {
+    console.log("Previous Events:", previousEvents);
+    console.log("Current Events:", currentEvents);
     const setPrevious = new Set(
       previousEvents.map((item) =>
         JSON.stringify([item.event_type, item.timestamp]),
@@ -120,6 +122,8 @@ sample({
       (item) =>
         !setPrevious.has(JSON.stringify([item.event_type, item.timestamp])),
     );
+
+    console.log("New Events:", newEvents);
 
     return newEvents;
   },

@@ -1,53 +1,79 @@
 import { createEffect, createEvent } from "effector";
 import { GameMode } from "@types";
-import { setActiveRoom } from "@store/roomManager";
+import { $roomManager, setActiveRoom } from "@store/roomManager";
 import { resetGameData } from "@store/gameManager";
+import { useStore } from "effector-react";
 
-export const createNewRoom = createEffect(async (mode: GameMode) => {
-  try {
-    const response = await fetch(`/api/new?mode=${mode}`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const room_code: string = await response.json();
-    return room_code;
-  } catch (error) {
-    console.error("Failed to create a new room:", error);
-    throw error;
+const createNewRoom = createEffect(async (mode: GameMode) => {
+  const response = await fetch(`/api/new?mode=${mode}`);
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
   }
+  return await response.json();
 });
 
-export const checkRoomExists = createEffect(async (roomCode: string) => {
+const checkRoomExists = createEffect(async (roomCode: string) => {
   const res = await fetch(`/api/game/${roomCode}`, {
     credentials: "include",
   });
-
   if (res.status !== 200) {
     throw new Error(`Room does not exist! Status: ${res.status}`);
   }
   return true;
 });
 
-export const getPastRooms = createEffect(async () => {
+const getPastRooms = createEffect(async () => {
   const res = await fetch(`/api/games`, {
     credentials: "include",
   });
-  const rooms: string[] = await res.json();
-
-  if (!rooms || !rooms.length) {
-    return [];
-  }
-  return rooms;
+  const rooms = await res.json();
+  return rooms || [];
 });
 
-export const joinRoom = createEvent<{
+const joinRoomEvent = createEvent<{
   roomCode: string;
   playerUsername: string;
 }>();
 
-export const leaveRoom = createEvent();
+const leaveRoomEvent = createEvent();
 
-leaveRoom.watch(() => {
+leaveRoomEvent.watch(() => {
   setActiveRoom(null);
   resetGameData();
 });
+
+export const createNewRoomAndJoin = createEffect<
+  {
+    mode: GameMode;
+    playerUsername: string;
+  },
+  string
+>(async ({ mode, playerUsername }) => {
+  const roomCode = await createNewRoom(mode);
+  joinRoomEvent({ roomCode, playerUsername });
+  setActiveRoom({
+    code: roomCode,
+    username: playerUsername,
+  });
+  return roomCode;
+});
+
+export function useRoomManager() {
+  const { activeRoom, pastRooms } = useStore($roomManager);
+
+  const joinRoom = (roomCode: string, playerUsername: string) => {
+    joinRoomEvent({ roomCode, playerUsername });
+  };
+
+  return {
+    activeRoom,
+    pastRooms,
+    joinRoom,
+    createNewRoom,
+    checkRoomExists,
+    getPastRooms,
+    setActiveRoom,
+    createNewRoomAndJoin,
+    leaveRoom: () => leaveRoomEvent(),
+  };
+}

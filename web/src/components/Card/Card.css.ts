@@ -150,12 +150,12 @@ export const cardStyles = {
     stroke: "striped",
   }),
   middle: style({
-    marginTop: `calc(${1} * -35%)`,
-    marginLeft: `calc(${1} * -17%)`,
-    marginRight: `calc(${1} * -17%)`,
+    marginTop: `calc(${1} * -24px)`,
+    marginLeft: `calc(${1} * -14px)`,
+    marginRight: `calc(${1} * -14px)`,
   }),
   leftRight: style({
-    marginTop: `calc(${1} * 35%)`,
+    marginTop: `calc(${1} * 24px)`,
   }),
   small: style({
     height: vars.sizes.s9,

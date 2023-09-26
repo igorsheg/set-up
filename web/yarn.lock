@@ -2792,10 +2792,10 @@ utility-types@^3.10.0:
   resolved "https://registry.yarnpkg.com/utility-types/-/utility-types-3.10.0.tgz#ea4148f9a741015f05ed74fd615e1d20e6bed82b"
   integrity sha512-O11mqxmi7wMKCo6HKFt5AhO4BwY3VV68YU07tgxfz8zJTIxr4BpsezN49Ffwy9j3ZpwwJp4fkRwjRzq3uWE6Rg==
 
-vaul@^0.3.7:
-  version "0.3.7"
-  resolved "https://registry.yarnpkg.com/vaul/-/vaul-0.3.7.tgz#ff02c55dcf710ea85425f94a7ce191f95bd1c42a"
-  integrity sha512-1XrxVz5A6b4k1xYCLF63SQ8A4Fepwt71CkAcIUCXosgjZyj9kRWYsTov6ca2cI6FV20dXOJnlIdMycZvavYJlg==
+vaul@^0.6.7:
+  version "0.6.7"
+  resolved "https://registry.yarnpkg.com/vaul/-/vaul-0.6.7.tgz#ac7875a87b113ed70e30147f7e11a09c95e5174b"
+  integrity sha512-zoRs6LmOqfREkghTgE6H7NjYHoEsgzaaLMCXDMN4wJ8yTlsmqHkBzKPGNWZvFgD4eDW4n825Y18S/bnDDAsMMg==
   dependencies:
     "@radix-ui/react-dialog" "^1.0.4"
 

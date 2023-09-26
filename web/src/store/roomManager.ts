@@ -1,6 +1,5 @@
 import { createStore, sample } from "effector";
 import { createEvent, createEffect } from "effector";
-import { getPastRooms as getPastRoomsService } from "@services/roomService";
 import { JoinGameAction, MessageType } from "@types";
 import { $wsSocket } from "./websocket";
 
@@ -20,11 +19,6 @@ export const $roomManager = createStore<RoomManagerState>({
 });
 
 export const setActiveRoom = createEvent<ActiveRoom | null>();
-
-export const getPastRooms = createEffect(async () => {
-  const pastRooms = await getPastRoomsService();
-  return pastRooms;
-});
 
 $roomManager.on(setActiveRoom, (state, payload) => ({
   ...state,

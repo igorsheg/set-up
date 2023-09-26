@@ -2,24 +2,22 @@ import { Board } from "@views/Board/Board";
 import * as styles from "./Game.css";
 import Pill from "@components/Pill/Pill";
 import { useNavigate, useParams } from "react-router-dom";
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import { ReJoinGameDialog } from "@dialogs/ReJoinGameDialog";
 import { InvitePlayersDialog } from "@dialogs/InvitePlayersDialog";
 import { GameMenuAction } from "@menus/GameMenu";
-import { $roomManager, setActiveRoom } from "@store/roomManager";
 import { AnimatePresence } from "framer-motion";
 import { GameEnded } from "@views/GameEnded/GameEnded";
 import { Splash } from "@components/Splash/Splash";
 import { vars } from "@styles/index.css";
-import { useStore } from "effector-react";
-import { $gameManager } from "@store/gameManager";
-import { GameAction, MessageType } from "@types";
-import { sendAction } from "@store/websocket";
-import { toggleSound } from "@store/app";
+import { useGameManager } from "@services/gameService";
+import { useRoomManager } from "@services/roomService";
+import { useAppSettings } from "@services/appSettingsService";
 
 export default function Game() {
-  const { gameData } = useStore($gameManager);
-  const { activeRoom } = useStore($roomManager);
+  const { toggleSound } = useAppSettings();
+  const { gameData, requestCards } = useGameManager();
+  const { setActiveRoom, activeRoom } = useRoomManager();
 
   const navigate = useNavigate();
   const { room_code } = useParams<{ room_code: string }>();
@@ -48,16 +46,11 @@ export default function Game() {
     setRoomJoinDialogOpen(false);
   };
 
-  const requestCardsHandler = useCallback(() => {
-    const action: GameAction = {
-      type: MessageType.REQUEST,
-      payload: {
-        room_code: activeRoom?.code,
-      },
-    };
-
-    sendAction(action);
-  }, []);
+  useEffect(() => {
+    if (room_code && !activeRoom) {
+      setRoomJoinDialogOpen(true);
+    }
+  }, [room_code, activeRoom]);
 
   const routeState = () => {
     return gameData.game_over ? (
@@ -80,7 +73,7 @@ export default function Game() {
       <>
         <Board />
         <Pill
-          handleRequest={requestCardsHandler}
+          handleRequest={requestCards}
           game={gameData}
           onMenuItemSelect={handleGameMenuitemSelect}
         />

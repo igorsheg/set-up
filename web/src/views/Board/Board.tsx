@@ -1,20 +1,11 @@
 import * as React from "react";
-import { Card as CardType, GameAction, MessageType } from "../../types";
+import { Card as CardType } from "../../types";
 import Card from "@components/Card/Card";
 import { boardVars, boardStyles as styles } from "./Board.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import { useIsMobile } from "@hooks/useIsMobile";
-import { moveCards } from "@services/gameService";
-import {
-  $gameManager,
-  addSelectedCard,
-  clearSelectedCards,
-  removeSelectedCard,
-} from "@store/gameManager";
-import { useStore } from "effector-react";
-import { $roomManager } from "@store/roomManager";
-import { sendAction } from "@store/websocket";
+import { useGameManager } from "@services/gameService";
 
 const createCardKey = (card: CardType): string => {
   return `${card.color}-${card.shape}-${card.number}-${card.shading}`;
@@ -59,34 +50,21 @@ const AnimatedCard: React.FC<React.PropsWithChildren<AnimatedCardProps>> = ({
 };
 
 export const Board: React.FC = () => {
-  const { gameData, selectedCardIndexes } = useStore($gameManager);
-  const { activeRoom } = useStore($roomManager);
+  const {
+    gameData,
+    selectedCardIndexes,
+    addCardToSelection,
+    removeCardFromSelection,
+  } = useGameManager();
 
   const [numberOfColumns, setNumberOfColumns] = React.useState(4);
   const isMobile = useIsMobile();
 
   const handleClick = (index: number): void => {
     if (!selectedCardIndexes.includes(index)) {
-      const newSelectedIndexes = [...selectedCardIndexes, index];
-      if (newSelectedIndexes.length === 3 && gameData.in_play && activeRoom) {
-        const selectedCards = newSelectedIndexes.map(
-          (i) => gameData.in_play[i],
-        );
-
-        const action: GameAction = {
-          type: MessageType.MOVE,
-          payload: {
-            room_code: activeRoom.code,
-            cards: selectedCards,
-          },
-        };
-        sendAction(action);
-        clearSelectedCards();
-      } else {
-        addSelectedCard(index);
-      }
+      addCardToSelection(index);
     } else {
-      removeSelectedCard(index);
+      removeCardFromSelection(index);
     }
   };
 

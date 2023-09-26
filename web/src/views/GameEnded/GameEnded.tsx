@@ -8,8 +8,7 @@ import { StarScene } from "@components/Star/Star";
 import { useGLTF } from "@react-three/drei";
 import Button from "@components/Button/Button";
 import { useNavigate } from "react-router-dom";
-import { useStore } from "effector-react";
-import { $gameManager, resetGameData } from "@store/gameManager";
+import { useGameManager } from "@services/gameService";
 
 useGLTF.preload("/star.gltf");
 
@@ -40,7 +39,7 @@ const confettiProps: confetti.Options = {
 export const GameEnded = () => {
   const navigate = useNavigate();
 
-  const { gameData } = useStore($gameManager);
+  const { gameData, resetGameData } = useGameManager();
 
   const highestScore = Math.max(
     ...gameData.players.map((p: Player) => p.score),

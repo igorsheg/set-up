@@ -6,7 +6,7 @@ import {
   sample,
 } from "effector";
 import { Data, GameAction } from "@types";
-import { setGameData } from "./gameManager";
+import { $gameManager, setGameData } from "./gameManager";
 
 export type WebSocketStatus = "IDLE" | "CONNECTING" | "OPEN" | "CLOSED";
 const RECONNECT_TIMEOUT = 1000;
@@ -53,9 +53,12 @@ $webSocketStatus.on(initializeWebSocket.done, () => "OPEN");
 $webSocketStatus.on(closeWebSocket, () => "CLOSED");
 
 sample({
+  source: $gameManager,
   clock: messageReceived,
-  fn: (payload) => payload,
+  fn: (_currentGameData, newGameData) => newGameData,
   target: setGameData,
+  filter: (source, clock) =>
+    JSON.stringify(source.gameData.in_play) !== JSON.stringify(clock.in_play),
 });
 
 forward({
