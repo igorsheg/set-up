@@ -1,4 +1,4 @@
-name: CI
+name: ci - backend
 
 on:
   pull_request:
@@ -13,9 +13,7 @@ defaults:
     shell: bash
 
 jobs:
-  all:
-    name: All
-
+  lint:
     strategy:
       matrix:
         os:

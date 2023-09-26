@@ -13,7 +13,7 @@ export function cx(...args: ClassValue[]): string {
       classes.push(arg);
     } else if (typeof arg === "object") {
       for (const key in arg) {
-        if (arg.hasOwnProperty(key) && arg[key]) {
+        if (Object.prototype.hasOwnProperty.call(arg, key) && arg[key]) {
           classes.push(key);
         }
       }

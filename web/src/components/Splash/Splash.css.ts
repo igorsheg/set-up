@@ -4,6 +4,21 @@ import { createVar, style, keyframes, globalStyle } from "@vanilla-extract/css";
 const highlightColor = createVar();
 const highlightColorAlt = createVar();
 
+const colors = [
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+].join(",");
+const gradient = `conic-gradient(${colors})`;
+
 const bgRotate = keyframes({
   "100%": {
     transform: "rotate(1turn)",
@@ -70,8 +85,7 @@ export const container = style({
     backgroundRepeat: "no-repeat",
     backgroundSize: "100% 100%, 50% 50%",
     backgroundPosition: "0 0, 100% 0, 100% 100%, 0 100%",
-    // @ts-ignore: complains about gradient
-    background: `conic-gradient(${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor});`,
+    background: gradient,
     animation: `${bgRotate} 2s linear infinite`,
     willChange: "transform",
   },

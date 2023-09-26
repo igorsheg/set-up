@@ -32,9 +32,9 @@ const AnimatedCard: React.FC<React.PropsWithChildren<AnimatedCardProps>> = ({
         exit={{ opacity: 0, y: -20 }}
         transition={{
           type: "spring",
-          stiffness: 450,
-          damping: 26,
-          delay: index * 0.01,
+          stiffness: 500,
+          damping: 32,
+          // delay: index * 0.01,
         }}
         style={{ position: "absolute", top: 0, left: 0 }}
       >
@@ -64,13 +64,14 @@ export const Board: React.FC<React.PropsWithChildren<BoardProps>> = ({
   const [numberOfColumns, setNumberOfColumns] = React.useState(4);
   const isMobile = useIsMobile();
 
-  const handleClick = React.useCallback((index: number): void => {
+  const handleClick = (index: number): void => {
+    console.log("Selected card index: ", selectedCardIndexes);
     if (!selectedCardIndexes.includes(index)) {
       addCardToSelection(index);
     } else {
       removeCardFromSelection(index);
     }
-  }, []);
+  };
 
   React.useEffect(() => {
     if (isMobile) {
@@ -105,8 +106,9 @@ export const Board: React.FC<React.PropsWithChildren<BoardProps>> = ({
                 className={styles.cardWrap}
                 transition={{
                   type: "spring",
-                  stiffness: 300,
-                  damping: 27,
+                  stiffness: 500,
+                  damping: 32,
+                  delay: index * 0.01,
                 }}
               >
                 <AnimatedCard

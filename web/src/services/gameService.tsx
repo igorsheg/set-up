@@ -55,7 +55,7 @@ export function useGameManager() {
     if (selectedCardIndexes.length === 3 && gameData.in_play) {
       makeMove();
     }
-  }, [selectedCardIndexes, gameData.in_play, activeRoom]);
+  }, [selectedCardIndexes, gameData.in_play, activeRoom, makeMove]);
 
   return {
     gameData,
