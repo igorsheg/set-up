@@ -1,4 +1,6 @@
-export default function Diamond(props: any) {
+import { SVGProps } from "react";
+
+const Diamond: React.FC<SVGProps<SVGSVGElement>> = (props) => {
   return (
     <svg
       width={18}
@@ -24,4 +26,6 @@ export default function Diamond(props: any) {
       />
     </svg>
   );
-}
+};
+
+export default Diamond;

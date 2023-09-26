@@ -15,6 +15,57 @@ const glow = keyframes({
   to: { boxShadow: `0 0 20px ${highlightColorAlt}` },
 });
 
+export const cardRecipe = recipe({
+  base: {
+    display: "flex",
+    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: vars.radius.base,
+    boxShadow: `${vars.shadows.extrude}, inset 0 0 0 2px ${vars.colors.d6}`,
+    cursor: "pointer",
+    position: "relative",
+    overflow: "hidden",
+    gap: vars.sizes.s1,
+    backgroundColor: vars.colors.foregorund,
+    willChange: "transform, box-shadow, background-color",
+    ":active": {
+      transform: "translateY(2px)",
+      boxShadow: `inset 0 0 0 2px ${vars.colors.d6}`,
+    },
+    "@media": {
+      "(max-width: 768px)": {
+        height: "78px",
+        width: "78px",
+      },
+    },
+    "::after": {
+      content: '""',
+      position: "absolute",
+      zIndex: -1,
+      left: "4px",
+      top: "4px",
+      width: "calc(100% - 8px)",
+      height: "calc(100% - 8px)",
+      backgroundColor: vars.colors.foregorund,
+      borderRadius: "12px",
+    },
+  },
+  variants: {
+    size: {
+      default: {
+        height: vars.sizes.s12,
+        width: vars.sizes.s12,
+      },
+      small: {
+        height: vars.sizes.s9,
+        width: vars.sizes.s9,
+        borderRadius: "6px",
+      },
+    },
+  },
+});
+
 export const cardStyles = {
   card: style({
     vars: {
@@ -27,8 +78,8 @@ export const cardStyles = {
     alignItems: "center",
     height: vars.sizes.s12,
     width: vars.sizes.s12,
-    borderRadius: "16px",
-    padding: vars.sizes.s3,
+    borderRadius: vars.radius.base,
+    // padding: vars.sizes.s3,
     boxShadow: `${vars.shadows.extrude}, inset 0 0 0 2px ${vars.colors.d6}`,
     cursor: "pointer",
     position: "relative",
@@ -77,7 +128,7 @@ export const cardStyles = {
       backgroundRepeat: "no-repeat",
       backgroundSize: "100% 100%, 50% 50%",
       backgroundPosition: "0 0, 100% 0, 100% 100%, 0 100%",
-      // @ts-ignore: complain about gradient
+      // @ts-ignore: complains about gradient
       background: `conic-gradient(${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor});`,
       animation: `${bgRotate} 2s linear infinite`,
       willChange: "transform",
@@ -105,6 +156,11 @@ export const cardStyles = {
   }),
   leftRight: style({
     marginTop: `calc(${1} * 24px)`,
+  }),
+  small: style({
+    height: vars.sizes.s9,
+    width: vars.sizes.s9,
+    borderRadius: "6px",
   }),
 };
 

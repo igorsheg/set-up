@@ -1,107 +1,71 @@
-import { NotificationMessage } from "@store/gameManager";
+import { useStore } from "effector-react";
+import { $webSocketStatus, sendAction } from "@store/websocket";
+import { useCallback, useEffect } from "react";
+import { GameAction, MessageType } from "@types";
 import {
-  AppThunk,
-  RootState,
-  addNotification,
-  // clearNotification,
+  $gameManager,
+  addSelectedCard,
   clearSelectedCards,
-  setEventLog,
-  setGameData,
-} from "@store/index";
-import { MessageType, ws } from "@store/websocket";
-import { Card, Data, Event } from "@types";
+  removeSelectedCard,
+  resetGameData,
+} from "@store/gameManager";
+import { $roomManager } from "@store/roomManager";
 
-function difference(arrayA: Event[], arrayB: Event[]): Event[] {
-  const setB = new Set(
-    arrayB.map((item) => JSON.stringify([item.event_type, item.timestamp])),
-  );
-  return arrayA.filter(
-    (item) => !setB.has(JSON.stringify([item.event_type, item.timestamp])),
-  );
-}
+export function useGameManager() {
+  const { gameData, selectedCardIndexes, activeNotifications } =
+    useStore($gameManager);
+  const { activeRoom } = useStore($roomManager);
+  const websocketStatus = useStore($webSocketStatus);
 
-export const setGameState =
-  (newData: Data): AppThunk =>
-  (dispatch, getState) => {
-    const currentEventLog = getState().gameManager.eventLog;
-    const newEvents = difference(newData.events, currentEventLog);
-
-    newEvents.forEach((event) => {
-      switch (event.event_type) {
-        case "PlayerJoined":
-          dispatch(
-            displayNotificationWithTimer({
-              timestamp: event.timestamp,
-              content: `Player ${event.data} joined the game`,
-              icon: "💬",
-            }),
-          );
-          break;
-        case "PlayerFoundSet":
-          dispatch(
-            displayNotificationWithTimer({
-              timestamp: event.timestamp,
-              content: `${event.data}`,
-              icon: "🎯",
-            }),
-          );
-          break;
-        case "PlayerRequestedCards":
-          dispatch(
-            displayNotificationWithTimer({
-              timestamp: event.timestamp,
-              content: `${event.data} requested cards`,
-              icon: "✋",
-            }),
-          );
-          break;
-        default:
-          break;
-      }
-    });
-
-    dispatch(setGameData(newData));
-    dispatch(setEventLog(newData.events || []));
-  };
-
-export const moveCards =
-  (cards: Card[]): AppThunk =>
-  (dispatch, getState) => {
-    const {
-      roomManager: { activeRoom },
-    } = getState() as RootState;
-
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          type: MessageType.MOVE,
-          payload: { room_code: activeRoom?.code, cards },
-        }),
-      );
-      dispatch(clearSelectedCards());
+  const requestCards = useCallback(() => {
+    if (activeRoom && activeRoom.code) {
+      const action: GameAction = {
+        type: MessageType.REQUEST,
+        payload: {
+          room_code: activeRoom.code,
+        },
+      };
+      sendAction(action);
     }
+  }, [activeRoom]);
+
+  const addCardToSelection = useCallback((cardIndex: number) => {
+    addSelectedCard(cardIndex);
+  }, []);
+
+  const removeCardFromSelection = useCallback((cardIndex: number) => {
+    removeSelectedCard(cardIndex);
+  }, []);
+
+  const makeMove = useCallback(() => {
+    if (activeRoom && activeRoom.code) {
+      const action: GameAction = {
+        type: MessageType.MOVE,
+        payload: {
+          cards: selectedCardIndexes.map((i) => gameData.in_play[i]),
+          room_code: activeRoom?.code,
+        },
+      };
+      sendAction(action);
+      clearSelectedCards();
+    }
+  }, [activeRoom, gameData.in_play, selectedCardIndexes]);
+
+  useEffect(() => {
+    if (selectedCardIndexes.length === 3 && gameData.in_play) {
+      makeMove();
+    }
+  }, [selectedCardIndexes, gameData.in_play]);
+
+  return {
+    gameData,
+    addCardToSelection,
+    removeCardFromSelection,
+    selectedCardIndexes,
+    requestCards,
+    makeMove,
+    activeNotifications,
+    resetGameData,
+    websocketStatus,
   };
-
-export const requestCards = (): AppThunk => (dispatch) => {
-  dispatch({
-    type: MessageType.REQUEST,
-  });
-  dispatch(clearSelectedCards());
-};
-
-export const resetGame = (): AppThunk => (dispatch) => {
-  dispatch({
-    type: MessageType.RESET,
-  });
-};
-
-export const displayNotificationWithTimer =
-  (message: NotificationMessage): AppThunk =>
-  (dispatch) => {
-    const notification = {
-      ...message,
-      id: Date.now(),
-    };
-
-    dispatch(addNotification(notification));
-  };
+}

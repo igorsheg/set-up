@@ -1,55 +1,59 @@
-import { Middleware, MiddlewareAPI } from "@reduxjs/toolkit";
-import { RootState } from ".";
-import { Event } from "@types";
+import { $appSettings } from "./app";
+import {
+  addSelectedCard,
+  removeSelectedCard,
+  setEventLog,
+} from "./gameManager";
+import { joinGame } from "./roomManager";
 
-const selectSound = new Audio("/sfx/navigation_forward-selection-minimal.wav");
-const notificationSound = new Audio("/sfx/notification_simple.wav");
-const unSelectSound = new Audio(
+export const selectSound = new Audio(
+  "/sfx/navigation_forward-selection-minimal.wav",
+);
+export const notificationSound = new Audio("/sfx/notification_simple.wav");
+export const unSelectSound = new Audio(
   "/sfx/navigation_backward-selection-minimal.wav",
 );
+export const newGame = new Audio("/sfx/navigation_forward-selection.wav");
 
-const newGame = new Audio("/sfx/navigation_forward-selection.wav");
+export const playSound = (audio: HTMLAudioElement) => {
+  audio.currentTime = 0;
+  audio.play();
+};
 
-export const audioMiddleware: Middleware =
-  (store: MiddlewareAPI) => (next) => (action) => {
-    const state = store.getState() as RootState;
+joinGame.watch(() => {
+  if ($appSettings.getState().soundEnabled) {
+    playSound(newGame);
+  }
+});
 
-    const playSound = (audio: HTMLAudioElement) => {
-      audio.currentTime = 0;
-      audio.play();
-    };
+addSelectedCard.watch(() => {
+  if ($appSettings.getState().soundEnabled) {
+    playSound(selectSound);
+  }
+});
 
-    if (!state.appSettings.soundEnabled) {
-      return next(action);
-    }
+removeSelectedCard.watch(() => {
+  if ($appSettings.getState().soundEnabled) {
+    playSound(unSelectSound);
+  }
+});
 
-    if (action.type === "gameManager/addSelectedCard") {
-      playSound(selectSound);
-    }
-    if (action.type === "gameManager/removeSelectedCard") {
-      playSound(unSelectSound);
-    }
-    if (action.type === "gameManager/setEventLog") {
-      const last = action.payload[action.payload.length - 1] as Event;
-
+setEventLog.watch((events) => {
+  if ($appSettings.getState().soundEnabled) {
+    const last = events[events.length - 1];
+    if (last) {
       const givenTimeInSeconds =
         last.timestamp.secs_since_epoch +
         last.timestamp.nanos_since_epoch / 1e9;
 
       const currentTimeInSeconds = Date.now() / 1000;
-
       const difference = Math.abs(currentTimeInSeconds - givenTimeInSeconds);
       const tolerance = 1;
       const isNow = difference <= tolerance;
 
-      if (isNow && last && last.event_type === "PlayerFoundSet") {
+      if (isNow && last.event_type === "PlayerFoundSet") {
         playSound(notificationSound);
       }
     }
-
-    if (action.type === "join") {
-      playSound(newGame);
-    }
-
-    return next(action);
-  };
+  }
+});

@@ -1,72 +1,79 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
-import { AppThunk, resetGameData, setActiveRoom } from "@store/index";
-import { JoinGameAction, MessageType } from "@store/websocket";
+import { createEffect, createEvent } from "effector";
 import { GameMode } from "@types";
+import { $roomManager, setActiveRoom } from "@store/roomManager";
+import { resetGameData } from "@store/gameManager";
+import { useStore } from "effector-react";
 
-export const createNewRoom = createAsyncThunk<string, GameMode>(
-  "game/createNewRoom",
-  async (mode, _thunkAPI) => {
-    try {
-      const response = await fetch(`/api/new?mode=${mode}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const room_code: string = await response.json();
-      return room_code;
-    } catch (error) {
-      console.error("Failed to create a new room:", error);
-      throw error;
-    }
-  },
-);
+const createNewRoom = createEffect(async (mode: GameMode) => {
+  const response = await fetch(`/api/new?mode=${mode}`);
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+  return await response.json();
+});
 
-export const checkRoomExists = createAsyncThunk<
-  boolean,
-  string,
-  { rejectValue: boolean }
->("game/checkRoomExists", async (roomCode, _thunkAPI) => {
+const checkRoomExists = createEffect(async (roomCode: string) => {
   const res = await fetch(`/api/game/${roomCode}`, {
     credentials: "include",
   });
-
-  if (res.status === 200) {
-    return true;
-  } else {
-    return _thunkAPI.rejectWithValue(false);
+  if (res.status !== 200) {
+    throw new Error(`Room does not exist! Status: ${res.status}`);
   }
+  return true;
 });
 
-export const joinRoom =
-  (roomCode: string, playerUsername: string): AppThunk =>
-  (dispatch) => {
-    const joinAction: JoinGameAction = {
-      type: MessageType.JOIN,
-      payload: {
-        room_code: roomCode,
-        player_username: playerUsername,
-      },
-    };
-    dispatch(joinAction);
-  };
-
-export const leaveRoom = (): AppThunk => (dispatch) => {
-  dispatch({ type: MessageType.CLOSE });
-  dispatch(setActiveRoom(null));
-  dispatch(resetGameData());
-};
-
-export const getPastRooms = createAsyncThunk<
-  string[],
-  void,
-  { rejectValue: boolean }
->("game/getPastRooms", async (_, _thunkAPI) => {
+const getPastRooms = createEffect(async () => {
   const res = await fetch(`/api/games`, {
     credentials: "include",
   });
-  const rooms: string[] = await res.json();
-
-  if (!rooms || !rooms.length) {
-    return _thunkAPI.rejectWithValue(false);
-  }
-  return rooms;
+  const rooms = await res.json();
+  return rooms || [];
 });
+
+const joinRoomEvent = createEvent<{
+  roomCode: string;
+  playerUsername: string;
+}>();
+
+const leaveRoomEvent = createEvent();
+
+leaveRoomEvent.watch(() => {
+  setActiveRoom(null);
+  resetGameData();
+});
+
+export const createNewRoomAndJoin = createEffect<
+  {
+    mode: GameMode;
+    playerUsername: string;
+  },
+  string
+>(async ({ mode, playerUsername }) => {
+  const roomCode = await createNewRoom(mode);
+  joinRoomEvent({ roomCode, playerUsername });
+  setActiveRoom({
+    code: roomCode,
+    username: playerUsername,
+  });
+  return roomCode;
+});
+
+export function useRoomManager() {
+  const { activeRoom, pastRooms } = useStore($roomManager);
+
+  const joinRoom = (roomCode: string, playerUsername: string) => {
+    joinRoomEvent({ roomCode, playerUsername });
+  };
+
+  return {
+    activeRoom,
+    pastRooms,
+    joinRoom,
+    createNewRoom,
+    checkRoomExists,
+    getPastRooms,
+    setActiveRoom,
+    createNewRoomAndJoin,
+    leaveRoom: () => leaveRoomEvent(),
+  };
+}

@@ -8,7 +8,6 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { RootState } from "@store/index";
 
 export enum GameMenuAction {
   invite = "invite",
@@ -18,12 +17,12 @@ export enum GameMenuAction {
 
 interface GameMenuProps {
   onItemSelect: (action: GameMenuAction) => void;
-  appSettings?: RootState["appSettings"];
+  soundEnabled?: boolean;
 }
 
 export const GameMenu: FC<PropsWithChildren<GameMenuProps>> = ({
   onItemSelect,
-  appSettings,
+  soundEnabled,
 }) => {
   return (
     <DropdownMenu
@@ -45,10 +44,10 @@ export const GameMenu: FC<PropsWithChildren<GameMenuProps>> = ({
         Invite players
       </DropdownItem>
       <DropdownItem
-        icon={appSettings?.soundEnabled ? <VolumeX /> : <Volume2 />}
+        icon={soundEnabled ? <VolumeX /> : <Volume2 />}
         onSelect={() => onItemSelect(GameMenuAction.mute)}
       >
-        {appSettings?.soundEnabled ? "Disable" : "Enable"} sounds
+        {soundEnabled ? "Disable" : "Enable"} sounds
       </DropdownItem>
       <DropdownItem
         icon={<LogOut />}

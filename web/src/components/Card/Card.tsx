@@ -6,12 +6,13 @@ import Oval from "./Oval";
 import Squiggle from "./Squiggle";
 import { cardStyles as styles, shapeWrap, shapeStyles } from "./Card.css";
 import { cx } from "../../util/cx";
+import { vars } from "@styles/index.css";
 
 type Props = {
   card: CardType;
-  hidden: boolean;
   onClick?: () => void;
-  selected: boolean;
+  selected?: boolean;
+  small?: boolean;
 };
 
 const SHAPE_COMPONENTS = {
@@ -21,11 +22,9 @@ const SHAPE_COMPONENTS = {
 };
 
 export default function Card(props: Props): React.ReactElement {
-  const { card, hidden, onClick, selected } = props;
+  const { card, onClick, selected } = props;
   const { color, shape, number, shading } = card;
   const threeElements = number + 1 === 3;
-
-  if (hidden) return <div className="hidden card" />;
 
   const ShapeComponent = SHAPE_COMPONENTS[shape];
   const element = (
@@ -64,7 +63,22 @@ export default function Card(props: Props): React.ReactElement {
       role="button"
       tabIndex={0}
     >
-      {elements}
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          justifyContent: "center",
+          flexDirection: "row",
+          alignItems: "center",
+          padding: vars.sizes.s3,
+          gap: vars.sizes.s1,
+          position: "relative",
+          transform: props.small ? "scale(.9)" : undefined,
+        }}
+      >
+        {elements}
+      </div>
     </div>
   );
 }

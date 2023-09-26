@@ -57,6 +57,10 @@ globalStyle("a", {
   textDecoration: "none",
 });
 
+globalStyle("strong", {
+  fontWeight: 550,
+});
+
 globalStyle("article p", {
   color: vars.colors.text,
   lineHeight: 1.6,

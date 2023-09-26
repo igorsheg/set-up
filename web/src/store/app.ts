@@ -1,15 +1,14 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createEvent, createStore } from "effector";
 
-export const appSettingsSlice = createSlice({
-  name: "appSettings",
-  initialState: {
-    soundEnabled: true,
-  },
-  reducers: {
-    toggleSound: (state) => {
-      state.soundEnabled = !state.soundEnabled;
-    },
-  },
-});
+const initialAppState = {
+  soundEnabled: true,
+};
 
-export const { toggleSound } = appSettingsSlice.actions;
+export const $appSettings = createStore(initialAppState);
+
+export const toggleSound = createEvent();
+
+$appSettings.on(toggleSound, (state) => ({
+  ...state,
+  soundEnabled: !state.soundEnabled,
+}));

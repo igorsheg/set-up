@@ -206,8 +206,6 @@ impl RoomManager {
     }
 
     pub async fn handle_new(&self, mode: GameMode) -> Result<String, Error> {
-        // let room_code = nanoid::nanoid!(6);
-
         let room_code: String = thread_rng()
             .sample_iter(&Alphanumeric)
             .take(6)

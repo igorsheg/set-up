@@ -1,9 +1,7 @@
 import Box from "@components/Box/Box";
 import Button from "@components/Button/Button";
-import { createNewRoom, getPastRooms } from "@services/roomService";
-import { AppDispatch, RootState, setActiveRoom } from "@store/index";
+import { useRoomManager } from "@services/roomService";
 import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { NewGameDialog } from "../../dialogs/NewGameDialog";
 import { lobbyStyles } from "./Lobby.css";
@@ -22,48 +20,34 @@ const cardMotionVariants = {
 
 export default function Lobby() {
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
 
   const [reqGame, setReqGame] = React.useState<
     Pick<LobbyActions, "type" | "mode"> & { roomCode?: string }
   >();
 
-  const pastRooms = useSelector(
-    (state: RootState) => state.roomManager.pastRooms,
-  );
+  const { getPastRooms, pastRooms, setActiveRoom, createNewRoomAndJoin } =
+    useRoomManager();
 
   const createGameHandler = async (playerUsername: string, mode: GameMode) => {
     try {
-      const actionResult = await dispatch(createNewRoom(mode));
-
-      if (createNewRoom.fulfilled.match(actionResult)) {
-        dispatch(
-          setActiveRoom({
-            code: actionResult.payload,
-            username: playerUsername,
-          }),
-        );
-        setReqGame({ type: "new", roomCode: actionResult.payload, mode });
-        navigate("/game/" + actionResult.payload);
-      }
+      const roomCode = await createNewRoomAndJoin({ mode, playerUsername });
+      navigate("/game/" + roomCode);
     } catch (error) {
       console.error("Error creating a new room:", error);
     }
   };
 
   const joinGameHandler = (roomCode: string, playerUsername: string) => {
-    dispatch(
-      setActiveRoom({
-        code: roomCode,
-        username: playerUsername,
-      }),
-    );
+    setActiveRoom({
+      code: roomCode,
+      username: playerUsername,
+    });
     setReqGame({ ...reqGame, type: "join", roomCode });
     navigate("/game/" + roomCode);
   };
 
   const getPlayerPastRooms = async () => {
-    await dispatch(getPastRooms());
+    await getPastRooms();
   };
 
   useEffect(() => {
