@@ -8,38 +8,37 @@ import {
   RandomizedLight,
   useGLTF,
 } from "@react-three/drei";
-import { Canvas, GroupProps } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import { vars } from "@styles/index.css";
 import { useLayoutEffect } from "react";
-import { CanvasTexture, RepeatWrapping, UVMapping } from "three";
-import { FlakesTexture } from "three-stdlib";
+import { GLTF } from "three-stdlib";
 
-function Model(_props: GroupProps) {
-  // @ts-ignore - missing types
-  const { scene, materials } = useGLTF("/star.gltf");
+type GLTFResult = GLTF & {
+  nodes: {
+    Star: THREE.Mesh;
+  };
+  materials: {
+    ["default"]: THREE.MeshStandardMaterial;
+  };
+};
+
+function Model() {
+  const { scene, materials } = useGLTF("/star.gltf") as GLTFResult;
 
   const springProps = useSpring({
-    from: { opacity: 0, position: [0, -0.2, 0] },
-    to: { opacity: 1, position: [0, 0, 0] },
+    from: { opacity: 0 },
+    to: { opacity: 1 },
     config: { mass: 1, tension: 100, friction: 20 },
   });
 
   useLayoutEffect(() => {
     materials["default"].color.set("orange");
     materials["default"].roughness = 0;
-    materials["default"].normalMap = new CanvasTexture(
-      // @ts-ignore - missing types
-      new FlakesTexture(),
-      UVMapping,
-      RepeatWrapping,
-      RepeatWrapping,
-    );
-    materials["default"].normalMap.repeat.set(40, 40);
+    materials["default"].normalMap?.repeat.set(40, 40);
     materials["default"].normalScale.set(0.1, 0.1);
   });
 
   return (
-    // @ts-ignore - missing types
     <animated.group {...springProps}>
       <primitive
         material={materials["default"]}

@@ -26,7 +26,10 @@ export const RunningShapes = () => {
     () => ["red", "purple", "green"],
     [],
   );
-  const shadings: ShapeStyle["shading"][] = ["outlined", "striped", "solid"];
+  const shadings: ShapeStyle["shading"][] = useMemo(
+    () => ["outlined", "striped", "solid"],
+    [],
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -60,7 +63,7 @@ export const RunningShapes = () => {
     return () => {
       clearInterval(timer);
     };
-  }, []);
+  }, [shapes.length]);
 
   return <div>{shapes[activeShapeIndex]}</div>;
 };

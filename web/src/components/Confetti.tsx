@@ -6,8 +6,8 @@ import canvasConfetti, {
 } from "canvas-confetti";
 
 export interface IProps extends Options, GlobalOptions {
-  fire?: any;
-  reset?: any;
+  fire?: boolean;
+  reset?: boolean;
   width?: string | number;
   height?: string | number;
   className?: string;
@@ -52,7 +52,7 @@ const ReactCanvasConfetti: React.FC<IProps> = ({
     return () => {
       refConfetti && refConfetti(null);
     };
-  }, []);
+  }, [refConfetti, confettiProps]);
 
   useEffect(() => {
     if (fire) {
@@ -60,14 +60,14 @@ const ReactCanvasConfetti: React.FC<IProps> = ({
       const promise = confettiRef.current?.(confettiProps);
       promise && promise.then(() => onDecay && onDecay());
     }
-  }, [fire]);
+  }, [fire, confettiProps, onDecay, onFire]);
 
   useEffect(() => {
     if (reset) {
       confettiRef.current?.reset();
       onReset && onReset();
     }
-  }, [reset]);
+  }, [reset, onReset]);
 
   return (
     <canvas

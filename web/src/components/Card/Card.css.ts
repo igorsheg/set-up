@@ -5,6 +5,21 @@ import { recipe } from "@vanilla-extract/recipes";
 const highlightColor = createVar();
 const highlightColorAlt = createVar();
 
+const colors = [
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+  highlightColorAlt,
+  highlightColor,
+].join(",");
+const gradient = `conic-gradient(${colors})`;
+
 const bgRotate = keyframes({
   "100%": {
     transform: "rotate(1turn)",
@@ -79,7 +94,6 @@ export const cardStyles = {
     height: vars.sizes.s12,
     width: vars.sizes.s12,
     borderRadius: vars.radius.base,
-    // padding: vars.sizes.s3,
     boxShadow: `${vars.shadows.extrude}, inset 0 0 0 2px ${vars.colors.d6}`,
     cursor: "pointer",
     position: "relative",
@@ -128,8 +142,7 @@ export const cardStyles = {
       backgroundRepeat: "no-repeat",
       backgroundSize: "100% 100%, 50% 50%",
       backgroundPosition: "0 0, 100% 0, 100% 100%, 0 100%",
-      // @ts-ignore: complains about gradient
-      background: `conic-gradient(${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor},${highlightColorAlt},${highlightColor});`,
+      background: gradient,
       animation: `${bgRotate} 2s linear infinite`,
       willChange: "transform",
     },
