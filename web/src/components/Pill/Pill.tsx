@@ -30,9 +30,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
   activeNotifications,
   websocketStatus,
 }) => {
-  // const appSettings = useStore($appSettings);
   const { soundEnabled } = useAppSettings();
-  // const { activeNotifications, websocketStatus } = useGameManager();
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
@@ -108,31 +106,44 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
               />
             </Box>
           </Box>
-          <AnimatePresence>
-            {isExpanded &&
-              activeNotifications.map((notification) => (
-                <motion.div
-                  key={notification.timestamp.secs_since_epoch}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  style={{ height: "100%" }}
-                >
-                  <Box
-                    orientation="row"
-                    style={{ height: "100%" }}
-                    xAlign="center"
-                    yAlign="center"
-                    gap={vars.sizes.s2}
+          {isExpanded &&
+            activeNotifications.map((notification) => (
+              <Box
+                orientation="row"
+                style={{ height: "100%", width: "100%" }}
+                xAlign="center"
+                yAlign="center"
+                gap={0}
+              >
+                <AnimatePresence>
+                  <motion.div
+                    key={notification.timestamp.secs_since_epoch}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    style={{ position: "absolute" }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20,
+                    }}
                   >
-                    <span>{notification.icon}</span>
-                    <span style={{ ...vars.typography.m }}>
-                      {notification.content}
-                    </span>
-                  </Box>
-                </motion.div>
-              ))}
-          </AnimatePresence>
+                    <Box
+                      orientation="row"
+                      style={{ height: "100%", width: "100%" }}
+                      xAlign="center"
+                      yAlign="center"
+                      gap={vars.sizes.s2}
+                    >
+                      <span>{notification.icon}</span>
+                      <span style={{ ...vars.typography.m }}>
+                        {notification.content}
+                      </span>
+                    </Box>
+                  </motion.div>
+                </AnimatePresence>
+              </Box>
+            ))}
         </>
       ) : (
         <Box

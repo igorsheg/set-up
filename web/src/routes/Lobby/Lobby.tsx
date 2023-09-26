@@ -25,13 +25,14 @@ export default function Lobby() {
     Pick<LobbyActions, "type" | "mode"> & { roomCode?: string }
   >();
 
-  const { getPastRooms, pastRooms, setActiveRoom, createNewRoomAndJoin } =
+  const { getPastRooms, pastRooms, setActiveRoom, createNewRoom } =
     useRoomManager();
 
-  const createGameHandler = async (playerUsername: string, mode: GameMode) => {
+  const createGameHandler = async (username: string, mode: GameMode) => {
     try {
-      const roomCode = await createNewRoomAndJoin({ mode, playerUsername });
-      navigate("/game/" + roomCode);
+      const code = await createNewRoom(mode);
+      setActiveRoom({ code, username });
+      navigate("/game/" + code);
     } catch (error) {
       console.error("Error creating a new room:", error);
     }

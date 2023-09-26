@@ -13,6 +13,9 @@ import { useGameManager } from "@services/gameService";
 import { useRoomManager } from "@services/roomService";
 import { useAppSettings } from "@services/appSettingsService";
 import { GameMenuAction } from "@types";
+import { useGLTF } from "@react-three/drei";
+
+useGLTF.preload("/star.gltf");
 
 export default function Game() {
   const { toggleSound } = useAppSettings();
