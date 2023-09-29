@@ -8,11 +8,13 @@ use crate::config::Configuration;
 pub mod client;
 pub mod config;
 pub mod context;
+pub mod events;
 pub mod game;
 pub mod infra;
 pub mod message;
 pub mod room;
 pub mod server;
+pub mod test;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

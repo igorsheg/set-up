@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
+use async_trait::async_trait;
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde_json::json;
 use tokio::sync::Mutex;
@@ -18,12 +19,6 @@ use crate::{
 
 pub struct RoomManager {
     rooms: Mutex<HashMap<String, Arc<Mutex<Game>>>>,
-}
-
-impl Default for RoomManager {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl RoomManager {
@@ -94,6 +89,11 @@ impl RoomManager {
         client_manager
             .broadcast_game_state(&message, &game_state)
             .await?;
+        //
+        // {
+        //     let event_emitter = self.event_emitter.lock().await;
+        //     event_emitter.enqueue_event(AppEvent::ClientConnected(client_id.to_string()));
+        // }
 
         Ok(())
     }
@@ -240,3 +240,20 @@ impl RoomManager {
         Ok(())
     }
 }
+
+// #[async_trait]
+// impl EventListener for RoomManager {
+//     async fn handle_event(&self, event: AppEvent) {
+//         println!("Before: RoomManager handling ClientConnected",);
+//         match event {
+//             AppEvent::ClientConnected(client_id) => {
+//                 println!("RoomManager handling ClientConnected: {}", client_id);
+//                 // Handle the event here
+//             }
+//             // Handle other events as needed
+//             _ => {
+//                 println!("Other ----------->",);
+//             }
+//         }
+//     }
+// }

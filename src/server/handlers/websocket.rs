@@ -15,6 +15,7 @@ use tokio::sync::mpsc;
 use crate::{
     client::Client,
     context::Context,
+    events::AppEvent,
     game::game::Game,
     infra::error::Error,
     message::{MessageType, WsMessage},
@@ -119,12 +120,24 @@ async fn handle_incoming_message(
         Error::WebsocketError(e.to_string())
     })?;
 
-    let client_manager = context.client_manager();
-    let room_manager = context.room_manager();
+    match message_type {
+        // For example, if you have a MessageType::ClientConnected
+        MessageType::Join(message) => {
+            // let event_emitter = context.event_emitter; // Assuming you have a way to get the event emitter from context
+            context
+                .event_emitter
+                .lock()
+                .await
+                .emit(AppEvent::PlayerJoined(client_id, message))
+                .await;
+        }
+        // Handle other message types and emit events as needed
+        _ => {
+            println!("Other message type");
+        }
+    };
 
-    context
-        .handle_message(message_type, client_id, room_manager, client_manager)
-        .await?;
+    // context.handle_message(message_type, client_id).await?;
 
     Ok(())
 }
@@ -171,17 +184,18 @@ async fn write_to_ws(
 }
 
 async fn cleanup_client(context: Arc<Context>, client_id: u16) -> Result<(), Error> {
-    let room_manager = context.room_manager();
-    let client_manager = context.client_manager();
-    match room_manager.handle_leave(client_id, client_manager).await {
-        Ok(_) => Ok(()),
-        Err(e) if e.to_string().contains("Client not in a room") => {
-            tracing::info!("Client {} was not in any room.", client_id);
-            Ok(())
-        }
-        Err(e) => {
-            tracing::error!("Error handling leave for client {}: {:?}", client_id, e);
-            Err(e)
-        }
-    }
+    // let room_manager = context.room_manager();
+    // let client_manager = context.client_manager();
+    // match room_manager.handle_leave(client_id, client_manager).await {
+    //     Ok(_) => Ok(()),
+    //     Err(e) if e.to_string().contains("Client not in a room") => {
+    //         tracing::info!("Client {} was not in any room.", client_id);
+    //         Ok(())
+    //     }
+    //     Err(e) => {
+    //         tracing::error!("Error handling leave for client {}: {:?}", client_id, e);
+    //         Err(e)
+    //     }
+    // }
+    Ok(())
 }

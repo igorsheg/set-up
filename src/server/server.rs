@@ -7,15 +7,19 @@ use axum::{
     routing::get,
     Extension,
 };
+use tokio::sync::Mutex;
 
 use crate::{
     context::Context,
+    events::{AppEvent, EventEmitter, EventListener},
+    room::RoomManager,
     server::handlers::{
         asset,
         client::auth,
         room::{check_game_exists, get_past_rooms, new_room_handler},
         websocket::ws_handler,
     },
+    test::Testy,
 };
 
 pub struct Server {
@@ -48,8 +52,34 @@ impl Server {
             .parse()
             .expect("Unable to parse address");
 
+        // let event_emitter = Arc::new(Mutex::new(EventEmitter::new()));
         let context = Arc::new(Context::new()); // Modify this line
+        context.start();
         let app_state = Arc::new(AppState::new(self.is_production));
+
+        // let testy = Arc::new(Testy::new());
+
+        // println!("Before registering RoomManager as listener");
+        // event_emitter
+        //     .lock()
+        //     .await
+        //     .register_listener(Box::new(move |event| {
+        //         println!("RoomManager registered as listener");
+        //         let testy = testy.clone();
+        //         tokio::spawn(async move {
+        //             testy.handle_event(event).await;
+        //         });
+        //     }))
+        //     .await;
+        // println!("After registering RoomManager as listener");
+
+        // tokio::spawn(async move {
+        //     loop {
+        //         if let Some(event) = event_emitter.lock().await.poll_event().await {
+        //             event_emitter.lock().await.emit(event).await;
+        //         }
+        //     }
+        // });
 
         let api_routes = axum::Router::new()
             .route("/health", get(health_check))
