@@ -13,24 +13,29 @@ use futures::{sink::SinkExt, stream::StreamExt};
 use tokio::sync::mpsc;
 
 use crate::{
-    client::Client,
-    context::Context,
-    events::AppEvent,
-    game::game::Game,
+    application::client_service::ClientService,
+    domain::{
+        client::Client,
+        events::AppEvent,
+        game::game::Game,
+        message::{MessageType, WsMessage},
+    },
     infra::error::Error,
-    message::{MessageType, WsMessage},
+    presentation::ws::event_emmiter::EventEmitter,
 };
 
 #[axum::debug_handler]
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
-    Extension(context): Extension<Arc<Context>>,
+    Extension(client_service): Extension<Arc<ClientService>>,
+    Extension(event_emitter): Extension<EventEmitter>,
     jar: CookieJar,
 ) -> impl IntoResponse {
     let client_id = get_client_id_from_cookies(&jar);
 
     ws.on_upgrade(move |socket| async move {
-        if let Err(err) = handle_connection(socket, context, client_id).await {
+        if let Err(err) = handle_connection(socket, event_emitter, client_service, client_id).await
+        {
             tracing::error!("WebSocket handler encountered an error: {}", err);
         }
     })
@@ -44,13 +49,14 @@ fn get_client_id_from_cookies(jar: &CookieJar) -> u16 {
 
 async fn handle_connection(
     ws: WebSocket,
-    context: Arc<Context>,
+    event_emitter: EventEmitter,
+    client_service: Arc<ClientService>,
     client_id: u16,
 ) -> Result<(), Error> {
     let (ws_tx, ws_rx) = ws.split();
 
-    let (_tx, rx) = setup_client(context.clone(), client_id).await?;
-    let reader_task = read_from_ws(ws_rx, context.clone(), client_id);
+    let (_tx, rx) = setup_client(client_service.clone(), client_id).await?;
+    let reader_task = read_from_ws(ws_rx, event_emitter, client_service, client_id);
     let writer_task = write_to_ws(rx, ws_tx);
 
     match tokio::try_join!(reader_task, writer_task) {
@@ -63,15 +69,15 @@ async fn handle_connection(
 }
 
 async fn setup_client(
-    context: Arc<Context>,
+    client_service: Arc<ClientService>,
     client_id: u16,
 ) -> Result<(mpsc::Sender<Game>, mpsc::Receiver<Game>), Error> {
     let (tx, rx) = mpsc::channel(32);
-    let client_manager = context.client_manager();
-    if client_manager.find_client(client_id).await.is_ok() {
-        client_manager.remove_client(client_id).await;
+    // let client_manager = client_service.client_manager();
+    if client_service.find_client(client_id).await.is_ok() {
+        client_service.remove_client(client_id).await;
     }
-    client_manager
+    client_service
         .add_client(client_id, Client::new(tx.clone(), client_id))
         .await;
     Ok((tx, rx))
@@ -79,25 +85,26 @@ async fn setup_client(
 
 async fn read_from_ws(
     mut ws_rx: impl StreamExt<Item = Result<Message, axum::Error>> + Unpin,
-    context: Arc<Context>,
+    event_emitter: EventEmitter,
+    client_service: Arc<ClientService>,
     client_id: u16,
 ) -> Result<(), Error> {
     while let Some(result) = ws_rx.next().await {
         match result {
-            Ok(msg) => handle_incoming_message(msg, context.clone(), client_id).await?,
+            Ok(msg) => handle_incoming_message(event_emitter.clone(), msg, client_id).await?,
             Err(e) => handle_incoming_error(e)?,
         }
     }
 
     tracing::info!("WebSocket connection closed for client: {}", client_id);
-    cleanup_client(context, client_id).await?;
+    cleanup_client(client_service, client_id).await?;
 
     Ok(())
 }
 
 async fn handle_incoming_message(
+    event_emitter: EventEmitter,
     msg: Message,
-    context: Arc<Context>,
     client_id: u16,
 ) -> Result<(), Error> {
     let text = msg.to_text().map_err(|e| {
@@ -120,24 +127,17 @@ async fn handle_incoming_message(
         Error::WebsocketError(e.to_string())
     })?;
 
-    match message_type {
-        // For example, if you have a MessageType::ClientConnected
-        MessageType::Join(message) => {
-            // let event_emitter = context.event_emitter; // Assuming you have a way to get the event emitter from context
-            context
-                .event_emitter
-                .lock()
-                .await
-                .emit(AppEvent::PlayerJoined(client_id, message))
-                .await;
-        }
-        // Handle other message types and emit events as needed
-        _ => {
-            println!("Other message type");
-        }
-    };
-
-    // context.handle_message(message_type, client_id).await?;
+    // match message_type {
+    //     MessageType::Join(message) => {
+    //         event_emitter
+    //             .emit(AppEvent::PlayerJoined(client_id, message))
+    //             .await?;
+    //     }
+    //     _ => {}
+    // }
+    event_emitter
+        .emit(AppEvent::PlayerJoined(client_id, message))
+        .await?;
 
     Ok(())
 }
@@ -183,7 +183,7 @@ async fn write_to_ws(
     Ok(())
 }
 
-async fn cleanup_client(context: Arc<Context>, client_id: u16) -> Result<(), Error> {
+async fn cleanup_client(client_service: Arc<ClientService>, client_id: u16) -> Result<(), Error> {
     // let room_manager = context.room_manager();
     // let client_manager = context.client_manager();
     // match room_manager.handle_leave(client_id, client_manager).await {

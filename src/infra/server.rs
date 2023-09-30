@@ -10,22 +10,24 @@ use axum::{
 use tokio::sync::Mutex;
 
 use crate::{
-    context::Context,
-    events::{AppEvent, EventEmitter, EventListener},
-    room::RoomManager,
-    server::handlers::{
-        asset,
-        client::auth,
-        room::{check_game_exists, get_past_rooms, new_room_handler},
-        websocket::ws_handler,
+    application::{client_service::ClientService, room_service::RoomService},
+    presentation::{
+        http::{
+            asset,
+            client::auth,
+            room::{check_game_exists, new_room_handler},
+        },
+        ws::{event_emmiter::EventEmitter, handler::ws_handler},
     },
-    test::Testy,
 };
 
 pub struct Server {
     host: String,
     port: u16,
     is_production: bool,
+    event_emitter: EventEmitter,
+    room_service: Arc<RoomService>,
+    client_service: Arc<ClientService>,
 }
 
 pub struct AppState {
@@ -39,11 +41,21 @@ impl AppState {
 }
 
 impl Server {
-    pub fn new(host: String, port: u16, is_production: bool) -> Self {
+    pub fn new(
+        host: String,
+        port: u16,
+        is_production: bool,
+        event_emitter: EventEmitter,
+        room_service: Arc<RoomService>,
+        client_service: Arc<ClientService>,
+    ) -> Self {
         Self {
             host,
             port,
             is_production,
+            event_emitter,
+            client_service,
+            room_service,
         }
     }
 
@@ -52,48 +64,23 @@ impl Server {
             .parse()
             .expect("Unable to parse address");
 
-        // let event_emitter = Arc::new(Mutex::new(EventEmitter::new()));
-        let context = Arc::new(Context::new()); // Modify this line
-        context.start();
-        let app_state = Arc::new(AppState::new(self.is_production));
-
-        // let testy = Arc::new(Testy::new());
-
-        // println!("Before registering RoomManager as listener");
-        // event_emitter
-        //     .lock()
-        //     .await
-        //     .register_listener(Box::new(move |event| {
-        //         println!("RoomManager registered as listener");
-        //         let testy = testy.clone();
-        //         tokio::spawn(async move {
-        //             testy.handle_event(event).await;
-        //         });
-        //     }))
-        //     .await;
-        // println!("After registering RoomManager as listener");
-
-        // tokio::spawn(async move {
-        //     loop {
-        //         if let Some(event) = event_emitter.lock().await.poll_event().await {
-        //             event_emitter.lock().await.emit(event).await;
-        //         }
-        //     }
-        // });
-
         let api_routes = axum::Router::new()
             .route("/health", get(health_check))
             .route("/new", get(new_room_handler))
-            .route("/games", get(get_past_rooms))
+            // .route("/games", get(get_past_rooms))
             .route("/game/:room_code", get(check_game_exists))
             .route("/auth", get(auth))
             .route("/ws", get(ws_handler));
+
+        let app_state = Arc::new(AppState::new(self.is_production));
 
         let app = axum::Router::new()
             .nest("/api", api_routes)
             .fallback(asset::handler)
             .layer(Extension(app_state))
-            .layer(Extension(context))
+            .layer(Extension(self.event_emitter.clone()))
+            .layer(Extension(self.room_service.clone()))
+            .layer(Extension(self.client_service.clone()))
             .layer(map_response(|mut resp: Response| async {
                 resp.headers_mut().insert(
                     header::SERVER,

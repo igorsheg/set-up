@@ -3,6 +3,9 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use thiserror::Error as ThisError;
+use tokio::sync::mpsc::error::SendError;
+
+use crate::domain::events::AppEvent;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -34,6 +37,12 @@ pub enum Error {
 
     #[error("Environment error: {0}")]
     EnviormentError(String),
+
+    #[error("Room service error: {0}")]
+    RoomNotFound(String),
+
+    #[error("Event emit error: {0}")]
+    EventEmitError(String),
 }
 
 pub struct AppError(pub Error);
@@ -76,5 +85,11 @@ impl From<tracing_loki::Error> for Error {
 impl From<std::env::VarError> for Error {
     fn from(err: std::env::VarError) -> Self {
         Error::DatabaseError(err.to_string())
+    }
+}
+
+impl From<SendError<AppEvent>> for Error {
+    fn from(err: SendError<AppEvent>) -> Self {
+        Error::EventEmitError(format!("Failed to send event: {:?}", err))
     }
 }

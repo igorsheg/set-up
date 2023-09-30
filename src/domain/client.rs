@@ -1,6 +1,7 @@
 use tokio::sync::mpsc;
 
-use crate::{game::game::Game, infra::error::Error};
+use super::game::game::Game;
+use crate::infra::error::Error;
 
 #[derive(Debug)]
 enum ClientState {

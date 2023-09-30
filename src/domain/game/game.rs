@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use super::card::Card;
 use crate::{
-    game::{deck::Deck, player::Player},
+    domain::game::{deck::Deck, player::Player},
     infra::error::Error,
 };
 

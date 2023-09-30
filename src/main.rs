@@ -1,20 +1,26 @@
-use infra::error::Error;
-use server::Server;
+use std::sync::Arc;
+
+use application::{client_service::ClientService, room_service::RoomService};
+use infra::{
+    error::Error,
+    server::{AppState, Server},
+};
+use presentation::ws::event_emmiter::EventEmitter;
+use tokio::sync::Mutex;
 use tracing_loki::url::Url;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
 use crate::config::Configuration;
 
-pub mod client;
+pub mod application;
 pub mod config;
-pub mod context;
-pub mod events;
-pub mod game;
+// pub mod context;
+pub mod domain;
 pub mod infra;
-pub mod message;
-pub mod room;
-pub mod server;
-pub mod test;
+// pub mod message;
+// pub mod room;
+pub mod presentation;
+// pub mod server;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -37,13 +43,28 @@ async fn main() -> Result<(), Error> {
 
     tracing::subscriber::set_global_default(subscriber).expect("Setting global default failed");
 
+    let (event_emitter, rx) = EventEmitter::new();
+
+    let room_service = Arc::new(RoomService::new(Mutex::new(rx)));
+    let room_service_clone = room_service.clone();
+
+    let client_service = Arc::new(ClientService::new());
+
     let server = Server::new(
         config.server.host,
         config.server.port.parse().unwrap(),
         config.is_production,
+        event_emitter,
+        room_service,
+        client_service,
     );
 
     tokio::spawn(loki_tracing_task);
+
+    tokio::spawn(async move {
+        tracing::info!("Spawning Listening for events...");
+        room_service_clone.listen_for_events().await;
+    });
 
     server.run().await;
 

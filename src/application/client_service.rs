@@ -3,20 +3,22 @@ use std::sync::Arc;
 use ahash::{HashMap, HashMapExt};
 use tokio::sync::Mutex;
 
-use super::Client;
-use crate::{game::game::Game, infra::error::Error, message::WsMessage};
+use crate::{
+    domain::{client::Client, game::game::Game, message::WsMessage},
+    infra::error::Error,
+};
 
-pub struct ClientManager {
+pub struct ClientService {
     clients: Mutex<HashMap<u16, Arc<Mutex<Client>>>>,
 }
 
-impl Default for ClientManager {
+impl Default for ClientService {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl ClientManager {
+impl ClientService {
     pub fn new() -> Self {
         Self {
             clients: Mutex::new(HashMap::new()),
