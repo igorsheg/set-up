@@ -1,26 +1,18 @@
 use std::sync::Arc;
 
 use application::{client_service::ClientService, room_service::RoomService};
-use infra::{
-    error::Error,
-    server::{AppState, Server},
-};
+use infra::{error::Error, server::Server};
 use presentation::ws::event_emmiter::EventEmitter;
-use tokio::sync::Mutex;
 use tracing_loki::url::Url;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
-use crate::config::Configuration;
+use crate::{config::Configuration, presentation::ws::event_emmiter::EventListener};
 
 pub mod application;
 pub mod config;
-// pub mod context;
 pub mod domain;
 pub mod infra;
-// pub mod message;
-// pub mod room;
 pub mod presentation;
-// pub mod server;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -43,30 +35,53 @@ async fn main() -> Result<(), Error> {
 
     tracing::subscriber::set_global_default(subscriber).expect("Setting global default failed");
 
-    let (event_emitter, rx) = EventEmitter::new();
+    let event_emitter = EventEmitter::new(32);
 
-    let room_service = Arc::new(RoomService::new(Mutex::new(rx)));
-    let room_service_clone = room_service.clone();
+    let room_service = Arc::new(RoomService::new(
+        event_emitter.get_sender().clone(),
+        event_emitter.subscribe(),
+    ));
+    // let room_service_clone = room_service.clone();
 
-    let client_service = Arc::new(ClientService::new());
+    let client_service = Arc::new(ClientService::new(
+        event_emitter.get_sender().clone(),
+        event_emitter.subscribe(),
+    ));
+
+    register_listener(room_service.clone(), event_emitter.clone()).await;
+    register_listener(client_service.clone(), event_emitter.clone()).await;
 
     let server = Server::new(
         config.server.host,
         config.server.port.parse().unwrap(),
         config.is_production,
-        event_emitter,
+        event_emitter.clone(),
         room_service,
         client_service,
     );
 
     tokio::spawn(loki_tracing_task);
 
-    tokio::spawn(async move {
-        tracing::info!("Spawning Listening for events...");
-        room_service_clone.listen_for_events().await;
-    });
-
     server.run().await;
 
     Ok(())
+}
+
+async fn register_listener<S: EventListener + Sync + Send + 'static>(
+    service: Arc<S>,
+    event_emitter: EventEmitter,
+) {
+    tokio::spawn(async move {
+        tracing::info!(
+            "Spawning Listening for events for {}",
+            std::any::type_name::<S>()
+        );
+        if let Err(e) = service.listen_for_events(event_emitter).await {
+            tracing::error!(
+                "Error in listen_for_events for {}: {:?}",
+                std::any::type_name::<S>(),
+                e
+            );
+        }
+    });
 }

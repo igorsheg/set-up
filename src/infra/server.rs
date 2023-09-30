@@ -7,7 +7,6 @@ use axum::{
     routing::get,
     Extension,
 };
-use tokio::sync::Mutex;
 
 use crate::{
     application::{client_service::ClientService, room_service::RoomService},

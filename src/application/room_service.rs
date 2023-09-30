@@ -1,52 +1,72 @@
 use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
-use tokio::sync::{mpsc, Mutex};
+use async_trait::async_trait;
+use tokio::sync::{broadcast, mpsc, Mutex};
 
-use super::client_service::ClientService;
 use crate::{
     domain::{
-        events::{AppEvent, EventHandler},
-        game::game::{Game, GameMode},
+        events::AppEvent,
+        game::{
+            game::{Game, GameMode},
+            player::Player,
+        },
         message::WsMessage,
         room::Room,
     },
-    infra::error::Error,
+    infra::{ba, error::Error},
+    presentation::ws::event_emmiter::{EventEmitter, EventListener},
 };
 
 pub struct RoomService {
     rooms: Mutex<HashMap<String, Arc<Room>>>,
-    rx: Mutex<mpsc::Receiver<AppEvent>>,
+    tx: broadcast::Sender<AppEvent>,
+    rx: broadcast::Receiver<AppEvent>,
 }
 
 impl RoomService {
-    pub fn new(rx: Mutex<mpsc::Receiver<AppEvent>>) -> Self {
+    pub fn new(tx: broadcast::Sender<AppEvent>, rx: broadcast::Receiver<AppEvent>) -> Self {
         Self {
             rooms: Mutex::new(HashMap::new()),
+            tx,
             rx,
         }
     }
 
-    pub async fn listen_for_events(&self) {
-        tracing::info!("Listening for events...");
-        while let Some(event) = self.rx.lock().await.recv().await {
-            tracing::info!("Event received");
-            match event {
-                AppEvent::PlayerJoined(client_id, message) => {
-                    tracing::info!("Player joined ----> {}", client_id);
-                    // handle player joined event
-                } // Handle other events as needed...
-            }
-        }
-    }
-
-    // Application-level methods like handle_join, handle_leave, etc.
     pub async fn handle_join(
         &self,
         message: WsMessage,
         client_id: u16,
-        client_manager: &ClientService,
+        event_emitter: &EventEmitter,
     ) -> Result<(), Error> {
+        let room_code = message.get_room_code()?;
+        let game_state_arc = self.get_game_state(&room_code).await?;
+        let mut game_state = game_state_arc.lock().await;
+
+        // This block updates the game state and then emits an event indicating the game state has changed
+        {
+            if game_state.restore_player(client_id).is_err() {
+                let player_username = message.get_player_username()?;
+                let player = Player::new(client_id, player_username);
+                game_state.add_player(player.clone());
+
+                tracing::info!(
+                    event_type = %ba::EventType::PlayerRejoined,
+                    client_id = %client_id,
+                    player_name = %player.name,
+                );
+            }
+
+            event_emitter
+                .emit(AppEvent::SetClientRoomCode(client_id, room_code.clone()))
+                .await?;
+        }
+
+        // Emit an event to broadcast the game state
+        event_emitter
+            .emit(AppEvent::BroadcastGameState(message, game_state.clone()))
+            .await?;
+
         Ok(())
     }
 
@@ -56,6 +76,21 @@ impl RoomService {
             Some(room) => Ok(room.get_game_state().await),
             None => Err(Error::RoomNotFound(format!("Room {} not found", room_code))),
         }
+    }
+
+    async fn handle_update_game_state(
+        &self,
+        client_id: u16,
+        room_code: String,
+    ) -> Result<(), Error> {
+        tracing::info!(
+            event_type = %ba::EventType::PlayerJoined,
+            room_code = %room_code,
+            client_id = %client_id,
+        );
+
+        // Any other logic related to updating the game state can go here.
+        Ok(())
     }
 
     pub async fn start_new_game(&self, mode: GameMode) -> Result<String, Error> {
@@ -76,5 +111,32 @@ impl RoomService {
         println!("New game started in room: {}", room_code);
 
         Ok(room_code)
+    }
+}
+
+#[async_trait]
+impl EventListener for RoomService {
+    fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
+        self.tx.subscribe()
+    }
+
+    async fn handle_event(
+        &self,
+        event: AppEvent,
+        event_emitter: &EventEmitter,
+    ) -> Result<(), Error> {
+        match event {
+            AppEvent::PlayerJoined(client_id, _message) => {
+                tracing::info!("Player joined ----> {}", client_id);
+                Ok(())
+            }
+            AppEvent::RequestPlayerJoin(client_id, message) => {
+                self.handle_join(message, client_id, event_emitter).await
+            }
+            AppEvent::UpdateGameState(client_id, room_code) => {
+                self.handle_update_game_state(client_id, room_code).await
+            }
+            _ => Ok(()),
+        }
     }
 }

@@ -1,27 +1,27 @@
 use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
-use tokio::sync::Mutex;
+use async_trait::async_trait;
+use tokio::sync::{broadcast, Mutex};
 
 use crate::{
-    domain::{client::Client, game::game::Game, message::WsMessage},
+    domain::{client::Client, events::AppEvent, game::game::Game, message::WsMessage},
     infra::error::Error,
+    presentation::ws::event_emmiter::{EventEmitter, EventListener},
 };
 
 pub struct ClientService {
     clients: Mutex<HashMap<u16, Arc<Mutex<Client>>>>,
-}
-
-impl Default for ClientService {
-    fn default() -> Self {
-        Self::new()
-    }
+    tx: broadcast::Sender<AppEvent>,
+    rx: broadcast::Receiver<AppEvent>,
 }
 
 impl ClientService {
-    pub fn new() -> Self {
+    pub fn new(tx: broadcast::Sender<AppEvent>, rx: broadcast::Receiver<AppEvent>) -> Self {
         Self {
             clients: Mutex::new(HashMap::new()),
+            tx,
+            rx,
         }
     }
 
@@ -45,6 +45,12 @@ impl ClientService {
     pub async fn remove_client(&self, id: u16) {
         self.clients.lock().await.remove(&id);
         tracing::info!(client_id = %id, "Client removed.");
+    }
+
+    pub async fn join_room(&self, client_id: u16, room_code: String) {
+        let client_arc = self.find_client(client_id).await.unwrap();
+        let mut client = client_arc.lock().await;
+        client.set_room_code(room_code);
     }
 
     pub async fn get_clients_in_room(
@@ -76,10 +82,36 @@ impl ClientService {
         for client_arc in clients_in_room {
             let mut client = client_arc.lock().await; // Lock the client
             client.send_message(game_state).await.map_err(|err| {
+                tracing::error!("Failed to send message to client: {:?}", err);
                 Error::WebsocketError(format!("Failed to send message to client: {:?}", err))
             })?;
         }
 
         Ok(())
+    }
+}
+
+#[async_trait]
+impl EventListener for ClientService {
+    fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
+        self.tx.subscribe()
+    }
+
+    async fn handle_event(
+        &self,
+        event: AppEvent,
+        event_emitter: &EventEmitter,
+    ) -> Result<(), Error> {
+        match event {
+            AppEvent::BroadcastGameState(message, game_state) => {
+                let _ = self.broadcast_game_state(&message, &game_state).await;
+                Ok(())
+            }
+            AppEvent::SetClientRoomCode(client_id, room_code) => {
+                self.join_room(client_id, room_code).await;
+                Ok(())
+            }
+            _ => Ok(()),
+        }
     }
 }

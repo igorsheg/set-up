@@ -3,7 +3,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use thiserror::Error as ThisError;
-use tokio::sync::mpsc::error::SendError;
+use tokio::sync::{broadcast, mpsc::error::SendError};
 
 use crate::domain::events::AppEvent;
 
@@ -90,6 +90,12 @@ impl From<std::env::VarError> for Error {
 
 impl From<SendError<AppEvent>> for Error {
     fn from(err: SendError<AppEvent>) -> Self {
+        Error::EventEmitError(format!("Failed to send event: {:?}", err))
+    }
+}
+
+impl From<broadcast::error::SendError<AppEvent>> for Error {
+    fn from(err: broadcast::error::SendError<AppEvent>) -> Self {
         Error::EventEmitError(format!("Failed to send event: {:?}", err))
     }
 }

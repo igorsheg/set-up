@@ -73,13 +73,13 @@ async fn setup_client(
     client_id: u16,
 ) -> Result<(mpsc::Sender<Game>, mpsc::Receiver<Game>), Error> {
     let (tx, rx) = mpsc::channel(32);
-    // let client_manager = client_service.client_manager();
     if client_service.find_client(client_id).await.is_ok() {
         client_service.remove_client(client_id).await;
     }
     client_service
         .add_client(client_id, Client::new(tx.clone(), client_id))
         .await;
+
     Ok((tx, rx))
 }
 
@@ -127,17 +127,17 @@ async fn handle_incoming_message(
         Error::WebsocketError(e.to_string())
     })?;
 
-    // match message_type {
-    //     MessageType::Join(message) => {
-    //         event_emitter
-    //             .emit(AppEvent::PlayerJoined(client_id, message))
-    //             .await?;
-    //     }
-    //     _ => {}
-    // }
-    event_emitter
-        .emit(AppEvent::PlayerJoined(client_id, message))
-        .await?;
+    match message_type {
+        MessageType::Join(message) => {
+            event_emitter
+                .emit(AppEvent::RequestPlayerJoin(client_id, message))
+                .await?;
+        }
+        MessageType::Move(message) => {
+            tracing::info!("Received move message: {:?}", message);
+        }
+        _ => {}
+    }
 
     Ok(())
 }

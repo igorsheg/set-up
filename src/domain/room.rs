@@ -54,11 +54,9 @@ impl Room {
         if all_requested && !game_state.deck.cards.is_empty() {
             game_state.add_cards();
             for player in game_state.players.iter_mut() {
-                player.request = false; // Reset the request flags
+                player.request = false;
             }
         }
         Ok(())
     }
-
-    // If you have other methods manipulating game state, you can also move them here.
 }
