@@ -1,14 +1,41 @@
 use async_trait::async_trait;
+use tokio::sync::mpsc::Sender;
 
-use super::{game::game::Game, message::WsMessage};
+use super::{
+    game::game::{Game, GameMode},
+    message::WsMessage,
+};
+
+#[derive(Debug, Clone)]
+pub enum Event {
+    PlayerJoined(u16, WsMessage),
+    GameStateUpdated(u16, String),
+    GameStateBroadcasted(WsMessage, Game),
+    ClientRoomCodeSet(u16, String),
+    RoomCreated(String),
+    RoomCreationFailed(String),
+}
+
+#[derive(Debug, Clone)]
+pub enum Command {
+    CreateRoom(GameMode),
+    RequestPlayerJoin(u16, WsMessage),
+    SetupClient(u16, Sender<Game>),
+    DisconnectClient(u16),
+    BroadcastGameState(WsMessage, Game),
+    SetClientRoomCode(u16, String),
+}
+
+#[derive(Debug, Clone)]
+pub enum CommandResult {
+    RoomCreated(String),
+    RoomCreationFailed(String),
+}
 
 #[derive(Debug, Clone)]
 pub enum AppEvent {
-    PlayerJoined(u16, WsMessage),
-    RequestPlayerJoin(u16, WsMessage),
-    UpdateGameState(u16, String), // client_id, room_code
-    BroadcastGameState(WsMessage, Game),
-    SetClientRoomCode(u16, String),
+    CommandReceived(Command, Sender<CommandResult>),
+    EventOccurred(Event),
 }
 
 #[async_trait]

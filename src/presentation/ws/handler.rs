@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{
         ws::{Message, WebSocket},
@@ -13,10 +11,8 @@ use futures::{sink::SinkExt, stream::StreamExt};
 use tokio::sync::mpsc;
 
 use crate::{
-    application::client_service::ClientService,
     domain::{
-        client::Client,
-        events::AppEvent,
+        events::{AppEvent, Command, Event},
         game::game::Game,
         message::{MessageType, WsMessage},
     },
@@ -27,15 +23,13 @@ use crate::{
 #[axum::debug_handler]
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
-    Extension(client_service): Extension<Arc<ClientService>>,
     Extension(event_emitter): Extension<EventEmitter>,
     jar: CookieJar,
 ) -> impl IntoResponse {
     let client_id = get_client_id_from_cookies(&jar);
 
     ws.on_upgrade(move |socket| async move {
-        if let Err(err) = handle_connection(socket, event_emitter, client_service, client_id).await
-        {
+        if let Err(err) = handle_connection(socket, event_emitter, client_id).await {
             tracing::error!("WebSocket handler encountered an error: {}", err);
         }
     })
@@ -50,13 +44,12 @@ fn get_client_id_from_cookies(jar: &CookieJar) -> u16 {
 async fn handle_connection(
     ws: WebSocket,
     event_emitter: EventEmitter,
-    client_service: Arc<ClientService>,
     client_id: u16,
 ) -> Result<(), Error> {
     let (ws_tx, ws_rx) = ws.split();
 
-    let (_tx, rx) = setup_client(client_service.clone(), client_id).await?;
-    let reader_task = read_from_ws(ws_rx, event_emitter, client_service, client_id);
+    let (_tx, rx) = setup_client(&event_emitter, client_id).await?;
+    let reader_task = read_from_ws(ws_rx, event_emitter, client_id);
     let writer_task = write_to_ws(rx, ws_tx);
 
     match tokio::try_join!(reader_task, writer_task) {
@@ -69,16 +62,14 @@ async fn handle_connection(
 }
 
 async fn setup_client(
-    client_service: Arc<ClientService>,
+    event_emitter: &EventEmitter,
     client_id: u16,
 ) -> Result<(mpsc::Sender<Game>, mpsc::Receiver<Game>), Error> {
     let (tx, rx) = mpsc::channel(32);
-    if client_service.find_client(client_id).await.is_ok() {
-        client_service.remove_client(client_id).await;
-    }
-    client_service
-        .add_client(client_id, Client::new(tx.clone(), client_id))
-        .await;
+
+    event_emitter
+        .emit_command(Command::SetupClient(client_id, tx.clone()))
+        .await?;
 
     Ok((tx, rx))
 }
@@ -86,7 +77,6 @@ async fn setup_client(
 async fn read_from_ws(
     mut ws_rx: impl StreamExt<Item = Result<Message, axum::Error>> + Unpin,
     event_emitter: EventEmitter,
-    client_service: Arc<ClientService>,
     client_id: u16,
 ) -> Result<(), Error> {
     while let Some(result) = ws_rx.next().await {
@@ -97,7 +87,7 @@ async fn read_from_ws(
     }
 
     tracing::info!("WebSocket connection closed for client: {}", client_id);
-    cleanup_client(client_service, client_id).await?;
+    cleanup_client(&event_emitter, client_id).await?;
 
     Ok(())
 }
@@ -129,8 +119,9 @@ async fn handle_incoming_message(
 
     match message_type {
         MessageType::Join(message) => {
+            // Emit the RequestPlayerJoin command
             event_emitter
-                .emit(AppEvent::RequestPlayerJoin(client_id, message))
+                .emit_command(Command::RequestPlayerJoin(client_id, message))
                 .await?;
         }
         MessageType::Move(message) => {
@@ -183,19 +174,9 @@ async fn write_to_ws(
     Ok(())
 }
 
-async fn cleanup_client(client_service: Arc<ClientService>, client_id: u16) -> Result<(), Error> {
-    // let room_manager = context.room_manager();
-    // let client_manager = context.client_manager();
-    // match room_manager.handle_leave(client_id, client_manager).await {
-    //     Ok(_) => Ok(()),
-    //     Err(e) if e.to_string().contains("Client not in a room") => {
-    //         tracing::info!("Client {} was not in any room.", client_id);
-    //         Ok(())
-    //     }
-    //     Err(e) => {
-    //         tracing::error!("Error handling leave for client {}: {:?}", client_id, e);
-    //         Err(e)
-    //     }
-    // }
+async fn cleanup_client(event_emitter: &EventEmitter, client_id: u16) -> Result<(), Error> {
+    event_emitter
+        .emit_command(Command::DisconnectClient(client_id))
+        .await?;
     Ok(())
 }

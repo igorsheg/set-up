@@ -2,26 +2,49 @@ use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
 use async_trait::async_trait;
-use tokio::sync::{broadcast, Mutex};
+use tokio::sync::{broadcast, mpsc::Sender, Mutex};
 
 use crate::{
-    domain::{client::Client, events::AppEvent, game::game::Game, message::WsMessage},
+    domain::{
+        client::Client,
+        events::{AppEvent, Command, CommandResult},
+        game::game::Game,
+        message::WsMessage,
+    },
     infra::error::Error,
     presentation::ws::event_emmiter::{EventEmitter, EventListener},
 };
 
 pub struct ClientService {
     clients: Mutex<HashMap<u16, Arc<Mutex<Client>>>>,
-    tx: broadcast::Sender<AppEvent>,
-    rx: broadcast::Receiver<AppEvent>,
+    event_emitter: EventEmitter,
 }
 
 impl ClientService {
-    pub fn new(tx: broadcast::Sender<AppEvent>, rx: broadcast::Receiver<AppEvent>) -> Self {
+    pub fn new(event_emitter: EventEmitter) -> Self {
         Self {
             clients: Mutex::new(HashMap::new()),
-            tx,
-            rx,
+            event_emitter,
+        }
+    }
+
+    async fn handle_command(&self, command: Command) -> CommandResult {
+        match command {
+            Command::BroadcastGameState(message, game_state) => {
+                let _ = self.broadcast_game_state(&message, &game_state).await;
+                CommandResult::RoomCreated("Broadcast successful".to_string()) // Adjust as needed
+            }
+            Command::SetClientRoomCode(client_id, room_code) => {
+                self.join_room(client_id, room_code).await;
+                CommandResult::RoomCreated("Client joined room".to_string()) // Adjust as needed
+            }
+            Command::SetupClient(client_id, tx) => {
+                self.setup_or_update_client(client_id, tx).await;
+                CommandResult::RoomCreated("Client setup successful".to_string())
+                // Adjust as needed
+            }
+            // ... handle other commands here
+            _ => CommandResult::RoomCreationFailed("Command not handled".to_string()),
         }
     }
 
@@ -40,6 +63,16 @@ impl ClientService {
             .await
             .insert(id, Arc::new(Mutex::new(client)));
         tracing::info!(client_id = %id, "New client added.");
+    }
+
+    pub async fn setup_or_update_client(&self, client_id: u16, tx: Sender<Game>) {
+        if let Ok(client_arc) = self.find_client(client_id).await {
+            let mut client = client_arc.lock().await;
+            client.tx = tx;
+            tracing::info!(client_id = %client_id, "Client updated.");
+        } else {
+            self.add_client(client_id, Client::new(tx, client_id)).await;
+        }
     }
 
     pub async fn remove_client(&self, id: u16) {
@@ -94,24 +127,20 @@ impl ClientService {
 #[async_trait]
 impl EventListener for ClientService {
     fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
-        self.tx.subscribe()
+        self.event_emitter.subscribe()
     }
 
-    async fn handle_event(
-        &self,
-        event: AppEvent,
-        event_emitter: &EventEmitter,
-    ) -> Result<(), Error> {
+    async fn handle_event(&self, event: AppEvent) -> Result<(), Error> {
         match event {
-            AppEvent::BroadcastGameState(message, game_state) => {
-                let _ = self.broadcast_game_state(&message, &game_state).await;
+            AppEvent::EventOccurred(e) => match e {
+                // Assuming you'll add more Event variants specific to the client in the future:
+                _ => Ok(()),
+            },
+            AppEvent::CommandReceived(command, result_sender) => {
+                let result = self.handle_command(command).await;
+                let _ = result_sender.send(result).await; // Send the result back
                 Ok(())
             }
-            AppEvent::SetClientRoomCode(client_id, room_code) => {
-                self.join_room(client_id, room_code).await;
-                Ok(())
-            }
-            _ => Ok(()),
         }
     }
 }

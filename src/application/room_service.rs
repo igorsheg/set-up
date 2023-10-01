@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
 use async_trait::async_trait;
-use tokio::sync::{broadcast, mpsc, Mutex};
+use tokio::sync::{broadcast, Mutex};
 
 use crate::{
     domain::{
-        events::AppEvent,
+        events::{AppEvent, Command, CommandResult, Event},
         game::{
             game::{Game, GameMode},
             player::Player,
@@ -20,51 +20,66 @@ use crate::{
 
 pub struct RoomService {
     rooms: Mutex<HashMap<String, Arc<Room>>>,
-    tx: broadcast::Sender<AppEvent>,
-    rx: broadcast::Receiver<AppEvent>,
+    event_emitter: EventEmitter,
 }
 
 impl RoomService {
-    pub fn new(tx: broadcast::Sender<AppEvent>, rx: broadcast::Receiver<AppEvent>) -> Self {
+    pub fn new(event_emitter: EventEmitter) -> Self {
         Self {
             rooms: Mutex::new(HashMap::new()),
-            tx,
-            rx,
+            event_emitter,
         }
     }
 
-    pub async fn handle_join(
-        &self,
-        message: WsMessage,
-        client_id: u16,
-        event_emitter: &EventEmitter,
-    ) -> Result<(), Error> {
+    pub async fn handle_command(&self, command: Command) -> CommandResult {
+        match command {
+            Command::CreateRoom(mode) => {
+                if let Ok(room_code) = self.start_new_game(mode).await {
+                    CommandResult::RoomCreated(room_code)
+                } else {
+                    CommandResult::RoomCreationFailed("Error creating room".to_string())
+                }
+            }
+            Command::RequestPlayerJoin(client_id, message) => {
+                match self.handle_join(message, client_id).await {
+                    Ok(_) => CommandResult::RoomCreated("Player joined successfully".to_string()), // Adjust the message as needed
+                    Err(err) => {
+                        tracing::error!("Error processing RequestPlayerJoin: {:?}", err);
+                        CommandResult::RoomCreationFailed("Error joining room".to_string())
+                    }
+                }
+            }
+            _ => CommandResult::RoomCreationFailed("Invalid command".to_string()),
+        }
+    }
+
+    pub async fn handle_join(&self, message: WsMessage, client_id: u16) -> Result<(), Error> {
         let room_code = message.get_room_code()?;
         let game_state_arc = self.get_game_state(&room_code).await?;
         let mut game_state = game_state_arc.lock().await;
 
-        // This block updates the game state and then emits an event indicating the game state has changed
-        {
-            if game_state.restore_player(client_id).is_err() {
-                let player_username = message.get_player_username()?;
-                let player = Player::new(client_id, player_username);
-                game_state.add_player(player.clone());
+        // Update game state and emit relevant events
+        if game_state.restore_player(client_id).is_err() {
+            let player_username = message.get_player_username()?;
+            let player = Player::new(client_id, player_username);
+            game_state.add_player(player.clone());
 
-                tracing::info!(
-                    event_type = %ba::EventType::PlayerRejoined,
-                    client_id = %client_id,
-                    player_name = %player.name,
-                );
-            }
-
-            event_emitter
-                .emit(AppEvent::SetClientRoomCode(client_id, room_code.clone()))
-                .await?;
+            tracing::info!(
+                event_type = %ba::EventType::PlayerRejoined,
+                client_id = %client_id,
+                player_name = %player.name,
+            );
         }
+        // self.event_emitter
+        //     .emit_command(Command::SetClientRoomCode(client_id, room_code.clone()))
+        //     .await?;
 
-        // Emit an event to broadcast the game state
-        event_emitter
-            .emit(AppEvent::BroadcastGameState(message, game_state.clone()))
+        // Using the new emit method for events
+        self.event_emitter
+            .emit(Event::ClientRoomCodeSet(client_id, room_code.clone()))
+            .await?;
+        self.event_emitter
+            .emit(Event::GameStateBroadcasted(message, game_state.clone()))
             .await?;
 
         Ok(())
@@ -117,26 +132,26 @@ impl RoomService {
 #[async_trait]
 impl EventListener for RoomService {
     fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
-        self.tx.subscribe()
+        self.event_emitter.subscribe()
     }
 
-    async fn handle_event(
-        &self,
-        event: AppEvent,
-        event_emitter: &EventEmitter,
-    ) -> Result<(), Error> {
+    async fn handle_event(&self, event: AppEvent) -> Result<(), Error> {
         match event {
-            AppEvent::PlayerJoined(client_id, _message) => {
-                tracing::info!("Player joined ----> {}", client_id);
+            AppEvent::EventOccurred(e) => match e {
+                Event::PlayerJoined(client_id, _message) => {
+                    tracing::info!("Player joined ----> {}", client_id);
+                    Ok(())
+                }
+                Event::GameStateUpdated(client_id, room_code) => {
+                    self.handle_update_game_state(client_id, room_code).await
+                }
+                _ => Ok(()),
+            },
+            AppEvent::CommandReceived(command, result_sender) => {
+                let result = self.handle_command(command).await;
+                let _ = result_sender.send(result).await; // Send the result back
                 Ok(())
             }
-            AppEvent::RequestPlayerJoin(client_id, message) => {
-                self.handle_join(message, client_id, event_emitter).await
-            }
-            AppEvent::UpdateGameState(client_id, room_code) => {
-                self.handle_update_game_state(client_id, room_code).await
-            }
-            _ => Ok(()),
         }
     }
 }

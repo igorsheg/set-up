@@ -37,27 +37,18 @@ async fn main() -> Result<(), Error> {
 
     let event_emitter = EventEmitter::new(32);
 
-    let room_service = Arc::new(RoomService::new(
-        event_emitter.get_sender().clone(),
-        event_emitter.subscribe(),
-    ));
-    // let room_service_clone = room_service.clone();
+    let room_service = Arc::new(RoomService::new(event_emitter.clone()));
 
-    let client_service = Arc::new(ClientService::new(
-        event_emitter.get_sender().clone(),
-        event_emitter.subscribe(),
-    ));
+    let client_service = Arc::new(ClientService::new(event_emitter.clone()));
 
-    register_listener(room_service.clone(), event_emitter.clone()).await;
-    register_listener(client_service.clone(), event_emitter.clone()).await;
+    register_listener(room_service.clone()).await;
+    register_listener(client_service.clone()).await;
 
     let server = Server::new(
         config.server.host,
         config.server.port.parse().unwrap(),
         config.is_production,
         event_emitter.clone(),
-        room_service,
-        client_service,
     );
 
     tokio::spawn(loki_tracing_task);
@@ -67,16 +58,13 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn register_listener<S: EventListener + Sync + Send + 'static>(
-    service: Arc<S>,
-    event_emitter: EventEmitter,
-) {
+async fn register_listener<S: EventListener + Sync + Send + 'static>(service: Arc<S>) {
     tokio::spawn(async move {
         tracing::info!(
             "Spawning Listening for events for {}",
             std::any::type_name::<S>()
         );
-        if let Err(e) = service.listen_for_events(event_emitter).await {
+        if let Err(e) = service.listen_for_events().await {
             tracing::error!(
                 "Error in listen_for_events for {}: {:?}",
                 std::any::type_name::<S>(),

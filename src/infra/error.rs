@@ -99,3 +99,9 @@ impl From<broadcast::error::SendError<AppEvent>> for Error {
         Error::EventEmitError(format!("Failed to send event: {:?}", err))
     }
 }
+
+impl From<&str> for Error {
+    fn from(err: &str) -> Self {
+        Error::EventEmitError(err.to_string())
+    }
+}

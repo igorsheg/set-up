@@ -8,16 +8,9 @@ use axum::{
     Extension,
 };
 
-use crate::{
-    application::{client_service::ClientService, room_service::RoomService},
-    presentation::{
-        http::{
-            asset,
-            client::auth,
-            room::{check_game_exists, new_room_handler},
-        },
-        ws::{event_emmiter::EventEmitter, handler::ws_handler},
-    },
+use crate::presentation::{
+    http::{asset, client::auth, room::new_room_handler},
+    ws::{event_emmiter::EventEmitter, handler::ws_handler},
 };
 
 pub struct Server {
@@ -25,8 +18,6 @@ pub struct Server {
     port: u16,
     is_production: bool,
     event_emitter: EventEmitter,
-    room_service: Arc<RoomService>,
-    client_service: Arc<ClientService>,
 }
 
 pub struct AppState {
@@ -40,21 +31,12 @@ impl AppState {
 }
 
 impl Server {
-    pub fn new(
-        host: String,
-        port: u16,
-        is_production: bool,
-        event_emitter: EventEmitter,
-        room_service: Arc<RoomService>,
-        client_service: Arc<ClientService>,
-    ) -> Self {
+    pub fn new(host: String, port: u16, is_production: bool, event_emitter: EventEmitter) -> Self {
         Self {
             host,
             port,
             is_production,
             event_emitter,
-            client_service,
-            room_service,
         }
     }
 
@@ -66,8 +48,6 @@ impl Server {
         let api_routes = axum::Router::new()
             .route("/health", get(health_check))
             .route("/new", get(new_room_handler))
-            // .route("/games", get(get_past_rooms))
-            .route("/game/:room_code", get(check_game_exists))
             .route("/auth", get(auth))
             .route("/ws", get(ws_handler));
 
@@ -78,8 +58,6 @@ impl Server {
             .fallback(asset::handler)
             .layer(Extension(app_state))
             .layer(Extension(self.event_emitter.clone()))
-            .layer(Extension(self.room_service.clone()))
-            .layer(Extension(self.client_service.clone()))
             .layer(map_response(|mut resp: Response| async {
                 resp.headers_mut().insert(
                     header::SERVER,
