@@ -6,7 +6,7 @@ use tokio::sync::{broadcast, Mutex};
 
 use crate::{
     domain::{
-        events::{AppEvent, Command, CommandResult, Event},
+        events::{AppEvent, Command, CommandResult, Event, Topic},
         game::{
             game::{Game, GameMode},
             player::Player,
@@ -32,24 +32,26 @@ impl RoomService {
     }
 
     pub async fn handle_command(&self, command: Command) -> CommandResult {
+        tracing::info!("Handling command: {:?}", command);
+
         match command {
-            Command::CreateRoom(mode) => {
-                if let Ok(room_code) = self.start_new_game(mode).await {
-                    CommandResult::RoomCreated(room_code)
-                } else {
-                    CommandResult::RoomCreationFailed("Error creating room".to_string())
+            Command::CreateRoom(mode) => match self.start_new_game(mode).await {
+                Ok(room_code) => CommandResult::RoomCreated(room_code),
+                Err(e) => {
+                    tracing::error!("Error in CreateRoom: {}", e);
+                    CommandResult::Error(format!("Error creating room: {}", e))
                 }
-            }
+            },
             Command::RequestPlayerJoin(client_id, message) => {
                 match self.handle_join(message, client_id).await {
-                    Ok(_) => CommandResult::RoomCreated("Player joined successfully".to_string()), // Adjust the message as needed
-                    Err(err) => {
-                        tracing::error!("Error processing RequestPlayerJoin: {:?}", err);
-                        CommandResult::RoomCreationFailed("Error joining room".to_string())
+                    Ok(_) => CommandResult::PlayerJoined("Player joined successfully".to_string()),
+                    Err(e) => {
+                        tracing::error!("Error in RequestPlayerJoin: {}", e);
+                        CommandResult::Error(format!("Error joining room: {}", e))
                     }
                 }
             }
-            _ => CommandResult::RoomCreationFailed("Invalid command".to_string()),
+            _ => CommandResult::NotHandled,
         }
     }
 
@@ -76,10 +78,10 @@ impl RoomService {
 
         // Using the new emit method for events
         self.event_emitter
-            .emit(Event::ClientRoomCodeSet(client_id, room_code.clone()))
-            .await?;
-        self.event_emitter
-            .emit(Event::GameStateBroadcasted(message, game_state.clone()))
+            .emit(
+                Topic::ClientService,
+                Event::ClientRoomCodeSet(client_id, room_code.clone()),
+            )
             .await?;
 
         Ok(())
@@ -131,8 +133,8 @@ impl RoomService {
 
 #[async_trait]
 impl EventListener for RoomService {
-    fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
-        self.event_emitter.subscribe()
+    async fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
+        self.event_emitter.subscribe(Topic::RoomService).await
     }
 
     async fn handle_event(&self, event: AppEvent) -> Result<(), Error> {

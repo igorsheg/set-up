@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use application::{client_service::ClientService, room_service::RoomService};
+use domain::events::Topic;
 use infra::{error::Error, server::Server};
 use presentation::ws::event_emmiter::EventEmitter;
 use tracing_loki::url::Url;
@@ -41,8 +42,8 @@ async fn main() -> Result<(), Error> {
 
     let client_service = Arc::new(ClientService::new(event_emitter.clone()));
 
-    register_listener(room_service.clone()).await;
-    register_listener(client_service.clone()).await;
+    register_listener(room_service.clone(), Topic::RoomService, &event_emitter).await;
+    register_listener(client_service.clone(), Topic::ClientService, &event_emitter).await;
 
     let server = Server::new(
         config.server.host,
@@ -58,11 +59,19 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn register_listener<S: EventListener + Sync + Send + 'static>(service: Arc<S>) {
+async fn register_listener<S: EventListener + Sync + Send + 'static>(
+    service: Arc<S>,
+    topic: Topic,
+    event_emitter: &EventEmitter,
+) {
+    // Set up the topic
+    let _ = event_emitter.topic_sender(topic.clone(), 32).await;
+
     tokio::spawn(async move {
         tracing::info!(
-            "Spawning Listening for events for {}",
-            std::any::type_name::<S>()
+            "Spawning Listening for events for {} on topic {:?}",
+            std::any::type_name::<S>(),
+            topic
         );
         if let Err(e) = service.listen_for_events().await {
             tracing::error!(

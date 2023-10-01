@@ -7,7 +7,7 @@ use tokio::sync::{broadcast, mpsc::Sender, Mutex};
 use crate::{
     domain::{
         client::Client,
-        events::{AppEvent, Command, CommandResult},
+        events::{AppEvent, Command, CommandResult, Topic},
         game::game::Game,
         message::WsMessage,
     },
@@ -31,20 +31,15 @@ impl ClientService {
     async fn handle_command(&self, command: Command) -> CommandResult {
         match command {
             Command::BroadcastGameState(message, game_state) => {
-                let _ = self.broadcast_game_state(&message, &game_state).await;
-                CommandResult::RoomCreated("Broadcast successful".to_string()) // Adjust as needed
+                match self.broadcast_game_state(&message, &game_state).await {
+                    Ok(_) => CommandResult::BroadcastDone("Broadcast successful".to_string()),
+                    Err(e) => {
+                        tracing::error!("Error in BroadcastGameState: {}", e);
+                        CommandResult::Error(format!("Error broadcasting game state: {}", e))
+                    }
+                }
             }
-            Command::SetClientRoomCode(client_id, room_code) => {
-                self.join_room(client_id, room_code).await;
-                CommandResult::RoomCreated("Client joined room".to_string()) // Adjust as needed
-            }
-            Command::SetupClient(client_id, tx) => {
-                self.setup_or_update_client(client_id, tx).await;
-                CommandResult::RoomCreated("Client setup successful".to_string())
-                // Adjust as needed
-            }
-            // ... handle other commands here
-            _ => CommandResult::RoomCreationFailed("Command not handled".to_string()),
+            _ => CommandResult::NotHandled,
         }
     }
 
@@ -126,8 +121,8 @@ impl ClientService {
 
 #[async_trait]
 impl EventListener for ClientService {
-    fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
-        self.event_emitter.subscribe()
+    async fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
+        self.event_emitter.subscribe(Topic::ClientService).await
     }
 
     async fn handle_event(&self, event: AppEvent) -> Result<(), Error> {

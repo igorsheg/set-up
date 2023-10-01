@@ -1,66 +1,92 @@
+use std::sync::Arc;
+
+use ahash::{HashMap, HashMapExt};
 use async_trait::async_trait;
-use tokio::sync::{broadcast, mpsc};
+use tokio::sync::{
+    broadcast::{self, Sender},
+    mpsc, Mutex,
+};
 
 use crate::{
-    domain::events::{AppEvent, Command, CommandResult, Event},
+    domain::events::{AppEvent, Command, CommandResult, Event, Topic},
     infra::error::Error,
 };
 
 #[derive(Clone)]
 pub struct EventEmitter {
-    tx: broadcast::Sender<AppEvent>,
+    topics: Arc<Mutex<HashMap<String, Sender<AppEvent>>>>,
 }
 
 impl EventEmitter {
     pub fn new(capacity: usize) -> Self {
-        let (tx, _) = broadcast::channel(capacity);
-        Self { tx }
+        let topics = HashMap::new();
+        Self {
+            topics: Arc::new(Mutex::new(topics)),
+        }
+    }
+    pub async fn topic_sender(&self, topic: Topic, capacity: usize) -> broadcast::Sender<AppEvent> {
+        let mut topics = self.topics.lock().await;
+        topics
+            .entry(topic.to_string())
+            .or_insert_with(|| {
+                let (tx, _) = broadcast::channel(capacity);
+                tx
+            })
+            .clone()
     }
 
-    pub async fn emit(&self, event: Event) -> Result<(), Error> {
-        self.tx
-            .send(AppEvent::EventOccurred(event))
+    pub async fn emit(&self, topic: Topic, event: Event) -> Result<(), Error> {
+        let tx = self.topic_sender(topic, 32).await;
+        tx.send(AppEvent::EventOccurred(event))
             .map_err(Error::from)?;
         Ok(())
     }
 
-    pub async fn emit_app_event(&self, app_event: AppEvent) -> Result<(), Error> {
-        self.tx.send(app_event).map_err(Error::from)?;
+    pub async fn emit_app_event(&self, topic: Topic, app_event: AppEvent) -> Result<(), Error> {
+        let tx = self.topic_sender(topic, 32).await;
+        tx.send(app_event).map_err(Error::from)?;
         Ok(())
     }
 
-    pub async fn emit_command(&self, command: Command) -> Result<CommandResult, Error> {
+    pub async fn emit_command(
+        &self,
+        topic: Topic,
+        command: Command,
+    ) -> Result<CommandResult, Error> {
         // We'll use a one-shot channel to get the result back after processing
-        let (tx, mut rx) = mpsc::channel(1);
+        let (tx, mut rx) = mpsc::channel(2);
 
         // Emit the command as an AppEvent with a sender to get back results
-        self.emit_app_event(AppEvent::CommandReceived(command, tx))
+        self.emit_app_event(topic, AppEvent::CommandReceived(command, tx))
             .await?;
 
-        // Wait for the result
+        // Await for the result
         match rx.recv().await {
-            Some(result) => Ok(result),
+            Some(result) if result != CommandResult::NotHandled => {
+                tracing::info!("Received command result: {:?}", result);
+                Ok(result)
+            }
+            Some(_) => Err(Error::EventEmitError(
+                "Unexpected error when waiting for command result".to_string(),
+            )),
             None => Err(Error::EventEmitError(
-                "Failed to get a result for the command".to_string(),
+                "No service handled the command".to_string(),
             )),
         }
     }
 
-    pub fn subscribe(&self) -> broadcast::Receiver<AppEvent> {
-        self.tx.subscribe()
-    }
-
-    pub fn get_sender(&self) -> &broadcast::Sender<AppEvent> {
-        &self.tx
+    pub async fn subscribe(&self, topic: Topic) -> broadcast::Receiver<AppEvent> {
+        let tx = self.topic_sender(topic, 32).await;
+        tx.subscribe()
     }
 }
 
 #[async_trait]
 pub trait EventListener {
-    fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent>;
+    async fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent>;
 
     async fn listen_for_events(&self) -> Result<(), Error> {
-        let mut receiver = self.get_event_receiver();
+        let mut receiver = self.get_event_receiver().await;
         while let Ok(event) = receiver.recv().await {
             tracing::info!("Event received");
             self.handle_event(event).await?;

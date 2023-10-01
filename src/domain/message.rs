@@ -48,6 +48,7 @@ pub struct JoinPayload {
     pub room_code: String,
 }
 
+#[derive(Debug)]
 pub enum MessageType {
     Join(WsMessage),
     Move(WsMessage),

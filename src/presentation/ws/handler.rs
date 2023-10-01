@@ -12,7 +12,7 @@ use tokio::sync::mpsc;
 
 use crate::{
     domain::{
-        events::{AppEvent, Command, Event},
+        events::{AppEvent, Command, CommandResult, Event, Topic},
         game::game::Game,
         message::{MessageType, WsMessage},
     },
@@ -68,7 +68,10 @@ async fn setup_client(
     let (tx, rx) = mpsc::channel(32);
 
     event_emitter
-        .emit_command(Command::SetupClient(client_id, tx.clone()))
+        .emit_command(
+            Topic::ClientService,
+            Command::SetupClient(client_id, tx.clone()),
+        )
         .await?;
 
     Ok((tx, rx))
@@ -121,16 +124,24 @@ async fn handle_incoming_message(
         MessageType::Join(message) => {
             // Emit the RequestPlayerJoin command
             event_emitter
-                .emit_command(Command::RequestPlayerJoin(client_id, message))
+                .emit_command(
+                    Topic::RoomService,
+                    Command::RequestPlayerJoin(client_id, message),
+                )
                 .await?;
+            Ok(())
         }
         MessageType::Move(message) => {
             tracing::info!("Received move message: {:?}", message);
+            Ok(())
+        } // ... handle other message types
+        _ => {
+            tracing::warn!("Message type not handled: {:?}", message_type);
+            Err(Error::WebsocketError(
+                "Message type not handled".to_string(),
+            ))
         }
-        _ => {}
     }
-
-    Ok(())
 }
 
 fn handle_incoming_error(err: axum::Error) -> Result<(), Error> {
@@ -176,7 +187,7 @@ async fn write_to_ws(
 
 async fn cleanup_client(event_emitter: &EventEmitter, client_id: u16) -> Result<(), Error> {
     event_emitter
-        .emit_command(Command::DisconnectClient(client_id))
+        .emit_command(Topic::ClientService, Command::DisconnectClient(client_id))
         .await?;
     Ok(())
 }

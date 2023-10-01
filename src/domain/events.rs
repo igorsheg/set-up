@@ -1,10 +1,17 @@
 use async_trait::async_trait;
+use strum::{Display, EnumString};
 use tokio::sync::mpsc::Sender;
 
 use super::{
     game::game::{Game, GameMode},
     message::WsMessage,
 };
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, EnumString, Display)]
+pub enum Topic {
+    RoomService,
+    ClientService,
+}
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -26,10 +33,14 @@ pub enum Command {
     SetClientRoomCode(u16, String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CommandResult {
     RoomCreated(String),
-    RoomCreationFailed(String),
+    PlayerJoined(String),
+    ClientSetup(String),
+    BroadcastDone(String),
+    NotHandled,
+    Error(String),
 }
 
 #[derive(Debug, Clone)]
