@@ -22,7 +22,7 @@ pub enum GameMode {
     BestOf3,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub enum EventType {
     PlayerJoined,
     PlayerFoundSet,
@@ -44,7 +44,7 @@ impl fmt::Display for EventType {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Event {
     event_type: EventType,
     data: String,
@@ -83,7 +83,7 @@ impl fmt::Display for GameMode {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Game {
     pub deck: Deck,                  // The deck of cards
     pub game_over: Option<bool>,     // Indicates whether the game is over

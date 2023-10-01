@@ -1,13 +1,11 @@
 use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension, Json};
-use serde_json::json;
 
 use crate::{
     domain::{
         events::{Command, CommandResult, Topic},
         game::game::GameMode,
     },
-    infra::ba,
-    presentation::ws::event_emmiter::EventEmitter,
+    infra::{ba, event_emmiter::EventEmitter},
 };
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]

@@ -2,21 +2,28 @@ use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
 use async_trait::async_trait;
+use serde_json::json;
 use tokio::sync::{broadcast, Mutex};
 
 use crate::{
     domain::{
         events::{AppEvent, Command, CommandResult, Event, Topic},
         game::{
-            game::{Game, GameMode},
+            self,
+            game::{Game, GameMode, Move},
             player::Player,
         },
         message::WsMessage,
         room::Room,
     },
-    infra::{ba, error::Error},
-    presentation::ws::event_emmiter::{EventEmitter, EventListener},
+    infra::{
+        ba,
+        error::Error,
+        event_emmiter::{EventEmitter, EventListener},
+    },
 };
+
+const ROOM_CODE_LENGTH: usize = 6;
 
 pub struct RoomService {
     rooms: Mutex<HashMap<String, Arc<Room>>>,
@@ -31,36 +38,31 @@ impl RoomService {
         }
     }
 
-    pub async fn handle_command(&self, command: Command) -> CommandResult {
-        tracing::info!("Handling command: {:?}", command);
-
+    pub async fn handle_command(&self, command: Command) -> Result<CommandResult, Error> {
         match command {
-            Command::CreateRoom(mode) => match self.start_new_game(mode).await {
-                Ok(room_code) => CommandResult::RoomCreated(room_code),
-                Err(e) => {
-                    tracing::error!("Error in CreateRoom: {}", e);
-                    CommandResult::Error(format!("Error creating room: {}", e))
-                }
-            },
+            Command::CreateRoom(mode) => self.start_new_game(mode).await,
             Command::RequestPlayerJoin(client_id, message) => {
-                match self.handle_join(message, client_id).await {
-                    Ok(_) => CommandResult::PlayerJoined("Player joined successfully".to_string()),
-                    Err(e) => {
-                        tracing::error!("Error in RequestPlayerJoin: {}", e);
-                        CommandResult::Error(format!("Error joining room: {}", e))
-                    }
-                }
+                self.handle_join(message, client_id).await
             }
-            _ => CommandResult::NotHandled,
+            Command::PlayerMove(client_id, message) => {
+                self.handle_player_move(client_id, message).await
+            }
+            Command::RequestCards(client_id, message) => {
+                self.handle_request_cards(client_id, message).await
+            }
+            _ => Ok(CommandResult::NotHandled),
         }
     }
 
-    pub async fn handle_join(&self, message: WsMessage, client_id: u16) -> Result<(), Error> {
+    pub async fn handle_join(
+        &self,
+        message: WsMessage,
+        client_id: u16,
+    ) -> Result<CommandResult, Error> {
         let room_code = message.get_room_code()?;
         let game_state_arc = self.get_game_state(&room_code).await?;
         let mut game_state = game_state_arc.lock().await;
 
-        // Update game state and emit relevant events
         if game_state.restore_player(client_id).is_err() {
             let player_username = message.get_player_username()?;
             let player = Player::new(client_id, player_username);
@@ -72,19 +74,109 @@ impl RoomService {
                 player_name = %player.name,
             );
         }
-        // self.event_emitter
-        //     .emit_command(Command::SetClientRoomCode(client_id, room_code.clone()))
-        //     .await?;
-
-        // Using the new emit method for events
         self.event_emitter
-            .emit(
+            .emit_command(
                 Topic::ClientService,
-                Event::ClientRoomCodeSet(client_id, room_code.clone()),
+                Command::SetClientRoomCode(client_id, room_code.clone()),
             )
             .await?;
 
-        Ok(())
+        Ok(CommandResult::PlayerJoined(client_id))
+    }
+
+    pub async fn handle_player_move(
+        &self,
+        client_id: u16,
+        message: WsMessage,
+    ) -> Result<CommandResult, Error> {
+        let game_move: Move = message.get_payload_as()?;
+        let game_state_arc = self.get_game_state(&game_move.room_code).await?;
+        let mut game_state = game_state_arc.lock().await;
+
+        let move_result = game_state.make_move(client_id, game_move.cards.clone())?;
+
+        let event_type = if move_result {
+            ba::EventType::PlayerMoveValid
+        } else {
+            ba::EventType::PlayerMoveInvalid
+        };
+
+        tracing::info!(
+            event_type = %event_type,
+            room_code = %game_move.room_code,
+            client_id = %client_id,
+            cards = %json!(game_move.cards)
+        );
+
+        if !move_result {
+            return Ok(CommandResult::PlayerMoveInvalid);
+        }
+
+        if game_state.game_over.is_some() {
+            tracing::info!(
+                event_type = %ba::EventType::GameOver,
+                room_code = %game_move.room_code,
+                client_id = %client_id,
+            );
+        }
+
+        self.event_emitter
+            .emit_command(
+                Topic::ClientService,
+                Command::BroadcastGameState(game_move.room_code, game_state.clone()),
+            )
+            .await?;
+
+        Ok(CommandResult::PlayerMoveValid)
+    }
+
+    async fn handle_request_cards(
+        &self,
+        client_id: u16,
+        message: WsMessage,
+    ) -> Result<CommandResult, Error> {
+        let room_code = message.get_room_code()?;
+        let game_state_arc = self.get_game_state(&room_code).await?;
+        let mut game_state = game_state_arc.lock().await;
+
+        if let Some(player) = game_state
+            .players
+            .iter_mut()
+            .find(|p| p.client_id == client_id)
+        {
+            player.request = true;
+            let player_name = player.name.clone();
+            game_state.events.push(game::game::Event::new(
+                game::game::EventType::PlayerRequestedCards,
+                player_name.clone(),
+            ));
+
+            tracing::info!(
+                event_type = %ba::EventType::PlayerRequestedCards,
+                room_code = %room_code,
+                client_id = %client_id,
+                player_name = %player_name
+            );
+
+            let all_requested = game_state.players.iter().all(|player| player.request);
+            if all_requested && !game_state.deck.cards.is_empty() {
+                game_state.add_cards();
+                for player in game_state.players.iter_mut() {
+                    player.request = false; // Reset the request flags
+                }
+            }
+
+            self.event_emitter
+                .emit_command(
+                    Topic::ClientService,
+                    Command::BroadcastGameState(room_code.clone(), game_state.clone()),
+                )
+                .await?;
+
+            Ok(CommandResult::CardsRequested)
+        } else {
+            Err(Error::ClientNotFound("Client not found".to_string()))
+        }
     }
 
     pub async fn get_game_state(&self, room_code: &str) -> Result<Arc<Mutex<Game>>, Error> {
@@ -106,28 +198,28 @@ impl RoomService {
             client_id = %client_id,
         );
 
-        // Any other logic related to updating the game state can go here.
         Ok(())
     }
 
-    pub async fn start_new_game(&self, mode: GameMode) -> Result<String, Error> {
-        use rand::{distributions::Alphanumeric, thread_rng, Rng};
-
-        let room_code: String = thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(6)
-            .map(char::from)
-            .collect();
-
+    pub async fn start_new_game(&self, mode: GameMode) -> Result<CommandResult, Error> {
+        let room_code = self.generate_room_code();
         let game = Game::new(mode);
         let room = Room::new(game);
 
         let mut rooms = self.rooms.lock().await;
         rooms.insert(room_code.clone(), Arc::new(room));
 
-        println!("New game started in room: {}", room_code);
+        tracing::info!("New game started in room: {}", room_code);
+        Ok(CommandResult::RoomCreated(room_code))
+    }
 
-        Ok(room_code)
+    fn generate_room_code(&self) -> String {
+        use rand::{distributions::Alphanumeric, thread_rng, Rng};
+        thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(ROOM_CODE_LENGTH)
+            .map(char::from)
+            .collect()
     }
 }
 
@@ -139,21 +231,47 @@ impl EventListener for RoomService {
 
     async fn handle_event(&self, event: AppEvent) -> Result<(), Error> {
         match event {
-            AppEvent::EventOccurred(e) => match e {
-                Event::PlayerJoined(client_id, _message) => {
-                    tracing::info!("Player joined ----> {}", client_id);
-                    Ok(())
-                }
-                Event::GameStateUpdated(client_id, room_code) => {
-                    self.handle_update_game_state(client_id, room_code).await
-                }
-                _ => Ok(()),
-            },
+            AppEvent::EventOccurred(e) => self.handle_event_occurred(e).await,
             AppEvent::CommandReceived(command, result_sender) => {
-                let result = self.handle_command(command).await;
-                let _ = result_sender.send(result).await; // Send the result back
+                self.handle_received_command(command, result_sender).await
+            }
+        }
+    }
+
+    async fn handle_event_occurred(&self, event: Event) -> Result<(), Error> {
+        match event {
+            Event::PlayerJoined(client_id) => {
+                tracing::info!("Player joined ----> {}", client_id);
+                Ok(())
+            }
+            Event::GameStateUpdated(client_id, room_code) => {
+                self.handle_update_game_state(client_id, room_code).await
+            }
+            Event::ClientRoomCodeSet(_client_id, room_code) => {
+                let game_state_arc = self.get_game_state(&room_code).await?;
+                let game_state = game_state_arc.lock().await.clone();
+                self.event_emitter
+                    .emit_command(
+                        Topic::ClientService,
+                        Command::BroadcastGameState(room_code, game_state),
+                    )
+                    .await?;
+                Ok(())
+            }
+            _ => {
+                tracing::debug!("Event not handled: {:?}", event);
                 Ok(())
             }
         }
+    }
+
+    async fn handle_received_command(
+        &self,
+        command: Command,
+        result_sender: tokio::sync::mpsc::Sender<CommandResult>,
+    ) -> Result<(), Error> {
+        let result = self.handle_command(command).await?;
+        result_sender.send(result).await?;
+        Ok(())
     }
 }

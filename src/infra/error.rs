@@ -5,7 +5,7 @@ use axum::{
 use thiserror::Error as ThisError;
 use tokio::sync::{broadcast, mpsc::error::SendError};
 
-use crate::domain::events::AppEvent;
+use crate::domain::events::{AppEvent, CommandResult};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -103,5 +103,11 @@ impl From<broadcast::error::SendError<AppEvent>> for Error {
 impl From<&str> for Error {
     fn from(err: &str) -> Self {
         Error::EventEmitError(err.to_string())
+    }
+}
+
+impl From<SendError<CommandResult>> for Error {
+    fn from(err: SendError<CommandResult>) -> Self {
+        Error::EventEmitError(format!("Failed to send command result: {:?}", err))
     }
 }

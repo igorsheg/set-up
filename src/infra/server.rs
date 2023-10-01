@@ -8,9 +8,10 @@ use axum::{
     Extension,
 };
 
+use super::event_emmiter::EventEmitter;
 use crate::presentation::{
     http::{asset, client::auth, room::new_room_handler},
-    ws::{event_emmiter::EventEmitter, handler::ws_handler},
+    ws::handler::ws_handler,
 };
 
 pub struct Server {

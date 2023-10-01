@@ -7,12 +7,13 @@ use tokio::sync::{broadcast, mpsc::Sender, Mutex};
 use crate::{
     domain::{
         client::Client,
-        events::{AppEvent, Command, CommandResult, Topic},
+        events::{AppEvent, Command, CommandResult, Event, Topic},
         game::game::Game,
-        message::WsMessage,
     },
-    infra::error::Error,
-    presentation::ws::event_emmiter::{EventEmitter, EventListener},
+    infra::{
+        error::Error,
+        event_emmiter::{EventEmitter, EventListener},
+    },
 };
 
 pub struct ClientService {
@@ -28,18 +29,16 @@ impl ClientService {
         }
     }
 
-    async fn handle_command(&self, command: Command) -> CommandResult {
+    async fn handle_command(&self, command: Command) -> Result<CommandResult, Error> {
         match command {
-            Command::BroadcastGameState(message, game_state) => {
-                match self.broadcast_game_state(&message, &game_state).await {
-                    Ok(_) => CommandResult::BroadcastDone("Broadcast successful".to_string()),
-                    Err(e) => {
-                        tracing::error!("Error in BroadcastGameState: {}", e);
-                        CommandResult::Error(format!("Error broadcasting game state: {}", e))
-                    }
-                }
+            Command::BroadcastGameState(room_code, game_state) => {
+                self.broadcast_game_state(room_code, game_state).await
             }
-            _ => CommandResult::NotHandled,
+            Command::SetClientRoomCode(client_id, room_code) => {
+                self.join_room(client_id, room_code).await
+            }
+            Command::SetupClient(client_id, tx) => self.setup_or_update_client(client_id, tx).await,
+            _ => Ok(CommandResult::NotHandled),
         }
     }
 
@@ -60,7 +59,11 @@ impl ClientService {
         tracing::info!(client_id = %id, "New client added.");
     }
 
-    pub async fn setup_or_update_client(&self, client_id: u16, tx: Sender<Game>) {
+    pub async fn setup_or_update_client(
+        &self,
+        client_id: u16,
+        tx: Sender<Game>,
+    ) -> Result<CommandResult, Error> {
         if let Ok(client_arc) = self.find_client(client_id).await {
             let mut client = client_arc.lock().await;
             client.tx = tx;
@@ -68,6 +71,9 @@ impl ClientService {
         } else {
             self.add_client(client_id, Client::new(tx, client_id)).await;
         }
+        Ok(CommandResult::ClientSetup(
+            "Client setup successful".to_string(),
+        ))
     }
 
     pub async fn remove_client(&self, id: u16) {
@@ -75,10 +81,15 @@ impl ClientService {
         tracing::info!(client_id = %id, "Client removed.");
     }
 
-    pub async fn join_room(&self, client_id: u16, room_code: String) {
+    pub async fn join_room(
+        &self,
+        client_id: u16,
+        room_code: String,
+    ) -> Result<CommandResult, Error> {
         let client_arc = self.find_client(client_id).await.unwrap();
         let mut client = client_arc.lock().await;
-        client.set_room_code(room_code);
+        client.set_room_code(room_code.clone());
+        Ok(CommandResult::ClientRoomCodeSet(client_id, room_code))
     }
 
     pub async fn get_clients_in_room(
@@ -101,21 +112,19 @@ impl ClientService {
 
     pub async fn broadcast_game_state(
         &self,
-        message: &WsMessage,
-        game_state: &Game,
-    ) -> Result<(), Error> {
-        let room_code = message.get_room_code()?;
+        room_code: String,
+        game_state: Game,
+    ) -> Result<CommandResult, Error> {
         let clients_in_room = self.get_clients_in_room(&room_code).await?;
 
         for client_arc in clients_in_room {
             let mut client = client_arc.lock().await; // Lock the client
-            client.send_message(game_state).await.map_err(|err| {
-                tracing::error!("Failed to send message to client: {:?}", err);
-                Error::WebsocketError(format!("Failed to send message to client: {:?}", err))
-            })?;
+            client.send_message(&game_state).await?;
         }
 
-        Ok(())
+        Ok(CommandResult::BroadcastDone(
+            "Broadcast successful".to_string(),
+        ))
     }
 }
 
@@ -127,15 +136,37 @@ impl EventListener for ClientService {
 
     async fn handle_event(&self, event: AppEvent) -> Result<(), Error> {
         match event {
-            AppEvent::EventOccurred(e) => match e {
-                // Assuming you'll add more Event variants specific to the client in the future:
-                _ => Ok(()),
-            },
+            AppEvent::EventOccurred(e) => self.handle_event_occurred(e).await,
             AppEvent::CommandReceived(command, result_sender) => {
-                let result = self.handle_command(command).await;
-                let _ = result_sender.send(result).await; // Send the result back
-                Ok(())
+                self.handle_received_command(command, result_sender).await
             }
         }
+    }
+
+    async fn handle_event_occurred(&self, event: Event) -> Result<(), Error> {
+        {
+            tracing::debug!("Event not handled: {:?}", event);
+            Ok(())
+        }
+    }
+
+    async fn handle_received_command(
+        &self,
+        command: Command,
+        result_sender: tokio::sync::mpsc::Sender<CommandResult>,
+    ) -> Result<(), Error> {
+        let result = self.handle_command(command).await?;
+        let _ = result_sender.send(result.clone()).await?;
+
+        if let CommandResult::ClientRoomCodeSet(client_id, room_code) = result {
+            self.event_emitter
+                .emit_app_event(
+                    Topic::RoomService,
+                    AppEvent::EventOccurred(Event::ClientRoomCodeSet(client_id, room_code)),
+                )
+                .await?;
+        }
+
+        Ok(())
     }
 }

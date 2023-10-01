@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::infra::error::Error;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct WsMessage {
     pub r#type: String,
     pub payload: HashMap<String, serde_json::Value>,

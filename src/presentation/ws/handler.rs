@@ -12,12 +12,11 @@ use tokio::sync::mpsc;
 
 use crate::{
     domain::{
-        events::{AppEvent, Command, CommandResult, Event, Topic},
+        events::{Command, Topic},
         game::game::Game,
         message::{MessageType, WsMessage},
     },
-    infra::error::Error,
-    presentation::ws::event_emmiter::EventEmitter,
+    infra::{error::Error, event_emmiter::EventEmitter},
 };
 
 #[axum::debug_handler]
@@ -122,7 +121,6 @@ async fn handle_incoming_message(
 
     match message_type {
         MessageType::Join(message) => {
-            // Emit the RequestPlayerJoin command
             event_emitter
                 .emit_command(
                     Topic::RoomService,
@@ -132,9 +130,20 @@ async fn handle_incoming_message(
             Ok(())
         }
         MessageType::Move(message) => {
-            tracing::info!("Received move message: {:?}", message);
+            event_emitter
+                .emit_command(Topic::RoomService, Command::PlayerMove(client_id, message))
+                .await?;
             Ok(())
-        } // ... handle other message types
+        }
+        MessageType::Request(message) => {
+            event_emitter
+                .emit_command(
+                    Topic::RoomService,
+                    Command::RequestCards(client_id, message),
+                )
+                .await?;
+            Ok(())
+        }
         _ => {
             tracing::warn!("Message type not handled: {:?}", message_type);
             Err(Error::WebsocketError(

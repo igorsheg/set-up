@@ -2,12 +2,11 @@ use std::sync::Arc;
 
 use application::{client_service::ClientService, room_service::RoomService};
 use domain::events::Topic;
-use infra::{error::Error, server::Server};
-use presentation::ws::event_emmiter::EventEmitter;
+use infra::{error::Error, event_emmiter::EventEmitter, server::Server};
 use tracing_loki::url::Url;
 use tracing_subscriber::{prelude::*, EnvFilter};
 
-use crate::{config::Configuration, presentation::ws::event_emmiter::EventListener};
+use crate::config::Configuration;
 
 pub mod application;
 pub mod config;
@@ -36,14 +35,18 @@ async fn main() -> Result<(), Error> {
 
     tracing::subscriber::set_global_default(subscriber).expect("Setting global default failed");
 
-    let event_emitter = EventEmitter::new(32);
+    let event_emitter = EventEmitter::new();
 
     let room_service = Arc::new(RoomService::new(event_emitter.clone()));
 
     let client_service = Arc::new(ClientService::new(event_emitter.clone()));
 
-    register_listener(room_service.clone(), Topic::RoomService, &event_emitter).await;
-    register_listener(client_service.clone(), Topic::ClientService, &event_emitter).await;
+    event_emitter
+        .register_listener(room_service.clone(), Topic::RoomService)
+        .await;
+    event_emitter
+        .register_listener(client_service.clone(), Topic::ClientService)
+        .await;
 
     let server = Server::new(
         config.server.host,
@@ -57,28 +60,4 @@ async fn main() -> Result<(), Error> {
     server.run().await;
 
     Ok(())
-}
-
-async fn register_listener<S: EventListener + Sync + Send + 'static>(
-    service: Arc<S>,
-    topic: Topic,
-    event_emitter: &EventEmitter,
-) {
-    // Set up the topic
-    let _ = event_emitter.topic_sender(topic.clone(), 32).await;
-
-    tokio::spawn(async move {
-        tracing::info!(
-            "Spawning Listening for events for {} on topic {:?}",
-            std::any::type_name::<S>(),
-            topic
-        );
-        if let Err(e) = service.listen_for_events().await {
-            tracing::error!(
-                "Error in listen_for_events for {}: {:?}",
-                std::any::type_name::<S>(),
-                e
-            );
-        }
-    });
 }

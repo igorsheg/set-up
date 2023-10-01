@@ -9,7 +9,7 @@ const createNewRoom = createEffect(async (mode: GameMode) => {
   if (!response.ok) {
     throw new Error(`HTTP error! Status: ${response.status}`);
   }
-  return await response.json();
+  return await response.json().then((res) => res.room_code);
 });
 
 const checkRoomExists = createEffect(async (roomCode: string) => {
