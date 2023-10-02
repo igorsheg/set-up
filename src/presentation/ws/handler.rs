@@ -12,7 +12,7 @@ use tokio::sync::mpsc;
 
 use crate::{
     domain::{
-        events::{Command, Topic},
+        events::{AppEvent, Command, Event, Topic},
         game::game::Game,
         message::{MessageType, WsMessage},
     },
@@ -89,7 +89,13 @@ async fn read_from_ws(
     }
 
     tracing::info!("WebSocket connection closed for client: {}", client_id);
-    cleanup_client(&event_emitter, client_id).await?;
+
+    event_emitter
+        .emit_app_event(
+            Topic::ClientService,
+            AppEvent::EventOccurred(Event::ClientDisconnected(client_id)),
+        )
+        .await?;
 
     Ok(())
 }
@@ -172,6 +178,7 @@ async fn write_to_ws(
     mut ws_tx: impl futures::Sink<Message, Error = axum::Error> + Unpin,
 ) -> Result<(), Error> {
     while let Some(message) = rx.recv().await {
+        tracing::info!("Sending message to client: {:?}", message);
         let json_message = serde_json::to_string(&message).unwrap_or_else(|err| {
             tracing::error!("Failed to serialize game message: {}", err);
             String::new()
@@ -191,12 +198,5 @@ async fn write_to_ws(
         }
     }
 
-    Ok(())
-}
-
-async fn cleanup_client(event_emitter: &EventEmitter, client_id: u16) -> Result<(), Error> {
-    event_emitter
-        .emit_command(Topic::ClientService, Command::DisconnectClient(client_id))
-        .await?;
     Ok(())
 }

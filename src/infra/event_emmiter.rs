@@ -51,6 +51,7 @@ impl EventEmitter {
     }
 
     pub async fn emit_app_event(&self, topic: Topic, app_event: AppEvent) -> Result<(), Error> {
+        tracing::info!("Emitting app event: {:?} on topic {:?}", app_event, topic);
         let tx = self.topic_sender(topic, CHANNEL_CAPACITY).await;
         tx.send(app_event).map_err(Error::from)?;
         Ok(())
@@ -61,14 +62,11 @@ impl EventEmitter {
         topic: Topic,
         command: Command,
     ) -> Result<CommandResult, Error> {
-        // We'll use a one-shot channel to get the result back after processing
         let (tx, mut rx) = mpsc::channel(1);
 
-        // Emit the command as an AppEvent with a sender to get back results
         self.emit_app_event(topic, AppEvent::CommandReceived(command, tx))
             .await?;
 
-        // Await for the result
         match rx.recv().await {
             Some(result) if result != CommandResult::NotHandled => {
                 tracing::info!("Received command result: {:?}", result);
@@ -93,7 +91,6 @@ impl EventEmitter {
         service: Arc<S>,
         topic: Topic,
     ) {
-        // Set up the topic
         let _ = self.topic_sender(topic.clone(), CHANNEL_CAPACITY).await;
 
         tokio::spawn(async move {
@@ -120,7 +117,6 @@ pub trait EventListener {
     async fn listen_for_events(&self) -> Result<(), Error> {
         let mut receiver = self.get_event_receiver().await;
         while let Ok(event) = receiver.recv().await {
-            tracing::info!("Event received");
             self.handle_event(event).await?;
         }
         Ok(())
@@ -137,6 +133,6 @@ pub trait EventListener {
         _command: Command,
         _result_sender: tokio::sync::mpsc::Sender<CommandResult>,
     ) -> Result<(), Error> {
-        Ok(()) // Default implementation does nothing
+        Ok(())
     }
 }

@@ -50,6 +50,9 @@ impl RoomService {
             Command::RequestCards(client_id, message) => {
                 self.handle_request_cards(client_id, message).await
             }
+            Command::RemovePlayerFromRoom(client_id, room_code) => {
+                self.handle_leave(client_id, room_code).await
+            }
             _ => Ok(CommandResult::NotHandled),
         }
     }
@@ -67,13 +70,8 @@ impl RoomService {
             let player_username = message.get_player_username()?;
             let player = Player::new(client_id, player_username);
             game_state.add_player(player.clone());
-
-            tracing::info!(
-                event_type = %ba::EventType::PlayerRejoined,
-                client_id = %client_id,
-                player_name = %player.name,
-            );
         }
+
         self.event_emitter
             .emit_command(
                 Topic::ClientService,
@@ -179,26 +177,32 @@ impl RoomService {
         }
     }
 
+    pub async fn handle_leave(
+        &self,
+        client_id: u16,
+        room_code: String,
+    ) -> Result<CommandResult, Error> {
+        tracing::info!("Player left ----> {}", client_id);
+        let game_state_arc = self.get_game_state(&room_code).await?;
+        let mut game_state = game_state_arc.lock().await;
+        game_state.remove_player(client_id);
+
+        self.event_emitter
+            .emit_app_event(
+                Topic::ClientService,
+                AppEvent::EventOccurred(Event::PlayerLeft(client_id, room_code.clone())),
+            )
+            .await?;
+
+        Ok(CommandResult::PlayerRemovedFromRoom(client_id, room_code))
+    }
+
     pub async fn get_game_state(&self, room_code: &str) -> Result<Arc<Mutex<Game>>, Error> {
         let rooms = self.rooms.lock().await;
         match rooms.get(room_code) {
             Some(room) => Ok(room.get_game_state().await),
             None => Err(Error::RoomNotFound(format!("Room {} not found", room_code))),
         }
-    }
-
-    async fn handle_update_game_state(
-        &self,
-        client_id: u16,
-        room_code: String,
-    ) -> Result<(), Error> {
-        tracing::info!(
-            event_type = %ba::EventType::PlayerJoined,
-            room_code = %room_code,
-            client_id = %client_id,
-        );
-
-        Ok(())
     }
 
     pub async fn start_new_game(&self, mode: GameMode) -> Result<CommandResult, Error> {
@@ -239,25 +243,37 @@ impl EventListener for RoomService {
     }
 
     async fn handle_event_occurred(&self, event: Event) -> Result<(), Error> {
+        let broadcast_game_state = |room_code: String, game_state: Game| async move {
+            self.event_emitter
+                .emit_command(
+                    Topic::ClientService,
+                    Command::BroadcastGameState(room_code, game_state),
+                )
+                .await
+        };
+
+        tracing::info!("Event occurred: {:?}", event);
         match event {
-            Event::PlayerJoined(client_id) => {
-                tracing::info!("Player joined ----> {}", client_id);
-                Ok(())
-            }
-            Event::GameStateUpdated(client_id, room_code) => {
-                self.handle_update_game_state(client_id, room_code).await
-            }
-            Event::ClientRoomCodeSet(_client_id, room_code) => {
+            Event::PlayerJoinedRoom(_client_id, room_code) => {
                 let game_state_arc = self.get_game_state(&room_code).await?;
-                let game_state = game_state_arc.lock().await.clone();
+                let game_state = game_state_arc.lock().await;
+                // broadcast_game_state(room_code, game_state).await?;
                 self.event_emitter
                     .emit_command(
                         Topic::ClientService,
-                        Command::BroadcastGameState(room_code, game_state),
+                        Command::BroadcastGameState(room_code.clone(), game_state.clone()),
                     )
                     .await?;
                 Ok(())
             }
+
+            Event::PlayerLeft(_client_id, room_code) => {
+                let game_state_arc = self.get_game_state(&room_code).await?;
+                let game_state = game_state_arc.lock().await.clone();
+                broadcast_game_state(room_code, game_state).await?;
+                Ok(())
+            }
+
             _ => {
                 tracing::debug!("Event not handled: {:?}", event);
                 Ok(())

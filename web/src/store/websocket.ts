@@ -38,6 +38,7 @@ export const initializeWebSocket = createEffect<void, void, Error>({
       setTimeout(() => initializeWebSocket(), RECONNECT_TIMEOUT);
     };
     socket.onmessage = (event) => {
+      console.log("message received", event.data);
       try {
         const parsedData = JSON.parse(event.data);
         messageReceived(parsedData);
@@ -58,7 +59,8 @@ sample({
   fn: (_currentGameData, newGameData) => newGameData,
   target: setGameData,
   filter: (source, clock) =>
-    JSON.stringify(source.gameData.in_play) !== JSON.stringify(clock.in_play),
+    JSON.stringify(source.gameData.in_play) !== JSON.stringify(clock.in_play) ||
+    JSON.stringify(source.gameData.players) !== JSON.stringify(clock.players),
 });
 
 forward({

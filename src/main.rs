@@ -28,8 +28,10 @@ async fn main() -> Result<(), Error> {
 
     let subscriber = tracing_subscriber::fmt()
         .with_env_filter(filter)
-        .json()
-        .compact()
+        .with_ansi(true)
+        .pretty()
+        // .json()
+        // .compact()
         .finish()
         .with(loki_tracing_layer);
 

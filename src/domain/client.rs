@@ -3,8 +3,8 @@ use tokio::sync::mpsc;
 use super::game::game::Game;
 use crate::infra::error::Error;
 
-#[derive(Debug)]
-enum ClientState {
+#[derive(Debug, Eq, PartialEq)]
+pub enum ClientState {
     Lobby,
     InRoom(String),
 }
@@ -51,6 +51,10 @@ impl Client {
 
     pub fn add_past_room(&mut self, room_code: String) {
         self.past_rooms.push(room_code.clone());
+    }
+
+    pub fn get_client_state(&self) -> &ClientState {
+        &self.state
     }
 
     pub fn remove_past_room(&mut self, room_code: &str) {
