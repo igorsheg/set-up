@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use application::{client_service::ClientService, room_service::RoomService};
+use application::{client::service::ClientService, room::service::RoomService};
 use domain::events::Topic;
 use infra::{error::Error, event_emmiter::EventEmitter, server::Server};
 use tracing_loki::url::Url;

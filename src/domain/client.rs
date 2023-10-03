@@ -34,13 +34,13 @@ impl Client {
         }
     }
 
-    pub async fn send_message(&mut self, message: &Game) -> Result<(), Error> {
+    pub async fn send_message(&self, message: &Game) -> Result<(), Error> {
         self.tx.send(message.clone()).await.map_err(|err| {
             Error::WebsocketError(format!("Failed to send message to client: {:?}", err))
         })
     }
 
-    pub fn set_room_code(&mut self, room_code: String) {
+    pub fn join_room(&mut self, room_code: String) {
         self.state = ClientState::InRoom(room_code.clone());
         self.add_past_room(room_code);
     }
@@ -55,6 +55,10 @@ impl Client {
 
     pub fn get_client_state(&self) -> &ClientState {
         &self.state
+    }
+
+    pub fn is_in_room(&self) -> bool {
+        matches!(self.state, ClientState::InRoom(_))
     }
 
     pub fn remove_past_room(&mut self, room_code: &str) {

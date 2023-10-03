@@ -88,8 +88,6 @@ async fn read_from_ws(
         }
     }
 
-    tracing::info!("WebSocket connection closed for client: {}", client_id);
-
     event_emitter
         .emit_app_event(
             Topic::ClientService,
@@ -178,7 +176,6 @@ async fn write_to_ws(
     mut ws_tx: impl futures::Sink<Message, Error = axum::Error> + Unpin,
 ) -> Result<(), Error> {
     while let Some(message) = rx.recv().await {
-        tracing::info!("Sending message to client: {:?}", message);
         let json_message = serde_json::to_string(&message).unwrap_or_else(|err| {
             tracing::error!("Failed to serialize game message: {}", err);
             String::new()

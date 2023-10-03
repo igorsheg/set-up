@@ -48,7 +48,7 @@ impl fmt::Display for EventType {
 pub struct Event {
     event_type: EventType,
     data: String,
-    timestamp: std::time::SystemTime, // TODO: consider switching to SystemTime
+    timestamp: std::time::SystemTime,
 }
 
 impl Event {
@@ -185,8 +185,8 @@ impl Game {
         self.remaining = self.deck.cards.len() as i64;
     }
 
-    pub fn make_move(&mut self, player_id: u16, selected_cards: Vec<Card>) -> Result<bool, Error> {
-        let (valid, err) = self.check_set(&selected_cards);
+    pub fn make_move(&mut self, player_id: u16, selected_cards: &[Card]) -> Result<bool, Error> {
+        let (valid, err) = self.check_set(selected_cards);
 
         if !valid || err.is_some() {
             return Ok(false);
@@ -216,7 +216,7 @@ impl Game {
             .iter()
             .find(|p| p.client_id == player_id)
             .map(|p| p.name.clone());
-        self.last_set = Some(selected_cards);
+        self.last_set = Some(selected_cards.to_owned());
 
         if let Some(last_player) = &self.last_player {
             self.events.push(Event::new(
