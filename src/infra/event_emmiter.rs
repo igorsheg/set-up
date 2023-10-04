@@ -4,7 +4,7 @@ use ahash::{HashMap, HashMapExt};
 use async_trait::async_trait;
 use tokio::sync::{
     broadcast::{self, Sender},
-    mpsc, Mutex,
+    mpsc, RwLock,
 };
 
 use crate::{
@@ -16,7 +16,7 @@ const CHANNEL_CAPACITY: usize = 32;
 
 #[derive(Clone)]
 pub struct EventEmitter {
-    topics: Arc<Mutex<HashMap<String, Sender<AppEvent>>>>,
+    topics: Arc<RwLock<HashMap<String, Sender<AppEvent>>>>,
 }
 
 impl Default for EventEmitter {
@@ -29,11 +29,18 @@ impl EventEmitter {
     pub fn new() -> Self {
         let topics = HashMap::new();
         Self {
-            topics: Arc::new(Mutex::new(topics)),
+            topics: Arc::new(RwLock::new(topics)),
         }
     }
     pub async fn topic_sender(&self, topic: Topic, capacity: usize) -> broadcast::Sender<AppEvent> {
-        let mut topics = self.topics.lock().await;
+        {
+            let topics = self.topics.read().await;
+            if let Some(sender) = topics.get(&topic.to_string()) {
+                return sender.clone();
+            }
+        }
+
+        let mut topics = self.topics.write().await;
         topics
             .entry(topic.to_string())
             .or_insert_with(|| {

@@ -34,7 +34,6 @@ const AnimatedCard: React.FC<React.PropsWithChildren<AnimatedCardProps>> = ({
           type: "spring",
           stiffness: 500,
           damping: 32,
-          // delay: index * 0.01,
         }}
         style={{ position: "absolute", top: 0, left: 0 }}
       >
@@ -65,7 +64,6 @@ export const Board: React.FC<React.PropsWithChildren<BoardProps>> = ({
   const isMobile = useIsMobile();
 
   const handleClick = (index: number): void => {
-    console.log("Selected card index: ", selectedCardIndexes);
     if (!selectedCardIndexes.includes(index)) {
       addCardToSelection(index);
     } else {

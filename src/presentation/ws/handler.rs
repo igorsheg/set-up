@@ -83,7 +83,7 @@ async fn read_from_ws(
 ) -> Result<(), Error> {
     while let Some(result) = ws_rx.next().await {
         match result {
-            Ok(msg) => handle_incoming_message(event_emitter.clone(), msg, client_id).await?,
+            Ok(msg) => handle_incoming_message(&event_emitter, msg, client_id).await?,
             Err(e) => handle_incoming_error(e)?,
         }
     }
@@ -96,7 +96,7 @@ async fn read_from_ws(
 }
 
 async fn handle_incoming_message(
-    event_emitter: EventEmitter,
+    event_emitter: &EventEmitter,
     msg: Message,
     client_id: u16,
 ) -> Result<(), Error> {

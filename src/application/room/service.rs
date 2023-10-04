@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 use crate::{
     domain::{
@@ -16,14 +16,14 @@ use crate::{
 const ROOM_CODE_LENGTH: usize = 6;
 
 pub struct RoomService {
-    rooms: Mutex<HashMap<String, Arc<Room>>>,
+    rooms: RwLock<HashMap<String, Arc<Room>>>,
     pub(super) event_emitter: EventEmitter,
 }
 
 impl RoomService {
     pub fn new(event_emitter: EventEmitter) -> Self {
         Self {
-            rooms: Mutex::new(HashMap::new()),
+            rooms: RwLock::new(HashMap::new()),
             event_emitter,
         }
     }
@@ -85,13 +85,13 @@ impl RoomService {
         room.is_game_over().await
     }
 
-    async fn get_room_game(&self, room_code: &str) -> Result<Game, Error> {
+    async fn get_room_game(&self, room_code: &str) -> Result<Arc<RwLock<Game>>, Error> {
         let room = self.get_room(room_code).await?;
-        room.get_game_state().await
+        Ok(room.get_game_state().await)
     }
 
     pub async fn get_room(&self, room_code: &str) -> Result<Arc<Room>, Error> {
-        let rooms = self.rooms.lock().await;
+        let rooms = self.rooms.read().await;
         match rooms.get(room_code) {
             Some(room) => Ok(room.clone()),
             None => Err(Error::RoomNotFound(format!("Room {} not found", room_code))),
@@ -141,18 +141,18 @@ impl RoomService {
         let game = Game::new(mode);
         let room = Room::new(game);
 
-        let mut rooms = self.rooms.lock().await;
+        let mut rooms = self.rooms.write().await;
         rooms.insert(room_code.clone(), Arc::new(room));
 
         Ok(CommandResult::RoomCreated(room_code))
     }
 
     pub async fn broadcast_game_state(&self, room_code: String) -> Result<(), Error> {
-        let game = self.get_room_game(&room_code).await?;
+        let game_arc = self.get_room_game(&room_code).await?;
         self.event_emitter
             .emit_command(
                 Topic::ClientService,
-                Command::BroadcastGameState(room_code, game),
+                Command::BroadcastGameState(room_code, game_arc),
             )
             .await?;
         Ok(())

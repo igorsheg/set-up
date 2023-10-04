@@ -27,10 +27,6 @@ export default function Game() {
   } = useGameManager();
   const { setActiveRoom, activeRoom } = useRoomManager();
 
-  useEffect(() => {
-    console.log("gameData", gameData);
-  }, [gameData]);
-
   const navigate = useNavigate();
   const { room_code } = useParams<{ room_code: string }>();
 

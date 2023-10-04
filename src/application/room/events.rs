@@ -20,9 +20,6 @@ impl RoomService {
             Command::RequestCards(client_id, message) => {
                 self.handle_request_cards(client_id, message).await
             }
-            // Command::RemovePlayerFromRoom(client_id, room_code) => {
-            //     self.handle_leave(client_id, room_code).await
-            // }
             _ => Ok(CommandResult::NotHandled),
         }
     }
