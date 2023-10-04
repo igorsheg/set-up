@@ -6,7 +6,7 @@ use tokio::sync::{mpsc::Sender, Mutex};
 use crate::{
     domain::{
         client::Client,
-        events::{AppEvent, Command, CommandResult, Event, Topic},
+        events::{CommandResult, Event, Topic},
         game::game::Game,
     },
     infra::{error::Error, event_emmiter::EventEmitter},
@@ -34,16 +34,6 @@ impl ClientService {
             .ok_or(Error::ClientNotFound("Client not found".to_string()))
     }
 
-    // pub async fn get_client(&self, client_id: u16) -> Result<Arc<Client>, Error> {
-    //     // let client_arc = self.find_client(client_id).await?;
-    //     // Ok(client_arc.clone())
-    //     let clients = self.clients.lock().await;
-    //     match clients.get(&client_id) {
-    //         Some(room) => Ok(room.clone()),
-    //         None => Err(Error::RoomNotFound(format!("Room {} not found", room_code))),
-    //     }
-    // }
-
     pub async fn add_client(&self, id: u16, client: Client) {
         self.clients
             .lock()
@@ -56,34 +46,24 @@ impl ClientService {
         client_id: u16,
         tx: Sender<Game>,
     ) -> Result<CommandResult, Error> {
-        let client_arc = self.find_client(client_id).await.is_ok();
-
-        if client_arc {
-            self.remove_client(client_id).await?;
-        }
-
+        self.clients.lock().await.remove(&client_id);
         self.add_client(client_id, Client::new(tx, client_id)).await;
+
         Ok(CommandResult::ClientSetup(
             "Client setup successful".to_string(),
         ))
     }
 
     pub async fn remove_client(&self, id: u16) -> Result<(), Error> {
-        let client_arc = self.find_client(id).await?;
-        let client = client_arc.lock().await;
-
-        if client.is_in_room() {
-            let room_code = client.get_room_code()?;
-
+        if let Some(client_arc) = self.clients.lock().await.remove(&id) {
+            let client = client_arc.lock().await;
+            let room_code = client.get_room_code();
             self.event_emitter
-                .emit_command(
-                    Topic::RoomService,
-                    Command::RemovePlayerFromRoom(id, room_code.clone()),
-                )
+                .emit_event(Topic::RoomService, Event::ClientRemoved(id, room_code))
                 .await?;
+        } else {
+            return Err(Error::ClientNotFound("Client not found".to_string()));
         }
-
-        self.clients.lock().await.remove(&id);
         Ok(())
     }
 
@@ -98,9 +78,9 @@ impl ClientService {
         client.join_room(room_code.clone());
 
         self.event_emitter
-            .emit_app_event(
+            .emit_event(
                 Topic::RoomService,
-                AppEvent::EventOccurred(Event::PlayerJoinedRoom(client_id, room_code.clone())),
+                Event::PlayerJoinedRoom(client_id, room_code.clone()),
             )
             .await?;
 
@@ -115,7 +95,7 @@ impl ClientService {
 
         for client_arc in self.clients.lock().await.values() {
             let client = client_arc.lock().await;
-            if let Ok(client_room_code) = client.get_room_code() {
+            if let Some(client_room_code) = client.get_room_code() {
                 if client_room_code == room_code {
                     clients_in_room.push(client_arc.clone());
                 }
@@ -133,7 +113,7 @@ impl ClientService {
         let clients_in_room = self.get_clients_in_room(&room_code).await?;
 
         for client_arc in clients_in_room {
-            let mut client = client_arc.lock().await;
+            let client = client_arc.lock().await;
             client.send_message(&game_state).await?;
         }
 

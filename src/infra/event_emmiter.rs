@@ -43,18 +43,9 @@ impl EventEmitter {
             .clone()
     }
 
-    pub async fn emit(&self, topic: Topic, event: Event) -> Result<(), Error> {
-        let tx = self.topic_sender(topic, CHANNEL_CAPACITY).await;
-        tx.send(AppEvent::EventOccurred(event))
-            .map_err(Error::from)?;
-        Ok(())
-    }
-
-    pub async fn emit_app_event(&self, topic: Topic, app_event: AppEvent) -> Result<(), Error> {
-        tracing::info!("Emitting app event: {:?} on topic {:?}", app_event, topic);
-        let tx = self.topic_sender(topic, CHANNEL_CAPACITY).await;
-        tx.send(app_event).map_err(Error::from)?;
-        Ok(())
+    pub async fn emit_event(&self, topic: Topic, event: Event) -> Result<(), Error> {
+        self.emit_internal(topic, AppEvent::EventOccurred(event))
+            .await
     }
 
     pub async fn emit_command(
@@ -64,7 +55,7 @@ impl EventEmitter {
     ) -> Result<CommandResult, Error> {
         let (tx, mut rx) = mpsc::channel(1);
 
-        self.emit_app_event(topic, AppEvent::CommandReceived(command, tx))
+        self.emit_internal(topic, AppEvent::CommandReceived(command, tx))
             .await?;
 
         match rx.recv().await {
@@ -79,6 +70,13 @@ impl EventEmitter {
                 "No service handled the command".to_string(),
             )),
         }
+    }
+
+    async fn emit_internal(&self, topic: Topic, app_event: AppEvent) -> Result<(), Error> {
+        tracing::info!("Emitting app event: {:?} on topic {:?}", app_event, topic);
+        let tx = self.topic_sender(topic, CHANNEL_CAPACITY).await;
+        tx.send(app_event).map_err(Error::from)?;
+        Ok(())
     }
 
     pub async fn subscribe(&self, topic: Topic) -> broadcast::Receiver<AppEvent> {

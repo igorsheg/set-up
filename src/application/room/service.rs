@@ -5,11 +5,8 @@ use tokio::sync::Mutex;
 
 use crate::{
     domain::{
-        events::{AppEvent, Command, CommandResult, Event, Topic},
-        game::{
-            card::Card,
-            game::{Game, GameMode, Move},
-        },
+        events::{Command, CommandResult, Event, Topic},
+        game::game::{Game, GameMode, Move},
         message::WsMessage,
         room::Room,
     },
@@ -59,46 +56,28 @@ impl RoomService {
     ) -> Result<CommandResult, Error> {
         let game_move: Move = message.get_payload_as()?;
         let room_code = &game_move.room_code;
+        let room = self.get_room(room_code).await?;
 
-        let move_result = self
-            .make_move_in_room(room_code, client_id, &game_move.cards)
+        let move_successful = room.handle_move(client_id, &game_move.cards).await?;
+
+        if !move_successful {
+            return Ok(CommandResult::PlayerMoveInvalid);
+        }
+
+        self.event_emitter
+            .emit_event(
+                Topic::RoomService,
+                Event::PlayerFoundSet(client_id, room_code.clone()),
+            )
             .await?;
 
-        match move_result {
-            false => Ok(CommandResult::PlayerMoveInvalid),
-            true => {
-                self.event_emitter
-                    .emit_app_event(
-                        Topic::RoomService,
-                        AppEvent::EventOccurred(Event::PlayerFoundSet(
-                            client_id,
-                            room_code.clone(),
-                        )),
-                    )
-                    .await?;
-
-                if self.is_game_over(room_code).await? {
-                    self.event_emitter
-                        .emit_app_event(
-                            Topic::RoomService,
-                            AppEvent::EventOccurred(Event::GameOver(room_code.clone())),
-                        )
-                        .await?;
-                }
-
-                Ok(CommandResult::PlayerMoveValid)
-            }
+        if self.is_game_over(room_code).await? {
+            self.event_emitter
+                .emit_event(Topic::RoomService, Event::GameOver(room_code.clone()))
+                .await?;
         }
-    }
 
-    async fn make_move_in_room(
-        &self,
-        room_code: &str,
-        client_id: u16,
-        cards: &[Card],
-    ) -> Result<bool, Error> {
-        let room = self.get_room(room_code).await?;
-        room.handle_move(client_id, cards).await
+        Ok(CommandResult::PlayerMoveValid)
     }
 
     async fn is_game_over(&self, room_code: &str) -> Result<bool, Error> {
@@ -130,9 +109,9 @@ impl RoomService {
         room.request_cards(client_id).await?;
 
         self.event_emitter
-            .emit_app_event(
+            .emit_event(
                 Topic::RoomService,
-                AppEvent::EventOccurred(Event::PlayerRequestedCards(client_id, room_code)),
+                Event::PlayerRequestedCards(client_id, room_code),
             )
             .await?;
 
@@ -144,13 +123,13 @@ impl RoomService {
         client_id: u16,
         room_code: String,
     ) -> Result<CommandResult, Error> {
-        let mut game = self.get_room(&room_code).await?.get_game_state().await?;
-        game.remove_player(client_id);
+        let room = self.get_room(&room_code).await?;
+        room.remove_player(client_id).await?;
 
         self.event_emitter
-            .emit_app_event(
-                Topic::ClientService,
-                AppEvent::EventOccurred(Event::PlayerLeft(client_id, room_code.clone())),
+            .emit_event(
+                Topic::RoomService,
+                Event::PlayerLeft(client_id, room_code.clone()),
             )
             .await?;
 

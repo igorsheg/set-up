@@ -41,6 +41,12 @@ impl Room {
         Ok(game_state.game_over.is_some())
     }
 
+    pub async fn remove_player(&self, client_id: u16) -> Result<(), Error> {
+        let mut game_state = self.game.lock().await;
+        game_state.remove_player(client_id);
+        Ok(())
+    }
+
     pub async fn get_game_state(&self) -> Result<Game, Error> {
         let game_state = self.game.lock().await;
         Ok(game_state.clone())
@@ -60,7 +66,6 @@ impl Room {
     pub async fn request_cards(&self, client_id: u16) -> Result<(), Error> {
         let mut game_state = self.game.lock().await;
 
-        // Player requests cards
         if let Some(player) = game_state
             .players
             .iter_mut()
@@ -73,7 +78,6 @@ impl Room {
                 player_name,
             ));
 
-            // Check if all players requested cards
             let all_requested = game_state.players.iter().all(|player| player.request);
             if all_requested && !game_state.deck.cards.is_empty() {
                 game_state.add_cards();
@@ -83,7 +87,7 @@ impl Room {
             }
             Ok(())
         } else {
-            Err(Error::ClientNotFound("Client not found".to_string()))
+            Err(Error::PlayerNotFound(client_id.to_string()))
         }
     }
 }

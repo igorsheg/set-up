@@ -5,7 +5,7 @@ use crate::{
         events::{Command, CommandResult, Topic},
         game::game::GameMode,
     },
-    infra::{ba, event_emmiter::EventEmitter},
+    infra::event_emmiter::EventEmitter,
 };
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
@@ -33,20 +33,13 @@ pub async fn new_room_handler(
                 .emit_command(Topic::RoomService, command)
                 .await
             {
-                Ok(CommandResult::RoomCreated(room_code)) => {
-                    tracing::info!(
-                        event_type = %ba::EventType::RoomCreated,
-                        room_code = %room_code,
-                        mode = %mode_str,
-                    );
-                    (
-                        StatusCode::CREATED,
-                        Json(RoomResponse {
-                            room_code: Some(room_code),
-                            error: None,
-                        }),
-                    )
-                }
+                Ok(CommandResult::RoomCreated(room_code)) => (
+                    StatusCode::CREATED,
+                    Json(RoomResponse {
+                        room_code: Some(room_code),
+                        error: None,
+                    }),
+                ),
                 Ok(CommandResult::NotHandled) => (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(RoomResponse {

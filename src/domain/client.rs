@@ -27,22 +27,24 @@ impl Client {
         }
     }
 
-    pub fn get_room_code(&self) -> Result<&String, Error> {
+    pub fn get_room_code(&self) -> Option<String> {
         match &self.state {
-            ClientState::InRoom(room_code) => Ok(room_code),
-            ClientState::Lobby => Err(Error::GameError("Client not in a room".to_string())),
+            ClientState::InRoom(room_code) => Some(room_code.clone()),
+            ClientState::Lobby => None,
         }
     }
 
-    pub async fn send_message(&self, message: &Game) -> Result<(), Error> {
-        self.tx.send(message.clone()).await.map_err(|err| {
-            Error::WebsocketError(format!("Failed to send message to client: {:?}", err))
+    pub async fn send_message(&self, game_state: &Game) -> Result<(), Error> {
+        self.tx.send(game_state.clone()).await.map_err(|err| {
+            Error::WebsocketError(format!("Failed to send game state to client: {:?}", err))
         })
     }
 
     pub fn join_room(&mut self, room_code: String) {
         self.state = ClientState::InRoom(room_code.clone());
-        self.add_past_room(room_code);
+        if !self.past_rooms.contains(&room_code) {
+            self.past_rooms.push(room_code);
+        }
     }
 
     pub fn get_past_rooms(&self) -> &Vec<String> {

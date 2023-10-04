@@ -30,9 +30,7 @@ const Pill: FC<PropsWithChildren<PillProps>> = ({
   activeNotifications,
   websocketStatus,
 }) => {
-  // const appSettings = useStore($appSettings);
   const { soundEnabled } = useAppSettings();
-  // const { activeNotifications, websocketStatus } = useGameManager();
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
@@ -161,6 +159,7 @@ const Players: FC<PropsWithChildren<{ players: Player[] }>> = ({ players }) => {
 
   return (
     <AvatarGroup
+      visible={2}
       items={topScoredPlayers.map((tp) => ({
         image: `https://source.boringavatars.com/beam/40/${tp.client_id}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`,
         fallback: tp.name.substring(0, 1),

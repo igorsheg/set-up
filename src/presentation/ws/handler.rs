@@ -12,7 +12,7 @@ use tokio::sync::mpsc;
 
 use crate::{
     domain::{
-        events::{AppEvent, Command, Event, Topic},
+        events::{Command, Event, Topic},
         game::game::Game,
         message::{MessageType, WsMessage},
     },
@@ -89,10 +89,7 @@ async fn read_from_ws(
     }
 
     event_emitter
-        .emit_app_event(
-            Topic::ClientService,
-            AppEvent::EventOccurred(Event::ClientDisconnected(client_id)),
-        )
+        .emit_event(Topic::ClientService, Event::ClientDisconnected(client_id))
         .await?;
 
     Ok(())

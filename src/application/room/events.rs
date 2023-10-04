@@ -20,9 +20,9 @@ impl RoomService {
             Command::RequestCards(client_id, message) => {
                 self.handle_request_cards(client_id, message).await
             }
-            Command::RemovePlayerFromRoom(client_id, room_code) => {
-                self.handle_leave(client_id, room_code).await
-            }
+            // Command::RemovePlayerFromRoom(client_id, room_code) => {
+            //     self.handle_leave(client_id, room_code).await
+            // }
             _ => Ok(CommandResult::NotHandled),
         }
     }
@@ -50,6 +50,14 @@ impl EventListener for RoomService {
             | Event::PlayerRequestedCards(_client_id, room_code)
             | Event::PlayerLeft(_client_id, room_code) => {
                 self.broadcast_game_state(room_code).await
+            }
+            Event::ClientRemoved(client_id, room_code) => {
+                if let Some(code) = room_code {
+                    let _ = self.handle_leave(client_id, code).await;
+                    Ok(())
+                } else {
+                    Ok(())
+                }
             }
             Event::GameOver(room_code) => self.broadcast_game_state(room_code).await,
 

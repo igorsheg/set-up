@@ -23,6 +23,9 @@ pub enum Error {
     #[error("Client error. {0}")]
     ClientNotFound(String),
 
+    #[error("Room error. {0}")]
+    PlayerNotFound(String),
+
     #[error("Game move error. {0}")]
     UnknownMove(String),
 
