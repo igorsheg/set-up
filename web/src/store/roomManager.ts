@@ -1,7 +1,7 @@
 import { createStore, sample } from "effector";
 import { createEvent, createEffect } from "effector";
 import { JoinGameAction, MessageType } from "@types";
-import { $wsSocket } from "./websocket";
+import { $webSocketStatus, $wsSocket } from "./websocket";
 
 export type ActiveRoom = {
   code: string;
@@ -34,11 +34,21 @@ export const joinGame = createEffect<JoinGameAction["payload"] | null, void>(
 );
 
 sample({
-  source: $roomManager,
-  clock: setActiveRoom,
-  fn: (_state, payload) =>
-    payload
-      ? { player_username: payload.username, room_code: payload.code }
-      : null,
+  source: {
+    webSocketStatus: $webSocketStatus,
+    activeRoom: $roomManager.map((state) => state.activeRoom),
+  },
+  clock: [setActiveRoom, $webSocketStatus],
+  fn: ({ webSocketStatus, activeRoom }) => {
+    if (webSocketStatus === "OPEN" && activeRoom) {
+      return {
+        player_username: activeRoom.username,
+        room_code: activeRoom.code,
+      };
+    }
+    return null;
+  },
   target: joinGame,
+  filter: (source) =>
+    source.webSocketStatus === "OPEN" && source.activeRoom !== null,
 });

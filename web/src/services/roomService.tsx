@@ -42,22 +42,6 @@ leaveRoomEvent.watch(() => {
   resetGameData();
 });
 
-export const createNewRoomAndJoin = createEffect<
-  {
-    mode: GameMode;
-    playerUsername: string;
-  },
-  string
->(async ({ mode, playerUsername }) => {
-  const roomCode = await createNewRoom(mode);
-  joinRoomEvent({ roomCode, playerUsername });
-  setActiveRoom({
-    code: roomCode,
-    username: playerUsername,
-  });
-  return roomCode;
-});
-
 export function useRoomManager() {
   const { activeRoom, pastRooms } = useStore($roomManager);
 
@@ -73,7 +57,6 @@ export function useRoomManager() {
     checkRoomExists,
     getPastRooms,
     setActiveRoom,
-    createNewRoomAndJoin,
     leaveRoom: () => leaveRoomEvent(),
   };
 }

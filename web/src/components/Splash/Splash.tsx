@@ -60,6 +60,7 @@ export const Rect: FC<PropsWithChildren<SVGAttributes<SVGSVGElement>>> = (
         </filter>
       </defs>
     </svg>
+
   );
 };
 
