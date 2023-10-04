@@ -8,20 +8,17 @@ use axum::{
     Extension,
 };
 
-use crate::{
-    context::Context,
-    server::handlers::{
-        asset,
-        client::auth,
-        room::{check_game_exists, get_past_rooms, new_room_handler},
-        websocket::ws_handler,
-    },
+use super::event_emmiter::EventEmitter;
+use crate::presentation::{
+    http::{asset, client::auth, room::new_room_handler},
+    ws::handler::ws_handler,
 };
 
 pub struct Server {
     host: String,
     port: u16,
     is_production: bool,
+    event_emitter: EventEmitter,
 }
 
 pub struct AppState {
@@ -35,11 +32,12 @@ impl AppState {
 }
 
 impl Server {
-    pub fn new(host: String, port: u16, is_production: bool) -> Self {
+    pub fn new(host: String, port: u16, is_production: bool, event_emitter: EventEmitter) -> Self {
         Self {
             host,
             port,
             is_production,
+            event_emitter,
         }
     }
 
@@ -48,22 +46,19 @@ impl Server {
             .parse()
             .expect("Unable to parse address");
 
-        let context = Arc::new(Context::new()); // Modify this line
-        let app_state = Arc::new(AppState::new(self.is_production));
-
         let api_routes = axum::Router::new()
             .route("/health", get(health_check))
             .route("/new", get(new_room_handler))
-            .route("/games", get(get_past_rooms))
-            .route("/game/:room_code", get(check_game_exists))
             .route("/auth", get(auth))
             .route("/ws", get(ws_handler));
+
+        let app_state = Arc::new(AppState::new(self.is_production));
 
         let app = axum::Router::new()
             .nest("/api", api_routes)
             .fallback(asset::handler)
             .layer(Extension(app_state))
-            .layer(Extension(context))
+            .layer(Extension(self.event_emitter.clone()))
             .layer(map_response(|mut resp: Response| async {
                 resp.headers_mut().insert(
                     header::SERVER,

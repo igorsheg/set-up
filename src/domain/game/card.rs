@@ -125,7 +125,7 @@ impl<'de> Deserialize<'de> for Shading {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Card {
     pub shape: Shape,
     pub color: Color,

@@ -3,6 +3,9 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use thiserror::Error as ThisError;
+use tokio::sync::{broadcast, mpsc::error::SendError};
+
+use crate::domain::events::{AppEvent, CommandResult};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -20,6 +23,9 @@ pub enum Error {
     #[error("Client error. {0}")]
     ClientNotFound(String),
 
+    #[error("Room error. {0}")]
+    PlayerNotFound(String),
+
     #[error("Game move error. {0}")]
     UnknownMove(String),
 
@@ -34,6 +40,12 @@ pub enum Error {
 
     #[error("Environment error: {0}")]
     EnviormentError(String),
+
+    #[error("Room service error: {0}")]
+    RoomNotFound(String),
+
+    #[error("Event emit error: {0}")]
+    EventEmitError(String),
 }
 
 pub struct AppError(pub Error);
@@ -76,5 +88,29 @@ impl From<tracing_loki::Error> for Error {
 impl From<std::env::VarError> for Error {
     fn from(err: std::env::VarError) -> Self {
         Error::DatabaseError(err.to_string())
+    }
+}
+
+impl From<SendError<AppEvent>> for Error {
+    fn from(err: SendError<AppEvent>) -> Self {
+        Error::EventEmitError(format!("Failed to send event: {:?}", err))
+    }
+}
+
+impl From<broadcast::error::SendError<AppEvent>> for Error {
+    fn from(err: broadcast::error::SendError<AppEvent>) -> Self {
+        Error::EventEmitError(format!("Failed to send event: {:?}", err))
+    }
+}
+
+impl From<&str> for Error {
+    fn from(err: &str) -> Self {
+        Error::EventEmitError(err.to_string())
+    }
+}
+
+impl From<SendError<CommandResult>> for Error {
+    fn from(err: SendError<CommandResult>) -> Self {
+        Error::EventEmitError(format!("Failed to send command result: {:?}", err))
     }
 }

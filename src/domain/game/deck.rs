@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use super::card::{Card, Color, Number, Shading, Shape};
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Deck {
     pub cards: Vec<Card>,
 }
