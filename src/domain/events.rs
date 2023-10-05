@@ -24,9 +24,10 @@ pub enum Event {
     ClientRoomCodeSet(u16, String),     // client_id, room_code
     ClientDisconnected(u16),            // client_id
     ClientRemoved(u16, Option<String>), // client_id
-    GameOver(String),                   // room_code
-    PlayerRequestedCards(u16, String),  // client_id, room_code
-    PlayerFoundSet(u16, String),        // client_id, room_code
+    ClientConnected(u16, Sender<Game>),
+    GameOver(String),                  // room_code
+    PlayerRequestedCards(u16, String), // client_id, room_code
+    PlayerFoundSet(u16, String),       // client_id, room_code
 }
 
 #[derive(Debug, Clone)]

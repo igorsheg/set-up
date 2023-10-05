@@ -71,12 +71,19 @@ async fn setup_client(
     client_id: u16,
 ) -> Result<(mpsc::Sender<Game>, mpsc::Receiver<Game>), Error> {
     let (tx, rx) = mpsc::channel(32);
+
     event_emitter
-        .emit_command(
+        .emit_event(
             Topic::ClientService,
-            Command::SetupClient(client_id, tx.clone()),
+            Event::ClientConnected(client_id, tx.clone()),
         )
         .await?;
+    // event_emitter
+    //     .emit_command(
+    //         Topic::ClientService,
+    //         Command::SetupClient(client_id, tx.clone()),
+    //     )
+    //     .await?;
     Ok((tx, rx))
 }
 
