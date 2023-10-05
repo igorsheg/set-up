@@ -16,7 +16,6 @@ impl ClientService {
             Command::SetClientRoomCode(client_id, room_code) => {
                 self.join_room(client_id, room_code).await
             }
-            Command::SetupClient(client_id, tx) => self.setup_or_update_client(client_id, tx).await,
             _ => Ok(CommandResult::NotHandled),
         }
     }
@@ -41,6 +40,10 @@ impl EventListener for ClientService {
         match event {
             Event::ClientDisconnected(client_id) => {
                 self.remove_client(client_id).await?;
+                Ok(())
+            }
+            Event::ClientConnected(client_id, tx) => {
+                self.setup_or_update_client(client_id, tx).await?;
                 Ok(())
             }
             _ => {
