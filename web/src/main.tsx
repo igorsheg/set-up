@@ -7,11 +7,9 @@ import "@styles/index.css.ts";
 import RootLayout from "@routes/Root.tsx";
 import Lobby from "@routes/Lobby/Lobby.tsx";
 import { SplashScreenWrapper } from "@components/Splash/SplashScreen";
-import { initializeWebSocket } from "@store/websocket";
-import { checkAndFetchInitEndpoint } from "@store/cookie";
+import { auth } from "@store/cookie";
 
-initializeWebSocket();
-checkAndFetchInitEndpoint();
+auth();
 
 const router = createBrowserRouter([
   {

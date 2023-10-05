@@ -7,6 +7,7 @@ import {
 } from "effector";
 import { Data, GameAction } from "@types";
 import { $gameManager, setGameData } from "./gameManager";
+import { $hasClientId } from "./cookie";
 
 export type WebSocketStatus = "IDLE" | "CONNECTING" | "OPEN" | "CLOSED";
 const RECONNECT_TIMEOUT = 3000;
@@ -103,4 +104,10 @@ forward({
       }
     },
   }),
+});
+
+$hasClientId.watch((hasClientId) => {
+  if (hasClientId) {
+    initializeWebSocket();
+  }
 });

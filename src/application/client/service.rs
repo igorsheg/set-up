@@ -46,8 +46,14 @@ impl ClientService {
         client_id: u16,
         tx: Sender<Game>,
     ) -> Result<CommandResult, Error> {
-        self.clients.write().await.remove(&client_id);
-        self.add_client(client_id, Client::new(tx, client_id)).await;
+        let mut clients = self.clients.write().await;
+
+        if let Some(client_arc) = clients.get(&client_id) {
+            let mut client = client_arc.write().await;
+            client.tx = tx;
+        } else {
+            clients.insert(client_id, Arc::new(RwLock::new(Client::new(tx, client_id))));
+        }
 
         Ok(CommandResult::ClientSetup(
             "Client setup successful".to_string(),
