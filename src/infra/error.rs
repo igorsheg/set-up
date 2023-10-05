@@ -46,6 +46,9 @@ pub enum Error {
 
     #[error("Event emit error: {0}")]
     EventEmitError(String),
+
+    #[error("Server error: client ID missing")]
+    ClientIdMissing,
 }
 
 pub struct AppError(pub Error);
