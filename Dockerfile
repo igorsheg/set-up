@@ -15,7 +15,6 @@ COPY --from=node-builder /app/web/dist ./web/dist
 COPY ./src ./src
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./Cargo.lock ./Cargo.lock
-COPY ./migrations ./migrations
 
 RUN cargo build --release
 
