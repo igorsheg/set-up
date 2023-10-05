@@ -57,7 +57,6 @@ async fn handle_connection(
     let reader_task = read_from_ws(ws_rx, event_emitter.clone(), client_id);
     let writer_task = write_to_ws(rx, ws_tx);
 
-    // Handle tasks and their potential errors
     match tokio::try_join!(reader_task, writer_task) {
         Ok(_) => {
             tracing::info!("Client {} disconnected gracefully", client_id);
