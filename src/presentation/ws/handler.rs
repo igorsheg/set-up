@@ -78,12 +78,7 @@ async fn setup_client(
             Event::ClientConnected(client_id, tx.clone()),
         )
         .await?;
-    // event_emitter
-    //     .emit_command(
-    //         Topic::ClientService,
-    //         Command::SetupClient(client_id, tx.clone()),
-    //     )
-    //     .await?;
+
     Ok((tx, rx))
 }
 
@@ -95,7 +90,7 @@ async fn read_from_ws(
     while let Some(result) = ws_rx.next().await {
         match result {
             Ok(msg) => handle_incoming_message(&event_emitter, msg, client_id).await?,
-            Err(e) => handle_incoming_error(e)?,
+            Err(e) => handle_incoming_error(&event_emitter, client_id, e).await?,
         }
     }
 
@@ -154,8 +149,15 @@ async fn handle_incoming_message(
     Ok(())
 }
 
-fn handle_incoming_error(err: axum::Error) -> Result<(), Error> {
+async fn handle_incoming_error(
+    event_emitter: &EventEmitter,
+    client_id: u16,
+    err: axum::Error,
+) -> Result<(), Error> {
     tracing::error!(error = %err, "Error receiving WebSocket message");
+    event_emitter
+        .emit_event(Topic::ClientService, Event::ClientDisconnected(client_id))
+        .await?;
     Err(Error::WebsocketError(err.to_string()))
 }
 
