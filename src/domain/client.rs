@@ -1,6 +1,9 @@
-use tokio::sync::mpsc;
+use std::sync::Arc;
 
-use super::game::game::Game;
+use async_trait::async_trait;
+use tokio::sync::{mpsc::UnboundedSender, Mutex};
+
+use super::{events::CommandResult, game::game::Game};
 use crate::infra::error::Error;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -12,13 +15,13 @@ pub enum ClientState {
 #[derive(Debug)]
 pub struct Client {
     pub id: u16,
-    pub tx: mpsc::Sender<Game>,
+    pub tx: UnboundedSender<Game>,
     state: ClientState,
     past_rooms: Vec<String>,
 }
 
 impl Client {
-    pub fn new(tx: mpsc::Sender<Game>, id: u16) -> Self {
+    pub fn new(tx: UnboundedSender<Game>, id: u16) -> Self {
         Self {
             id,
             tx,
@@ -35,7 +38,7 @@ impl Client {
     }
 
     pub async fn send_message(&self, game_state: &Game) -> Result<(), Error> {
-        self.tx.send(game_state.clone()).await.map_err(|err| {
+        self.tx.send(game_state.clone()).map_err(|err| {
             Error::WebsocketError(format!("Failed to send game state to client: {:?}", err))
         })
     }
@@ -66,4 +69,23 @@ impl Client {
     pub fn remove_past_room(&mut self, room_code: &str) {
         self.past_rooms.retain(|room| room != room_code);
     }
+}
+
+#[async_trait]
+pub trait ClientServiceTrait {
+    async fn find_client(&self, client_id: u16) -> Result<Arc<Mutex<Client>>, Error>;
+    async fn add_client(&self, id: u16, client: Client);
+    async fn setup_or_update_client(
+        &self,
+        client_id: u16,
+        tx: UnboundedSender<Game>,
+    ) -> Result<CommandResult, Error>;
+    async fn remove_client(&self, id: u16) -> Result<(), Error>;
+    async fn join_room(&self, client_id: u16, room_code: String) -> Result<CommandResult, Error>;
+    async fn get_clients_in_room(&self, room_code: &str) -> Result<Vec<Arc<Mutex<Client>>>, Error>;
+    async fn broadcast_game_state(
+        &self,
+        room_code: String,
+        game_state: Arc<Mutex<Game>>,
+    ) -> Result<CommandResult, Error>;
 }

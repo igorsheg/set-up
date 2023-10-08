@@ -37,3 +37,4 @@ ahash = "0.8.3"
 rust-embed = { version = "8.0.0", features = ["compression"] }
 mime_guess = "2.0.4"
 async-trait = "0.1.73"
+tokio-stream = "0.1.14"

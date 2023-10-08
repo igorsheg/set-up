@@ -27,8 +27,8 @@ impl RoomService {
 
 #[async_trait]
 impl EventListener for RoomService {
-    async fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
-        self.event_emitter.subscribe(Topic::RoomService).await
+    async fn get_event_receiver(&self) -> Result<broadcast::Receiver<AppEvent>, Error> {
+        Ok(self.event_emitter.subscribe(Topic::RoomService).await?)
     }
 
     async fn handle_event(&self, event: AppEvent) -> Result<(), Error> {

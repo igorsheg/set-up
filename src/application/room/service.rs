@@ -1,29 +1,31 @@
 use std::sync::Arc;
 
 use ahash::{HashMap, HashMapExt};
-use tokio::sync::RwLock;
+use async_trait::async_trait;
+use tokio::sync::Mutex;
 
 use crate::{
     domain::{
         events::{Command, CommandResult, Event, Topic},
         game::game::{Game, GameMode, Move},
         message::WsMessage,
-        room::Room,
+        room::{Room, RoomServiceTrait},
     },
     infra::{error::Error, event_emmiter::EventEmitter},
 };
 
 const ROOM_CODE_LENGTH: usize = 6;
 
+#[derive(Clone)]
 pub struct RoomService {
-    rooms: RwLock<HashMap<String, Arc<Room>>>,
+    rooms: Arc<Mutex<HashMap<String, Arc<Room>>>>,
     pub(super) event_emitter: EventEmitter,
 }
 
 impl RoomService {
     pub fn new(event_emitter: EventEmitter) -> Self {
         Self {
-            rooms: RwLock::new(HashMap::new()),
+            rooms: Arc::new(Mutex::new(HashMap::new())),
             event_emitter,
         }
     }
@@ -85,13 +87,13 @@ impl RoomService {
         room.is_game_over().await
     }
 
-    async fn get_room_game(&self, room_code: &str) -> Result<Arc<RwLock<Game>>, Error> {
+    async fn get_room_game(&self, room_code: &str) -> Result<Arc<Mutex<Game>>, Error> {
         let room = self.get_room(room_code).await?;
         Ok(room.get_game_state().await)
     }
 
     pub async fn get_room(&self, room_code: &str) -> Result<Arc<Room>, Error> {
-        let rooms = self.rooms.read().await;
+        let rooms = self.rooms.lock().await;
         match rooms.get(room_code) {
             Some(room) => Ok(room.clone()),
             None => Err(Error::RoomNotFound(format!("Room {} not found", room_code))),
@@ -141,7 +143,7 @@ impl RoomService {
         let game = Game::new(mode);
         let room = Room::new(game);
 
-        let mut rooms = self.rooms.write().await;
+        let mut rooms = self.rooms.lock().await;
         rooms.insert(room_code.clone(), Arc::new(room));
 
         Ok(CommandResult::RoomCreated(room_code))
@@ -165,5 +167,52 @@ impl RoomService {
             .take(ROOM_CODE_LENGTH)
             .map(char::from)
             .collect()
+    }
+}
+
+#[async_trait]
+impl RoomServiceTrait for RoomService {
+    async fn handle_join(
+        &self,
+        message: WsMessage,
+        client_id: u16,
+    ) -> Result<CommandResult, Error> {
+        self.handle_join(message, client_id).await
+    }
+
+    async fn handle_player_move(
+        &self,
+        client_id: u16,
+        message: WsMessage,
+    ) -> Result<CommandResult, Error> {
+        self.handle_player_move(client_id, message).await
+    }
+
+    async fn get_room(&self, room_code: &str) -> Result<Arc<Room>, Error> {
+        self.get_room(room_code).await
+    }
+
+    async fn handle_request_cards(
+        &self,
+        client_id: u16,
+        message: WsMessage,
+    ) -> Result<CommandResult, Error> {
+        self.handle_request_cards(client_id, message).await
+    }
+
+    async fn handle_leave(
+        &self,
+        client_id: u16,
+        room_code: String,
+    ) -> Result<CommandResult, Error> {
+        self.handle_leave(client_id, room_code).await
+    }
+
+    async fn start_new_game(&self, mode: GameMode) -> Result<CommandResult, Error> {
+        self.start_new_game(mode).await
+    }
+
+    async fn broadcast_game_state(&self, room_code: String) -> Result<(), Error> {
+        self.broadcast_game_state(room_code).await
     }
 }

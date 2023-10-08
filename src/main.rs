@@ -1,6 +1,6 @@
-use std::sync::Arc;
-
-use application::{client::service::ClientService, room::service::RoomService};
+use application::{
+    client::service::ClientService, game::service::GameService, room::service::RoomService,
+};
 use domain::events::Topic;
 use infra::{error::Error, event_emmiter::EventEmitter, server::Server};
 use tracing_loki::url::Url;
@@ -28,6 +28,8 @@ async fn main() -> Result<(), Error> {
 
     let subscriber = tracing_subscriber::fmt()
         .with_env_filter(filter)
+        .with_ansi(true)
+        .pretty()
         .json()
         .compact()
         .finish()
@@ -36,23 +38,27 @@ async fn main() -> Result<(), Error> {
     tracing::subscriber::set_global_default(subscriber).expect("Setting global default failed");
 
     let event_emitter = EventEmitter::new();
+    let room_service = RoomService::new(event_emitter.clone());
+    let client_service = ClientService::new(event_emitter.clone());
 
-    let room_service = Arc::new(RoomService::new(event_emitter.clone()));
-
-    let client_service = Arc::new(ClientService::new(event_emitter.clone()));
-
-    event_emitter
+    let _ = event_emitter
         .register_listener(room_service.clone(), Topic::RoomService)
         .await;
-    event_emitter
+    let _ = event_emitter
         .register_listener(client_service.clone(), Topic::ClientService)
         .await;
+
+    let game_controller = GameService::<ClientService, RoomService, EventEmitter>::new(
+        client_service.clone(),
+        room_service.clone(),
+        event_emitter.clone(),
+    );
 
     let server = Server::new(
         config.server.host,
         config.server.port.parse().unwrap(),
         config.is_production,
-        event_emitter.clone(),
+        game_controller.clone(),
     );
 
     tokio::spawn(loki_tracing_task);

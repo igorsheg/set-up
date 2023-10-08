@@ -9,16 +9,21 @@ use axum::{
 };
 
 use super::event_emmiter::EventEmitter;
-use crate::presentation::{
-    http::{asset, client::auth, room::new_room_handler},
-    ws::handler::ws_handler,
+use crate::{
+    application::{
+        client::service::ClientService, game::service::GameService, room::service::RoomService,
+    },
+    presentation::{
+        http::{asset, client::auth, room::new_room_handler},
+        ws::handler::ws_handler,
+    },
 };
 
 pub struct Server {
     host: String,
     port: u16,
     is_production: bool,
-    event_emitter: EventEmitter,
+    game_controller: GameService<ClientService, RoomService, EventEmitter>,
 }
 
 pub struct AppState {
@@ -32,12 +37,17 @@ impl AppState {
 }
 
 impl Server {
-    pub fn new(host: String, port: u16, is_production: bool, event_emitter: EventEmitter) -> Self {
+    pub fn new(
+        host: String,
+        port: u16,
+        is_production: bool,
+        game_controller: GameService<ClientService, RoomService, EventEmitter>,
+    ) -> Self {
         Self {
             host,
             port,
             is_production,
-            event_emitter,
+            game_controller,
         }
     }
 
@@ -58,7 +68,7 @@ impl Server {
             .nest("/api", api_routes)
             .fallback(asset::handler)
             .layer(Extension(app_state))
-            .layer(Extension(self.event_emitter.clone()))
+            .layer(Extension(self.game_controller.clone()))
             .layer(map_response(|mut resp: Response| async {
                 resp.headers_mut().insert(
                     header::SERVER,

@@ -23,8 +23,8 @@ impl ClientService {
 
 #[async_trait]
 impl EventListener for ClientService {
-    async fn get_event_receiver(&self) -> broadcast::Receiver<AppEvent> {
-        self.event_emitter.subscribe(Topic::ClientService).await
+    async fn get_event_receiver(&self) -> Result<broadcast::Receiver<AppEvent>, Error> {
+        Ok(self.event_emitter.subscribe(Topic::ClientService).await?)
     }
 
     async fn handle_event(&self, event: AppEvent) -> Result<(), Error> {
@@ -59,7 +59,7 @@ impl EventListener for ClientService {
         result_sender: tokio::sync::mpsc::Sender<CommandResult>,
     ) -> Result<(), Error> {
         let result = self.handle_command(command).await?;
-        result_sender.send(result.clone()).await?;
+        let _ = result_sender.send(result).await;
         Ok(())
     }
 }
