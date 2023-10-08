@@ -33,7 +33,6 @@ impl EventEmitter {
         }
     }
     async fn topic_sender(&self, topic: Topic) -> Result<Sender<AppEvent>, Error> {
-        // First, try to get the sender from the read-locked state.
         {
             let read_lock = self.topics.lock().await;
             if let Some(sender) = read_lock.get(&topic.to_string()) {
@@ -41,18 +40,14 @@ impl EventEmitter {
             }
         }
 
-        // If the sender doesn't exist, acquire a write lock and insert it.
         let mut write_lock = self.topics.lock().await;
 
-        // Double-check to see if the sender was created while we were waiting for the write lock.
         if let Some(sender) = write_lock.get(&topic.to_string()) {
             return Ok(sender.clone());
         }
 
-        // Create a new broadcast channel and insert it into the HashMap.
         let (sender, _) = broadcast::channel(CHANNEL_CAPACITY);
 
-        // Insert the new sender into the HashMap.
         write_lock.insert(topic.to_string(), sender.clone());
 
         Ok(sender)
@@ -71,7 +66,6 @@ impl EventEmitter {
         self.emit(AppEvent::CommandReceived(command, tx), topic)
             .await?;
 
-        // Improved error handling
         match rx.recv().await {
             Some(result) if result != CommandResult::NotHandled => Ok(result),
             Some(_) => Err(Error::EventEmitError(
@@ -98,7 +92,7 @@ impl EventEmitter {
 
     pub async fn register_listener<S: EventListener + Sync + Send + 'static>(
         &self,
-        service: Arc<S>,
+        service: S,
         topic: Topic,
     ) -> Result<(), Error> {
         let _ = self.topic_sender(topic.clone()).await?;
@@ -156,7 +150,7 @@ pub trait EventEmitterTrait {
     async fn subscribe(&self, topic: Topic) -> Result<Receiver<AppEvent>, Error>;
     async fn register_listener<S: EventListener + Sync + Send + 'static>(
         &self,
-        service: Arc<S>,
+        service: S,
         topic: Topic,
     ) -> Result<(), Error>;
 }

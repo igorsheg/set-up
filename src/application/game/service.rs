@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use async_trait::async_trait;
 use axum::extract::ws::{Message, WebSocket};
 use futures::{StreamExt, TryStreamExt};
@@ -50,19 +48,9 @@ where
     }
 
     pub async fn start(&self, client_id: u16, ws: WebSocket) {
-        tracing::info!("Starting game for client {}", client_id);
         let (ws_tx, ws_rx) = ws.split();
         let (tx, rx) = unbounded_channel::<Game>();
         let rx = UnboundedReceiverStream::new(rx);
-
-        let _ = self
-            .event_emitter
-            .register_listener(Arc::new(self.room_service.clone()), Topic::RoomService)
-            .await;
-        let _ = self
-            .event_emitter
-            .register_listener(Arc::new(self.client_service.clone()), Topic::ClientService)
-            .await;
 
         let _ = self.setup_client(client_id, tx).await;
 
@@ -70,9 +58,17 @@ where
         let writer_task = self.write_to_ws(rx, ws_tx);
 
         tokio::select! {
-            _ = reader_task => {}
-            _ = writer_task => {},
-        };
+            result = reader_task => {
+                if let Err(e) = result {
+                    tracing::error!("Reader task failed: {:?}", e);
+                }
+            }
+            result = writer_task => {
+                if let Err(e) = result {
+                    tracing::error!("Writer task failed: {:?}", e);
+                }
+            }
+        }
     }
 
     pub async fn setup_client(
@@ -205,7 +201,6 @@ where
         let send_to_client = rx
             .map(|msg| {
                 let msg = serde_json::to_string(&msg);
-
                 match msg {
                     Ok(msg) => Message::Text(msg),
                     Err(_) => Message::Text("MESSAGE_SERIALIZATION_ERROR".to_string()),
@@ -240,7 +235,7 @@ impl EventEmitterTrait for EventEmitter {
 
     async fn register_listener<S: EventListener + Sync + Send + 'static>(
         &self,
-        service: Arc<S>,
+        service: S,
         topic: Topic,
     ) -> Result<(), Error> {
         self.register_listener(service, topic).await

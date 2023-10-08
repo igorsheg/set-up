@@ -1,6 +1,7 @@
 use application::{
     client::service::ClientService, game::service::GameService, room::service::RoomService,
 };
+use domain::events::Topic;
 use infra::{error::Error, event_emmiter::EventEmitter, server::Server};
 use tracing_loki::url::Url;
 use tracing_subscriber::{prelude::*, EnvFilter};
@@ -39,6 +40,13 @@ async fn main() -> Result<(), Error> {
     let event_emitter = EventEmitter::new();
     let room_service = RoomService::new(event_emitter.clone());
     let client_service = ClientService::new(event_emitter.clone());
+
+    let _ = event_emitter
+        .register_listener(room_service.clone(), Topic::RoomService)
+        .await;
+    let _ = event_emitter
+        .register_listener(client_service.clone(), Topic::ClientService)
+        .await;
 
     let game_controller = GameService::<ClientService, RoomService, EventEmitter>::new(
         client_service.clone(),
