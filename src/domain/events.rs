@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use strum::{Display, EnumString};
-use tokio::sync::{mpsc::Sender, RwLock};
+use tokio::sync::{
+    mpsc::{Sender, UnboundedSender},
+    Mutex,
+};
 
 use super::{
     game::game::{Game, GameMode},
@@ -24,7 +27,7 @@ pub enum Event {
     ClientRoomCodeSet(u16, String),     // client_id, room_code
     ClientDisconnected(u16),            // client_id
     ClientRemoved(u16, Option<String>), // client_id
-    ClientConnected(u16, Sender<Game>),
+    ClientConnected(u16, UnboundedSender<Game>),
     GameOver(String),                  // room_code
     PlayerRequestedCards(u16, String), // client_id, room_code
     PlayerFoundSet(u16, String),       // client_id, room_code
@@ -36,7 +39,7 @@ pub enum Command {
     RequestPlayerJoin(u16, WsMessage),
     SetupClient(u16, Sender<Game>),
     DisconnectClient(u16),
-    BroadcastGameState(String, Arc<RwLock<Game>>), // room_code, Game
+    BroadcastGameState(String, Arc<Mutex<Game>>), // room_code, Game
     SetClientRoomCode(u16, String),
     PlayerMove(u16, WsMessage),
     RequestCards(u16, WsMessage),

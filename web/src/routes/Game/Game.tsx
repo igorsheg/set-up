@@ -25,7 +25,7 @@ export default function Game() {
     activeNotifications,
     websocketStatus,
   } = useGameManager();
-  const { setActiveRoom, activeRoom } = useRoomManager();
+  const { setActiveRoom, activeRoom, joinRoom } = useRoomManager();
 
   const navigate = useNavigate();
   const { room_code } = useParams<{ room_code: string }>();
@@ -57,6 +57,8 @@ export default function Game() {
   useEffect(() => {
     if (room_code && !activeRoom) {
       setRoomJoinDialogOpen(true);
+    } else if (room_code && activeRoom) {
+      joinRoom(activeRoom.code, activeRoom.username);
     }
   }, [room_code, activeRoom]);
 

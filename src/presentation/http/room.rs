@@ -1,6 +1,9 @@
 use axum::{extract::Query, http::StatusCode, response::IntoResponse, Extension, Json};
 
 use crate::{
+    application::{
+        client::service::ClientService, game::service::GameService, room::service::RoomService,
+    },
     domain::{
         events::{Command, CommandResult, Topic},
         game::game::GameMode,
@@ -21,64 +24,71 @@ struct RoomResponse {
 
 #[axum::debug_handler]
 pub async fn new_room_handler(
-    Extension(event_emitter): Extension<EventEmitter>,
+    Extension(game_service): Extension<GameService<ClientService, RoomService, EventEmitter>>,
     Query(query): Query<NewGameQuery>,
 ) -> impl IntoResponse {
     let mode_str = query.mode.unwrap_or_else(|| "classic".to_string());
 
-    match mode_str.parse::<GameMode>() {
-        Ok(mode) => {
-            let command = Command::CreateRoom(mode);
-            match event_emitter
-                .emit_command(Topic::RoomService, command)
-                .await
-            {
-                Ok(CommandResult::RoomCreated(room_code)) => (
-                    StatusCode::CREATED,
-                    Json(RoomResponse {
-                        room_code: Some(room_code),
-                        error: None,
-                    }),
-                ),
-                Ok(CommandResult::NotHandled) => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(RoomResponse {
-                        room_code: None,
-                        error: Some("No service handled the command".to_string()),
-                    }),
-                ),
-                Ok(CommandResult::Error(error_msg)) => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(RoomResponse {
-                        room_code: None,
-                        error: Some(error_msg),
-                    }),
-                ),
-                Err(e) => {
-                    tracing::error!("Failed to emit command: {}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(RoomResponse {
-                            room_code: None,
-                            error: Some("Error creating room".to_string()),
-                        }),
-                    )
-                }
-                _ => (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(RoomResponse {
-                        room_code: None,
-                        error: Some("Unexpected command result".to_string()),
-                    }),
-                ),
-            }
+    let mode = match mode_str.parse::<GameMode>() {
+        Ok(mode) => mode,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(RoomResponse::new(
+                    None,
+                    Some("Invalid game mode".to_string()),
+                )),
+            )
         }
-        Err(_) => (
-            StatusCode::BAD_REQUEST,
-            Json(RoomResponse {
-                room_code: None,
-                error: Some("Invalid game mode".to_string()),
-            }),
+    };
+
+    let event_emitter = &game_service.event_emitter;
+
+    let command_result = match event_emitter
+        .emit_command(Topic::RoomService, Command::CreateRoom(mode))
+        .await
+    {
+        Ok(result) => result,
+        Err(e) => {
+            tracing::error!("Failed to emit command: {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(RoomResponse::new(
+                    None,
+                    Some("Error creating room".to_string()),
+                )),
+            );
+        }
+    };
+
+    match command_result {
+        CommandResult::RoomCreated(room_code) => (
+            StatusCode::CREATED,
+            Json(RoomResponse::new(Some(room_code), None)),
         ),
+        CommandResult::NotHandled => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(RoomResponse::new(
+                None,
+                Some("No service handled the command".to_string()),
+            )),
+        ),
+        CommandResult::Error(error_msg) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(RoomResponse::new(None, Some(error_msg))),
+        ),
+        _ => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(RoomResponse::new(
+                None,
+                Some("Unexpected command result".to_string()),
+            )),
+        ),
+    }
+}
+
+impl RoomResponse {
+    pub fn new(room_code: Option<String>, error: Option<String>) -> Self {
+        Self { room_code, error }
     }
 }
