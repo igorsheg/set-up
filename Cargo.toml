@@ -4,6 +4,10 @@ version = "0.2.0"
 authors = ["Igor Shegolev <igorsheg@gmail.com>"]
 edition = "2021"
 
+[profile.release]
+strip = "symbols"
+lto = "fat"
+
 [dependencies]
 rand = "0.8.5"
 axum = { version = "0.6.18", features = [
