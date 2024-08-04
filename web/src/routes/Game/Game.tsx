@@ -63,7 +63,7 @@ export default function Game() {
     } else if (room_code && activeRoom) {
       joinRoom(activeRoom.code, activeRoom.username);
     }
-  }, [room_code, activeRoom]);
+  }, [room_code, activeRoom, joinRoom]);
 
   const routeState = () => {
     return gameData.game_over ? (
