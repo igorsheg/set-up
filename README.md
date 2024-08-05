@@ -1,56 +1,46 @@
 <p align="center">
-  <img src="https://github.com/igorsheg/set-up/blob/main/web/public/icon-app.png?raw=true" alt="Set Up! Logo" width="200">
+  <strong>Set Up!</strong>
 </p>
-
-<h1 align="center">Set Up! - Multiplayer Game</h1>
 
 <p align="center">
-Set Up! is an engaging multiplayer game developed using the powerful combination of Rust for the backend and React for the frontend. Dive into a seamless gaming experience whether you're contributing to the code or just here for the fun!
+  <i>is an open-source implementation of a fast-paced, real-time multiplayer card game.</i>
 </p>
 
-## Table of Contents
-- [Getting Started](#getting-started)
-- [Contributing](#contributing)
-- [Environment Setup](#environment-setup)
-- [Frontend Development](#frontend-development)
-- [Backend Development](#backend-development)
-- [Support](#support)
-- [License](#license)
+<p align="center">
+  
+![setup](https://github.com/user-attachments/assets/655f0394-d355-430e-a95c-4aa55f1dda22)
+</p>
 
-## Getting Started
+## Development Setup
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+1. Set up environment variables:
+   ```
+   cp .env.example .env
+   ```
+
+2. Set up and build the frontend:
+
+   ```
+   cd web
+   yarn install
+   yarn build
+   cd ..
+   ```
+
+3. Set up and run the Rust backend:
+
+   ```
+   cargo run
+   ```
+
+4. Start playing at `http://localhost:5432` (or your configured port)
+
+## Project Structure
+
+- `/web`: React frontend
+- `/src`: Rust backend
+- `/docs`: Additional documentation
 
 ## Contributing
 
-We welcome contributions from everyone. Here's how you can contribute:
-
-### Environment Setup
-
-1. **Clone the repository** - First, clone the repo to your local machine using your favorite git client.
-2. **Environment Variables**:
-   - Copy `env.example` to `.env`.
-   - Update the variables in `.env` to match your local development environment.
-
-### Frontend Development
-
-1. **Navigate to the Frontend Directory**:
-   - `cd web`
-2. **Install Dependencies**:
-   - Run `yarn install` to install the required dependencies.
-3. **Start the Development Server**:
-   - Execute `yarn dev` to start the development server. Your default web browser should open automatically to `http://localhost:3000`.
-
-### Backend Development
-
-1. **Navigate to the Project Directory** (if not already there).
-2. **Start the Backend Server**:
-   - Run `cargo run` to start the Rust backend server.
-
-## Support
-
-If you encounter any issues or have any questions, feel free to open an issue on the GitHub repository.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.
+Contributions are welcome! Whether it's bug fixes, feature additions, or documentation improvements, feel free to fork the repository and submit a pull request.
