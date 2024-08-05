@@ -39,7 +39,6 @@
 
 - `/web`: React frontend
 - `/src`: Rust backend
-- `/docs`: Additional documentation
 
 ## Contributing
 
