@@ -5,8 +5,15 @@ authors = ["Igor Shegolev <igorsheg@gmail.com>"]
 edition = "2021"
 
 [profile.release]
-strip = "symbols"
+opt-level = 3
 lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+debug = false
+
+[profile.release.package."*"]
+opt-level = 3
 
 [rust-analyzer]
 exclude = [
@@ -15,12 +22,7 @@ exclude = [
 
 [dependencies]
 rand = "0.8.5"
-axum = { version = "0.6.18", features = [
-  "ws",
-  "headers",
-  "multipart",
-  "macros",
-] }
+axum = { version = "0.6.18", features = ["ws", "headers", "multipart", "macros"] }
 axum-extra = { version = "0.7.7", features = ["cookie"] }
 tokio = { version = "1", features = ["full"] }
 thiserror = "1.0.40"
@@ -31,20 +33,18 @@ serde = { version = "1.0", features = ["derive"] }
 futures = "0.3"
 hyper = { version = "0.14.27", features = ["full"] }
 tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.17", features = [
-  "registry",
-  "env-filter",
-  "ansi",
-  "json",
-] }
+tracing-subscriber = { version = "0.3.17", features = ["registry", "env-filter", "ansi", "json"] }
 strum = { version = "0.25", features = ["derive"] }
-tracing-loki = { version = "0.2.4", default-features = false, features = [
-  "rustls",
-  "compat-0-2-1",
-] }
 ahash = "0.8.3"
 rust-embed = { version = "8.0.0", features = ["compression"] }
 mime_guess = "2.0.4"
 async-trait = "0.1.73"
 tokio-stream = "0.1.14"
 dashmap = { version = "6.0.1" }
+
+# Optional dependencies
+tracing-loki = { version = "0.2.4", optional = true, default-features = false, features = ["rustls", "compat-0-2-1"] }
+
+[features]
+default = []
+loki = ["tracing-loki"]

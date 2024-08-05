@@ -87,6 +87,7 @@ impl From<serde_json::Error> for Error {
     }
 }
 
+#[cfg(feature = "loki")]
 impl From<tracing_loki::Error> for Error {
     fn from(err: tracing_loki::Error) -> Self {
         Error::DatabaseError(err.to_string())
