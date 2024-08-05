@@ -8,7 +8,7 @@
 
 <p align="center">
   
-![setup](https://github.com/user-attachments/assets/655f0394-d355-430e-a95c-4aa55f1dda22)
+![setup](https://github.com/igorsheg/set-up/blob/main/.github/images/setup.gif?raw=true)
 </p>
 
 ## Development Setup
