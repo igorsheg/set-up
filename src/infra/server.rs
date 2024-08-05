@@ -8,7 +8,6 @@ use axum::{
     Extension,
 };
 
-use super::event_emmiter::EventEmitter;
 use crate::{
     application::{
         client::service::ClientService, game::service::GameService, room::service::RoomService,
@@ -23,7 +22,7 @@ pub struct Server {
     host: String,
     port: u16,
     is_production: bool,
-    game_controller: GameService<ClientService, RoomService, EventEmitter>,
+    game_controller: GameService<ClientService, RoomService>,
 }
 
 pub struct AppState {
@@ -41,7 +40,7 @@ impl Server {
         host: String,
         port: u16,
         is_production: bool,
-        game_controller: GameService<ClientService, RoomService, EventEmitter>,
+        game_controller: GameService<ClientService, RoomService>,
     ) -> Self {
         Self {
             host,

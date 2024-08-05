@@ -8,6 +8,11 @@ edition = "2021"
 strip = "symbols"
 lto = "fat"
 
+[rust-analyzer]
+exclude = [
+    "web/**"
+]
+
 [dependencies]
 rand = "0.8.5"
 axum = { version = "0.6.18", features = [
@@ -42,3 +47,4 @@ rust-embed = { version = "8.0.0", features = ["compression"] }
 mime_guess = "2.0.4"
 async-trait = "0.1.73"
 tokio-stream = "0.1.14"
+dashmap = { version = "6.0.1" }

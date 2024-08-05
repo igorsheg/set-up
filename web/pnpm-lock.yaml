@@ -53,6 +53,9 @@ importers:
       '@vanilla-extract/vite-plugin':
         specifier: ^3.8.2
         version: 3.9.5(@types/node@22.1.0)(vite@4.5.3(@types/node@22.1.0))
+      boring-avatars:
+        specifier: ^1.10.2
+        version: 1.10.2
       canvas-confetti:
         specifier: ^1.6.0
         version: 1.9.3
@@ -1432,6 +1435,9 @@ packages:
 
   bidi-js@1.0.3:
     resolution: {integrity: sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw==}
+
+  boring-avatars@1.10.2:
+    resolution: {integrity: sha512-uQyvmNeW6loz4Yytj7aDo0IhhuByW/YyOHtqwb3kQ/x48hum22hROA2Wn3qzrLR5JsoZ+FHjPO6z6LrXrWjegg==}
 
   brace-expansion@1.1.11:
     resolution: {integrity: sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==}
@@ -3664,6 +3670,8 @@ snapshots:
   bidi-js@1.0.3:
     dependencies:
       require-from-string: 2.0.2
+
+  boring-avatars@1.10.2: {}
 
   brace-expansion@1.1.11:
     dependencies:

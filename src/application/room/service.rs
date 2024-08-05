@@ -19,11 +19,11 @@ const ROOM_CODE_LENGTH: usize = 6;
 #[derive(Clone)]
 pub struct RoomService {
     rooms: Arc<Mutex<HashMap<String, Arc<Room>>>>,
-    pub(super) event_emitter: EventEmitter,
+    pub(super) event_emitter: Arc<EventEmitter>,
 }
 
 impl RoomService {
-    pub fn new(event_emitter: EventEmitter) -> Self {
+    pub fn new(event_emitter: Arc<EventEmitter>) -> Self {
         Self {
             rooms: Arc::new(Mutex::new(HashMap::new())),
             event_emitter,
@@ -66,17 +66,16 @@ impl RoomService {
             return Ok(CommandResult::PlayerMoveInvalid);
         }
 
-        self.event_emitter
-            .emit_event(
-                Topic::RoomService,
-                Event::PlayerFoundSet(client_id, room_code.clone()),
-            )
-            .await?;
+        self.event_emitter.emit_event(
+            Topic::RoomService,
+            Event::PlayerFoundSet(client_id, room_code.clone()),
+        )?;
 
         if self.is_game_over(room_code).await? {
-            self.event_emitter
-                .emit_event(Topic::RoomService, Event::GameOver(room_code.clone()))
-                .await?;
+            self.event_emitter.emit_event(
+                Topic::RoomService,
+                Event::GameOver(client_id, room_code.clone()),
+            )?;
         }
 
         Ok(CommandResult::PlayerMoveValid)
@@ -110,12 +109,10 @@ impl RoomService {
         let room = self.get_room(&room_code).await?;
         room.request_cards(client_id).await?;
 
-        self.event_emitter
-            .emit_event(
-                Topic::RoomService,
-                Event::PlayerRequestedCards(client_id, room_code),
-            )
-            .await?;
+        self.event_emitter.emit_event(
+            Topic::RoomService,
+            Event::PlayerRequestedCards(client_id, room_code),
+        )?;
 
         Ok(CommandResult::CardsRequested)
     }
@@ -128,12 +125,10 @@ impl RoomService {
         let room = self.get_room(&room_code).await?;
         room.remove_player(client_id).await?;
 
-        self.event_emitter
-            .emit_event(
-                Topic::RoomService,
-                Event::PlayerLeft(client_id, room_code.clone()),
-            )
-            .await?;
+        self.event_emitter.emit_event(
+            Topic::RoomService,
+            Event::PlayerLeft(client_id, room_code.clone()),
+        )?;
 
         Ok(CommandResult::PlayerRemovedFromRoom(client_id, room_code))
     }

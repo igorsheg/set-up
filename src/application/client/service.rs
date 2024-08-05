@@ -16,11 +16,11 @@ use crate::{
 #[derive(Clone)]
 pub struct ClientService {
     clients: Arc<Mutex<HashMap<u16, Arc<Mutex<Client>>>>>,
-    pub(super) event_emitter: EventEmitter,
+    pub(super) event_emitter: Arc<EventEmitter>,
 }
 
 impl ClientService {
-    pub fn new(event_emitter: EventEmitter) -> Self {
+    pub fn new(event_emitter: Arc<EventEmitter>) -> Self {
         Self {
             clients: Arc::new(Mutex::new(HashMap::new())),
             event_emitter,
@@ -67,8 +67,7 @@ impl ClientService {
             let client = client_arc.lock().await;
             let room_code = client.get_room_code();
             self.event_emitter
-                .emit_event(Topic::RoomService, Event::ClientRemoved(id, room_code))
-                .await?;
+                .emit_event(Topic::RoomService, Event::ClientRemoved(id, room_code))?;
         } else {
             return Err(Error::ClientNotFound("Client not found".to_string()));
         }
@@ -85,12 +84,10 @@ impl ClientService {
 
         client.join_room(room_code.clone());
 
-        self.event_emitter
-            .emit_event(
-                Topic::RoomService,
-                Event::PlayerJoinedRoom(client_id, room_code.clone()),
-            )
-            .await?;
+        self.event_emitter.emit_event(
+            Topic::RoomService,
+            Event::PlayerJoinedRoom(client_id, room_code.clone()),
+        )?;
 
         Ok(CommandResult::ClientRoomCodeSet(client_id, room_code))
     }

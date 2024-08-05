@@ -13,6 +13,7 @@ import { Avatar } from "@components/Avatar/Avatar";
 import Loader from "@components/Loader/Loader";
 import { useAppSettings } from "@services/appSettingsService";
 import { WebSocketStatus } from "@store/websocket";
+import BoringAvatar from "boring-avatars"
 
 const NOTIFICATION_DURATION = 6000;
 
@@ -174,7 +175,7 @@ const Players: FC<PropsWithChildren<{ players: Player[] }>> = ({ players }) => {
     <AvatarGroup
       visible={2}
       items={topScoredPlayers.map((tp) => ({
-        image: `https://source.boringavatars.com/beam/40/${tp.client_id}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`,
+        image: <BoringAvatar variant="beam" size={40} name={tp?.client_id} colors={["#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51"]} />,
         fallback: tp.name.substring(0, 1),
         alt: `${tp.name}'s avatar`,
         popoverContent: <AvatarTooltipContent player={tp} />,
@@ -202,7 +203,7 @@ const AvatarTooltipContent: FC<PropsWithChildren<AvatarProps>> = ({
         <Avatar
           alt={`${player.name}'s avatar`}
           fallback={player.name.substring(0, 1)}
-          image={`https://source.boringavatars.com/beam/40/${player.client_id}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
+          image={<BoringAvatar variant="beam" size={40} name={player?.client_id} colors={["#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51"]} />}
         />
         <p style={{ fontWeight: 500 }}>{player.name}</p>
       </Box>

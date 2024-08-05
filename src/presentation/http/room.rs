@@ -8,7 +8,6 @@ use crate::{
         events::{Command, CommandResult, Topic},
         game::game::GameMode,
     },
-    infra::event_emmiter::EventEmitter,
 };
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Clone)]
@@ -24,7 +23,7 @@ struct RoomResponse {
 
 #[axum::debug_handler]
 pub async fn new_room_handler(
-    Extension(game_service): Extension<GameService<ClientService, RoomService, EventEmitter>>,
+    Extension(game_service): Extension<GameService<ClientService, RoomService>>,
     Query(query): Query<NewGameQuery>,
 ) -> impl IntoResponse {
     let mode_str = query.mode.unwrap_or_else(|| "classic".to_string());

@@ -28,7 +28,7 @@ pub enum Event {
     ClientDisconnected(u16),            // client_id
     ClientRemoved(u16, Option<String>), // client_id
     ClientConnected(u16, UnboundedSender<Game>),
-    GameOver(String),                  // room_code
+    GameOver(u16, String),             // room_code
     PlayerRequestedCards(u16, String), // client_id, room_code
     PlayerFoundSet(u16, String),       // client_id, room_code
 }

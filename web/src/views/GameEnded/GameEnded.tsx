@@ -8,6 +8,7 @@ import { StarScene } from "@components/Star/Star";
 import Button from "@components/Button/Button";
 import { useNavigate } from "react-router-dom";
 import { useGameManager } from "@services/gameService";
+import Avatar from "boring-avatars";
 
 const viewAnimationProps = {
   initial: { opacity: 0, y: 50 },
@@ -61,10 +62,7 @@ export const GameEnded = () => {
           <h1>We have a winner!</h1>
         </Box>
         <Box gap={vars.sizes.s1} xAlign="center" yAlign="center">
-          <img
-            src={`https://source.boringavatars.com/beam/36/${winner?.client_id}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
-            alt="avatar"
-          />
+          <Avatar variant="beam" size={36} name={winner?.client_id} colors={["#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51"]} />
           <p>{winner?.name}</p>
         </Box>
       </Box>
@@ -91,10 +89,7 @@ export const GameEnded = () => {
                 xAlign="center"
                 yAlign="center"
               >
-                <img
-                  src={`https://source.boringavatars.com/beam/36/${p?.client_id}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`}
-                  alt="avatar"
-                />
+                <Avatar variant="beam" size={36} name={p?.client_id} colors={["#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51"]} />
                 <Box yAlign="center" xAlign="center" gap={0}>
                   <p>{p?.name}</p>
                   <span
@@ -110,7 +105,7 @@ export const GameEnded = () => {
             ))}
           </Box>
 
-          <p>{}</p>
+          <p>{ }</p>
         </Box>
       </Box>
     );

@@ -5,7 +5,7 @@ import { cx } from "../../util/cx";
 import { AnimatePresence, motion } from "framer-motion";
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
-  image?: string;
+  image?: ReactNode;
   fallback: string;
   ping?: ReactNode;
   alt: string;
@@ -49,7 +49,7 @@ export const Avatar: FC<PropsWithChildren<AvatarProps>> = ({
         </AnimatePresence>
         <Popover.Trigger asChild>
           <span className={styles.avatarSpan}>
-            {image ? <img src={image} alt="avatar" /> : fallback}
+            {image ?? fallback}
           </span>
         </Popover.Trigger>
       </div>

@@ -7,6 +7,8 @@ use tokio::sync::{broadcast, mpsc::error::SendError};
 
 use crate::domain::events::{AppEvent, CommandResult};
 
+use super::event_emmiter::EventEmitterError;
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Clone, Debug, ThisError)]
@@ -39,13 +41,16 @@ pub enum Error {
     DatabaseError(String),
 
     #[error("Environment error: {0}")]
-    EnviormentError(String),
+    EnvironmentError(String),
 
     #[error("Room service error: {0}")]
     RoomNotFound(String),
 
     #[error("Event emit error: {0}")]
     EventEmitError(String),
+
+    #[error("Event emitter error: {0}")]
+    EventEmitter(#[from] EventEmitterError),
 
     #[error("Server error: client ID missing")]
     ClientIdMissing,

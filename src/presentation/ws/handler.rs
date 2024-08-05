@@ -5,16 +5,13 @@ use crate::{
     application::{
         client::service::ClientService, game::service::GameService, room::service::RoomService,
     },
-    infra::{
-        error::{AppError, Error},
-        event_emmiter::EventEmitter,
-    },
+    infra::error::{AppError, Error},
 };
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     jar: CookieJar,
-    Extension(game_service): Extension<GameService<ClientService, RoomService, EventEmitter>>,
+    Extension(game_service): Extension<GameService<ClientService, RoomService>>,
 ) -> Result<impl IntoResponse, AppError> {
     tracing::info!("Starting WebSocket connection");
     match get_client_id_from_cookies(&jar) {

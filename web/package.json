@@ -26,6 +26,7 @@
     "@vanilla-extract/dynamic": "^2.0.3",
     "@vanilla-extract/recipes": "^0.4.0",
     "@vanilla-extract/vite-plugin": "^3.8.2",
+    "boring-avatars": "^1.10.2",
     "canvas-confetti": "^1.6.0",
     "effector": "^22.8.6",
     "effector-react": "^22.5.4",

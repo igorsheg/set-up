@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use crate::config::Configuration;
 use application::{
     client::service::ClientService, game::service::GameService, room::service::RoomService,
 };
 use domain::events::Topic;
 use infra::{error::Error, event_emmiter::EventEmitter, server::Server};
-use tracing_subscriber::{prelude::*, EnvFilter};
+use tracing_subscriber::EnvFilter;
 
 pub mod application;
 pub mod config;
@@ -49,7 +51,7 @@ async fn main() -> Result<(), Error> {
 
     tracing::subscriber::set_global_default(subscriber).expect("Setting global default failed");
 
-    let event_emitter = EventEmitter::new();
+    let event_emitter = Arc::new(EventEmitter::new());
     let room_service = RoomService::new(event_emitter.clone());
     let client_service = ClientService::new(event_emitter.clone());
 
@@ -60,17 +62,14 @@ async fn main() -> Result<(), Error> {
         .register_listener(client_service.clone(), Topic::ClientService)
         .await;
 
-    let game_controller = GameService::<ClientService, RoomService, EventEmitter>::new(
-        client_service.clone(),
-        room_service.clone(),
-        event_emitter.clone(),
-    );
+    let game_controller =
+        GameService::<ClientService, RoomService>::new(client_service, room_service, event_emitter);
 
     let server = Server::new(
         config.server.host,
         config.server.port.parse().unwrap(),
         config.is_production,
-        game_controller.clone(),
+        game_controller,
     );
 
     #[cfg(feature = "loki")]
@@ -79,4 +78,3 @@ async fn main() -> Result<(), Error> {
     server.run().await;
     Ok(())
 }
-
